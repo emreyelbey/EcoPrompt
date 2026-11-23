@@ -1,0 +1,9 @@
+/* Genel stiller: Tailwind'i yükler ve sayfanın kendisinin kaymasını kapatır. */
+/* source(...): Tailwind yalnızca src/ klasöründeki sınıfları tarar (reference/ prototipini değil). */
+@import "tailwindcss" source("../src");
+
+html,
+body {
+  height: 100%;
+  overflow: hidden; /* Yalnızca <main> kayar (proje rehberi, Bölüm 8). */
+}

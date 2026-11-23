@@ -1,0 +1,23 @@
+# Git'e girmeyecek dosyalar
+
+# Bağımlılıklar ve derleme çıktıları
+node_modules/
+dist/
+coverage/
+
+# Vercel yerel ayarları
+.vercel/
+
+# Loglar
+*.log
+
+# Gizli bilgiler: ortam değişkenleri ve kimlik dosyaları
+.env
+.env.*
+!.env.example
+*service-account*.json
+*serviceAccount*.json
+
+# İşletim sistemi / editör
+.DS_Store
+Thumbs.db

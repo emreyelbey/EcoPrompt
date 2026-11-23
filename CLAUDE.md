@@ -155,11 +155,12 @@ isSample (boolean), createdAt (sunucu zamanı)
 
 ## 11. Komutlar
 
-_Dilim 0 tamamlanınca güncellenecek._ Beklenen:
-- `npm run dev` — yerel geliştirme
-- `npm test` — Vitest
-- `npm run build` — üretim derlemesi
-- `vercel dev` — sunucu fonksiyonlarıyla birlikte yerel çalıştırma
+- `npm run dev` — yerel geliştirme (http://localhost:5173, `/api` fonksiyonları çalışmaz)
+- `npm test` — Vitest (tek sefer); `npm run test:watch` — izleme modu
+- `npm run build` — üretim derlemesi (`dist/`)
+- `vercel dev` — sunucu fonksiyonlarıyla birlikte yerel çalıştırma (Vercel CLI gerekir; Dilim 2–3'te kurulacak)
+- Yayın: GitHub `main` dalına push → Vercel otomatik yayınlar.
+- `tests/marka-yasagi.test.js`: `src/`, `index.html`, `api/` içinde marka adı arar; `api/_lib/` hariçtir.
 
 ## 12. Açık kararlar (uygulamadan önce kullanıcıya sor)
 
