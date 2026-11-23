@@ -115,6 +115,10 @@ isSample (boolean), createdAt (sunucu zamanı)
 ```
 `settings/experiment`: `{ activePhase: 'pretest' | 'posttest', updatedAt }`
 `rateLimits/{code}`: `{ lastRequestAt }`
+`logins/{code}_{phase}` (ör. `logins/K001_pretest`): `{ code, group, phase, firstLoginAt, lastLoginAt, loginCount }` — hangi kodun hangi aşamada giriş yaptığını tutar (Bölüm 12/1). Zamanlar sunucu saatidir. `/api/login` yazar (`api/_lib/logins.js` → `recordLogin`); Dilim 3'te `/api/chat` de her istekte aynı yardımcıyla günceller. Aşama `settings/experiment` yoksa `'pretest'` varsayılır.
+
+### Bilinen sınırlamalar
+- **Katılımcı kodları tahmin edilebilir** (K001–K030, D001–D030 sıralı ve parolasız). Bir öğrenci başkasının kodunu yazarak giriş yapabilir. Önlem: deney oturumları öğretmen gözetiminde yapılır; yönetici `logins.loginCount` (ve `lastLoginAt`) ile şüpheli çoklu girişleri kontrol eder.
 
 - **Örnek veriler (`isSample: true`) istatistiklere, grafiklere ve Excel'e varsayılan olarak GİRMEZ.** Yönetici panelinde örnekler varken açık bir uyarı bandı gösterilir.
 - Aşama değiştirilince eski veriler silinmez. Öğrenci ekranı yalnızca aktif aşamanın mesajlarını gösterir.
