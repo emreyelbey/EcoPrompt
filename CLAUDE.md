@@ -117,11 +117,12 @@ isSample (boolean), createdAt (sunucu zamanı)
 `rateLimits/{code}`: `{ lastRequestAt }`
 `logins/{code}_{phase}` (ör. `logins/K001_pretest`): `{ code, group, phase, firstLoginAt, lastLoginAt, loginCount }` — hangi kodun hangi aşamada giriş yaptığını tutar (Bölüm 12/1). Zamanlar sunucu saatidir. `/api/login` yazar (`api/_lib/logins.js` → `recordLogin`); Dilim 3'te `/api/chat` de her istekte aynı yardımcıyla günceller. Aşama `settings/experiment` yoksa `'pretest'` varsayılır.
 
-### Bilinen sınırlamalar
-- **Katılımcı kodları tahmin edilebilir** (K001–K030, D001–D030 sıralı ve parolasız). Bir öğrenci başkasının kodunu yazarak giriş yapabilir. Önlem: deney oturumları öğretmen gözetiminde yapılır; yönetici `logins.loginCount` (ve `lastLoginAt`) ile şüpheli çoklu girişleri kontrol eder.
-
 - **Örnek veriler (`isSample: true`) istatistiklere, grafiklere ve Excel'e varsayılan olarak GİRMEZ.** Yönetici panelinde örnekler varken açık bir uyarı bandı gösterilir.
 - Aşama değiştirilince eski veriler silinmez. Öğrenci ekranı yalnızca aktif aşamanın mesajlarını gösterir.
+- **"Verileri Temizle" (yönetici paneli) `interactions` ile birlikte `logins` ve `rateLimits` koleksiyonlarını da temizler.** Yoksa UAT/test girişleri katılım verisi olarak kalır ve istatistiği bozar (ör. `'zero'` politikasında test girişi yapılmış bir kod 0 istemle analize girer). `settings/experiment` silinmez. (Dilim 6'da uygulanacak.)
+
+### Bilinen sınırlamalar
+- **Katılımcı kodları tahmin edilebilir** (K001–K030, D001–D030 sıralı ve parolasız). Bir öğrenci başkasının kodunu yazarak giriş yapabilir. Önlem: deney oturumları öğretmen gözetiminde yapılır; yönetici `logins.loginCount` (ve `lastLoginAt`) ile şüpheli çoklu girişleri kontrol eder.
 
 ## 8. Arayüz kuralları (önceki denemelerde yaşanmış hatalar)
 
@@ -173,7 +174,17 @@ isSample (boolean), createdAt (sunucu zamanı)
    - **Uygulama (Dilim 1'de kararlaştırıldı):** `src/lib/stats.js` içinde `ZERO_PROMPT_POLICY = 'exclude' | 'zero'`. Varsayılan `'exclude'` (prototip davranışı).
    - `'zero'` politikası yalnızca **o aşamada giriş yapmış** katılımcıları 0 istemle dahil eder. "Herhangi bir aşamada kaydı olan" ölçütü KULLANILMAZ: Son Test'e hiç gelmeyen öğrenci 0 istem yazmış sayılır ve sahte bir düşüş görünür.
    - Bunun için toplama fonksiyonu her aşamada giriş yapmış kodların listesini parametre olarak alır (`{ pretest: [...], posttest: [...] }`).
-   - **Dilim 2'de yapılacak:** Giriş kayıtları (kod + aşama) Firestore'da tutulacak. Bu, Bölüm 7'deki veri modeline yeni bir koleksiyon ekler; Dilim 2 planında koleksiyonun adı ve alanları netleştirilecek.
+   - **Dilim 2'de yapıldı:** Giriş kayıtları `logins/{code}_{phase}` koleksiyonunda tutuluyor (Bölüm 7).
    - Hafif model oranı 0 istemde tanımsızdır; bu metrikte 0 istemli katılımcı her iki politikada da dışarıda kalır.
 2. **Model adları:** Güncel model listesi kontrol edilip onaylanacak (Bölüm 4).
 3. **Etik/veli onayı:** Kod meselesi değil, ama UAT ve canlı deneyden önce tamamlanmış olmalı.
+
+## 13. Canlı deney öncesi kontrol listesi
+
+60 öğrencilik canlı deney başlamadan önce hepsi tamamlanmış olmalı:
+
+- [ ] **`ADMIN_PASSCODE` değiştirildi.** Şu anki değer geçicidir. Vercel'de (Production) yeni, güçlü bir parola girilip yeniden yayın yapıldı.
+- [ ] **Tüm test verileri temizlendi:** `interactions`, `logins`, `rateLimits` (yönetici panelindeki "Verileri Temizle" ile; Bölüm 7). Temizlik sonrası panelde 0 kayıt görüldü.
+- [ ] **Etik kurul ve veli onayı tamamlandı** (Bölüm 12/3).
+- [ ] **Gerçek model eşlemesi ve ücretsiz kota doğrulandı:** Üç ölçek sınıfının gerçekten farklı modellere gittiği kontrol edildi; 60 öğrencinin aynı anda kullanımına benzer bir yük testiyle kota sınırına takılmadığı görüldü.
+- [ ] **Excel dışa aktarma bir kez denendi:** 4 sayfa da açılıyor, başlıklar Türkçe, SPSS'e aktarım çalışıyor.
