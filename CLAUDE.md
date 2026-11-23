@@ -168,6 +168,7 @@ isSample (boolean), engineVersion, createdAt (sunucu zamanı)
 
 ## 10. Çalışma kuralları
 
+- **Kullanıcıyla her zaman Türkçe konuş.** Açıklamalar, planlar, sorular ve özetler Türkçe olur (kod, komut ve dosya adları olduğu gibi kalır).
 - **Kod sade olacak.** Bu proje lise öğrencileri tarafından jüriye savunulacak. Her dosyanın başında ne yaptığını anlatan kısa bir Türkçe yorum olsun. Karmaşık satırlara Türkçe açıklama yaz. Akıllıca ama anlaşılmaz kısa yollardan kaçın.
 - **Küçük adımlar.** Bir seferde tek dilim veya dilimin bir parçası. Bitince çalıştır, test et, sonra commit öner.
 - **Önce plan.** Yeni bir dilime başlamadan önce kısa bir plan sun ve onay bekle.
