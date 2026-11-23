@@ -1,0 +1,18 @@
+// Firestore güvenlik kuralları (proje rehberi Bölüm 3).
+// - Tarayıcı yalnızca settings/experiment belgesini OKUYABİLİR (aktif aşamayı canlı dinlemek için).
+// - Başka hiçbir belge tarayıcıdan okunamaz veya yazılamaz.
+// - Sunucu (/api) Admin SDK kullandığı için bu kurallardan etkilenmez.
+// YAYINLAMA: Firebase konsolu → Firestore Database → Rules → bu dosyanın içeriğini yapıştır → Publish.
+// Bu dosya değişirse konsoldaki kurallar da aynı şekilde güncellenmelidir.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /settings/experiment {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

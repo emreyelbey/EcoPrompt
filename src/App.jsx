@@ -2,12 +2,16 @@
 // Durumlar: 'loading' (kayıtlı oturum kontrol ediliyor) → 'login' | 'student' | 'admin'.
 // Kayıtlı oturuma körü körüne güvenilmez: öğrenci kodu /api/login ile, yönetici token'ı
 // /api/admin/session ile sunucuda yeniden doğrulanır.
-import { useEffect, useState } from 'react';
+// Aktif aşama iki yoldan öğrenilir: canlı dinleyici (hızlı) ve API yanıtları (doğru kaynak).
+// İkisi de applyPhaseReport ile aynı yere yazar; dinleyici hiç çalışmasa da ekran doğru aşamaya geçer.
+import { useCallback, useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import LoginScreen from './components/LoginScreen.jsx';
-import Placeholder from './components/Placeholder.jsx';
+import AdminScreen from './components/AdminScreen.jsx';
 import ChatScreen from './components/ChatScreen.jsx';
 import { apiRequest } from './lib/api.js';
+import { applyPhaseReport, getStudentView } from './lib/phases.js';
+import { subscribeToPhase } from './lib/phaseListener.js';
 import { saveStudent, saveAdmin, loadSession, clearSession } from './lib/session.js';
 
 export default function App() {
@@ -65,6 +69,19 @@ export default function App() {
     };
   }, []);
 
+  // Yeni bir aşama bildirimi (dinleyiciden veya sunucu yanıtından) öğrenci durumuna uygulanır.
+  // Aşama değişmediyse durum aynı kalır.
+  const handlePhaseReport = useCallback((phase) => {
+    setStudent((current) => applyPhaseReport(current, phase));
+  }, []);
+
+  // Öğrenci ekranı açıkken settings/experiment belgesini canlı dinle (salt okunur).
+  const studentCode = view === 'student' ? student?.code : null;
+  useEffect(() => {
+    if (!studentCode) return undefined;
+    return subscribeToPhase(handlePhaseReport); // Ekran kapanınca dinleme durur.
+  }, [studentCode, handlePhaseReport]);
+
   const handleStudentLogin = (data) => {
     saveStudent(data.code);
     setStudent(data);
@@ -94,18 +111,20 @@ export default function App() {
   }
 
   if (view === 'student' && student) {
-    // Sade sohbet ekranı. (Deney grubu + Son Test için EkoToken arayüzü Dilim 5'te eklenecek.)
-    return <ChatScreen student={student} onLogout={handleLogout} />;
-  }
-
-  if (view === 'admin' && admin) {
+    const studentView = getStudentView(student.group, student.phase);
+    // DİLİM 5: studentView === 'ekotoken' (Deney + Son Test) olduğunda EkoToken arayüzü gösterilecek.
+    // Şimdilik iki durumda da sade sohbet ekranı açılır; aşama bilgisinin doğru aktığı testlerle doğrulanır.
     return (
-      <Placeholder
-        title="Yönetici Paneli"
-        lines={['Yönetici oturumu açık.', 'Panel sekmeleri sonraki adımlarda eklenecek.']}
+      <ChatScreen
+        student={student}
+        onServerPhase={handlePhaseReport}
         onLogout={handleLogout}
       />
     );
+  }
+
+  if (view === 'admin' && admin) {
+    return <AdminScreen token={admin.token} onLogout={handleLogout} />;
   }
 
   return (

@@ -3,11 +3,16 @@
 // (sunucu da bu verileri tarayıcıya göndermez).
 // Düzen kuralları (proje rehberi Bölüm 8): tam ekran kilitli yerleşim, yalnızca mesaj listesi kayar,
 // kaydırma yalnızca container.scrollTo ile yapılır (scrollIntoView YOK), model seçici grid-cols-3.
+// Aşama (Ön Test / Son Test) bu ekranda HİÇ YAZMAZ (kör deney). Aşama değişince yalnızca nötr bir
+// "Yeni oturum başladı" notu çıkar ve yeni aşamanın mesajları yüklenir.
+// Sunucu doğru kaynaktır: /api/messages yanıtındaki aşama onServerPhase ile üst bileşene bildirilir;
+// /api/chat yanıtındaki aşama ekrandakinden farklıysa geçmiş yeniden yüklenir.
 import { useEffect, useRef, useState } from 'react';
-import { GraduationCap, LogOut, Send, RefreshCw, AlertCircle, X, Sparkles, Loader2 } from 'lucide-react';
+import { GraduationCap, LogOut, Send, RefreshCw, AlertCircle, X, Sparkles, Loader2, Info } from 'lucide-react';
 import RichMessage from './RichMessage.jsx';
 import { apiRequest } from '../lib/api.js';
 import { MODEL_ORDER, MODEL_SCALES } from '../lib/footprint.js';
+import { chatResponseAction } from '../lib/phases.js';
 
 // Sunucudaki sınırlarla aynı değerler (asıl kontrol sunucuda yapılır).
 const MAX_PROMPT_LENGTH = 4000;
@@ -26,7 +31,7 @@ function formatTime(iso) {
   return new Date(iso).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 }
 
-export default function ChatScreen({ student, onLogout }) {
+export default function ChatScreen({ student, onServerPhase, onLogout }) {
   const [messages, setMessages] = useState([]); // Sunucudan gelen, kaydı yazılmış mesajlar
   const [historyState, setHistoryState] = useState('loading'); // 'loading' | 'ready' | hata metni
   const [selectedModel, setSelectedModel] = useState('standard');
@@ -35,25 +40,47 @@ export default function ChatScreen({ student, onLogout }) {
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState(''); // Son gönderimin hata mesajı
   const [cooldown, setCooldown] = useState(false); // İki gönderim arası 3 sn bekleme
+  const [sessionNote, setSessionNote] = useState(false); // Nötr "Yeni oturum başladı" notu
 
   const containerRef = useRef(null);
+  // Ekranda mesajları gösterilen aşama (son başarılı /api/messages yanıtından). İlk açılışta null.
+  const loadedPhaseRef = useRef(null);
+  // Her geçmiş yüklemesine sıra numarası verilir; geç gelen eski yanıt yok sayılır.
+  const historyRequestRef = useRef(0);
 
-  // Açılışta: aktif aşamadaki kendi mesajlarımızı sunucudan yükle.
+  // Aktif aşamadaki kendi mesajlarımızı sunucudan yükle. Bu çağrı sunucuda giriş kaydını da günceller.
   const loadHistory = async () => {
+    const requestNo = ++historyRequestRef.current;
     setHistoryState('loading');
     try {
       const data = await apiRequest('/api/messages', { method: 'POST', body: { code: student.code } });
+      if (requestNo !== historyRequestRef.current) return; // Daha yeni bir yükleme başladı.
+      // Ekrandaki aşamadan farklı bir aşamaya geçildiyse nötr not gösterilir (ilk açılışta gösterilmez).
+      if (loadedPhaseRef.current !== null && loadedPhaseRef.current !== data.phase) setSessionNote(true);
+      loadedPhaseRef.current = data.phase;
       setMessages(data.messages);
       setHistoryState('ready');
+      onServerPhase?.(data.phase); // Sunucunun aşaması ekrandakinden farklıysa üst bileşen günceller.
     } catch (err) {
+      if (requestNo !== historyRequestRef.current) return;
       setHistoryState(err.message);
     }
   };
 
+  // Açılışta ve aşama değiştiğinde geçmişi yükle.
   useEffect(() => {
+    // Bu aşamanın mesajları zaten ekrandaysa (aşamayı bize /api/messages söylediyse) yeniden yükleme.
+    if (loadedPhaseRef.current === student.phase) return;
+
+    // Ekran açıkken aşama değişti: eski aşamaya ait bekleyen istem ve hata temizlenir, nötr not gösterilir.
+    if (loadedPhaseRef.current !== null) {
+      setMessages([]);
+      setPending(null);
+      setError('');
+      setSessionNote(true);
+    }
     loadHistory();
-    // Yalnızca ekran açılırken (veya kod değişirse) yüklenir.
-  }, [student.code]);
+  }, [student.code, student.phase]);
 
   // Yeni mesaj, bekleme göstergesi veya hata kartı gelince listenin en altına kaydır.
   useEffect(() => {
@@ -76,15 +103,24 @@ export default function ChatScreen({ student, onLogout }) {
     setInput('');
     setCooldown(true);
     setTimeout(() => setCooldown(false), COOLDOWN_MS);
+    const phaseAtStart = loadedPhaseRef.current;
 
     try {
       const data = await apiRequest('/api/chat', {
         method: 'POST',
         body: { code: student.code, modelId, prompt: clean },
       });
-      setMessages((old) => [...old, data.message]);
       setPending(null);
+      if (chatResponseAction(loadedPhaseRef.current, data.phase) === 'append') {
+        setMessages((old) => [...old, data.message]);
+      } else {
+        // Kayıt ekrandakinden farklı bir aşamaya yazıldı: geçmişi sunucudan yeniden al.
+        // /api/messages yanıtı güncel aşamayı söyler ve ekran ona göre güncellenir.
+        loadHistory();
+      }
     } catch (err) {
+      // İstek sürerken aşama değiştiyse eski aşamanın hatası yeni ekranda gösterilmez.
+      if (loadedPhaseRef.current !== phaseAtStart) return;
       // Sahte yanıt gösterilmez; Türkçe hata kartı + Tekrar Dene.
       setError(err.message);
     } finally {
@@ -170,6 +206,23 @@ export default function ChatScreen({ student, onLogout }) {
       {/* KAYAN MESAJ LİSTESİ */}
       <main ref={containerRef} className="flex-1 min-h-0 overflow-y-auto px-3 sm:px-5 py-5">
         <div className="max-w-4xl mx-auto space-y-5">
+          {sessionNote && (
+            <div role="status" className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+              <div className="flex items-start gap-2">
+                <Info className="w-4 h-4 mt-0.5 shrink-0 text-indigo-600" />
+                <p className="flex-1">Yeni oturum başladı. Önceki mesajlar bu ekranda gösterilmiyor.</p>
+                <button
+                  type="button"
+                  onClick={() => setSessionNote(false)}
+                  aria-label="Kapat"
+                  className="shrink-0 text-slate-400 hover:text-slate-700"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
           {historyState === 'loading' && (
             <div className="py-12 flex justify-center text-slate-400">
               <Loader2 className="w-6 h-6 animate-spin" aria-label="Yükleniyor" />

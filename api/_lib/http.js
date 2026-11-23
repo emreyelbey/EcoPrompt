@@ -6,9 +6,11 @@ export function sendError(res, status, message) {
 }
 
 // İstek yöntemi beklenenden farklıysa 405 döner ve false verir.
+// `method` tek bir yöntem ('POST') veya izin verilen yöntemlerin listesi (['GET', 'POST']) olabilir.
 export function allowMethod(req, res, method) {
-  if (req.method === method) return true;
-  res.setHeader('Allow', method);
+  const allowed = Array.isArray(method) ? method : [method];
+  if (allowed.includes(req.method)) return true;
+  res.setHeader('Allow', allowed.join(', '));
   sendError(res, 405, 'Bu istek türü desteklenmiyor.');
   return false;
 }

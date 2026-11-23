@@ -106,13 +106,15 @@ describe('/api/chat — başarılı istek', () => {
 
   it('tarayıcıya yalnızca id, modelId, prompt, response, createdAt gider (çevresel alan ve engineVersion yok)', async () => {
     const res = await post({ code: 'D001', modelId: 'light', prompt: 'merhaba' });
+    expect(Object.keys(res.body).sort()).toEqual(['message', 'phase']);
     expect(Object.keys(res.body.message).sort()).toEqual(['createdAt', 'id', 'modelId', 'prompt', 'response']);
     expect(JSON.stringify(res.body)).not.toContain('motor-surum-1');
   });
 
-  it('aktif aşama veritabanından okunur', async () => {
+  it('aktif aşama veritabanından okunur ve yanıtta kaydın aşaması döner', async () => {
     fakeDb = createFakeDb({ 'settings/experiment': { activePhase: 'posttest' } });
-    await post({ code: 'D002', modelId: 'standard', prompt: 'merhaba' });
+    const res = await post({ code: 'D002', modelId: 'standard', prompt: 'merhaba', phase: 'pretest' });
+    expect(res.body.phase).toBe('posttest');
     expect(interactions()[0].phase).toBe('posttest');
     expect(interactions()[0].group).toBe('Deney');
   });

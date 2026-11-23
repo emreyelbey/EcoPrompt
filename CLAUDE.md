@@ -36,6 +36,7 @@ Tarayıcı (React)  ──HTTP──>  Vercel sunucu fonksiyonları (/api/*)  �
 - **Tek istisna:** `settings/experiment` belgesi (`activePhase`). Tarayıcı bunu Firebase istemci SDK'sı ile gerçek zamanlı **okur**, yazamaz. Firestore kuralları: bu belge `read: true, write: false`, geri kalan her şey `read, write: false`.
 - **Sunucu belirler, tarayıcı değil:** `group` koddan, `phase` veritabanından, `createdAt` sunucu saatinden, token sayıları API yanıtından gelir. Tarayıcıdan gelen bu alanlara asla güvenilmez.
 - **Öğrenci yalnızca kendi kayıtlarını alır** (kendi kodu + aktif aşama). Başka hiçbir öğrencinin verisi tarayıcıya inmez.
+- **Aşamanın doğru kaynağı her zaman sunucudur.** Öğrenci ekranı aşamayı yalnızca istemci SDK dinleyicisinden öğrenmez: `/api/messages` ve `/api/chat` yanıtlarındaki `phase` ekrandakinden farklıysa ekran sunucunun söylediğine göre güncellenir (`src/lib/phases.js` → `applyPhaseReport`, `chatResponseAction`). Sebep: okul ağı veya reklam engelleyici dinleyiciyi bloklarsa Deney grubu Son Test'te sade ekranda kalır; kayıt "Deney/posttest" olur ama müdahale hiç uygulanmamış olur. `/api/chat` aşamayı isteğin başında okuduğu için yanıtındaki aşama farklıysa doğrudan uygulanmaz; geçmiş `/api/messages` ile yeniden yüklenir ve oradaki aşama uygulanır. `tests/phase-guvence.test.js` dinleyici hiç çalışmadan görünümün değiştiğini denetler.
 - **Yönetici oturumu:** Parola sunucuda `ADMIN_PASSCODE` ile karşılaştırılır. Başarılıysa sunucu imzalı, süreli bir token döner (`SESSION_SECRET` ile). Tüm yönetici uç noktaları bu token'ı doğrular. Yönetici paneli veriyi birkaç saniyede bir yenileyerek çeker.
 - **Öğrenci oturumu:** Aktif kod `localStorage`'da saklanır (sayfa yenilenince kaybolmaz). Sunucu her istekte kodu yeniden doğrular.
 - **Hız sınırı:** Kod başına 3 saniye, istem en fazla 4000 karakter. Son istek zamanı Firestore'da tutulur (sunucusuz ortamda bellekte tutulamaz).
@@ -123,7 +124,8 @@ energyMin/Avg/Max, waterMin/Avg/Max, co2Min/Avg/Max, costUsd, savingsPct,
 isSample (boolean), engineVersion, createdAt (sunucu zamanı)
 ```
 - **`engineVersion`:** Yapay zeka yanıtındaki gerçek model sürümü (`modelVersion`). Yanıtta yoksa `null` olur. Tekrarlanabilirlik için yalnızca veritabanında tutulur. Marka yasağı gereği bu alan **Excel'e, CSV'ye ve tarayıcıya giden yanıtlara ASLA girmez.** Tarayıcıya giden mesaj alanları `api/_lib/interactions.js` → `toClientMessage` ile sınırlıdır (`id, modelId, prompt, response, createdAt`). `tests/api-messages.test.js` ve `tests/api-chat.test.js` bunu denetler. Dilim 6–7'de CSV ve Excel sütunları da bu alanı dışarıda bırakmalıdır.
-`settings/experiment`: `{ activePhase: 'pretest' | 'posttest', updatedAt }`
+`settings/experiment`: `{ activePhase: 'pretest' | 'posttest', updatedAt }` — yalnızca `/api/admin/phase` (POST, yönetici token'ı) yazar; `updatedAt` sunucu saatidir. Tarayıcı `src/lib/phaseListener.js` ile salt okunur dinler. Güvenlik kuralları repoda `firestore.rules` dosyasındadır ve Firebase konsolundan elle yayınlanır.
+- **Aşama değişince öğrenci ekranı:** aşama adı (Ön Test / Son Test) öğrenci ekranında HİÇ yazmaz (kör deney). Ekran açıkken aşama değişirse eski mesajlar kalkar, yalnızca nötr bir not çıkar ("Yeni oturum başladı. Önceki mesajlar bu ekranda gösterilmiyor.") ve yeni aşamanın mesajları `/api/messages` ile yüklenir (bu çağrı `recordLogin` ile öğrenciyi yeni aşamada giriş yapmış sayar).
 `rateLimits/{code}`: `{ lastRequestAt }` (sunucu saati, milisaniye cinsinden sayı)
 `logins/{code}_{phase}` (ör. `logins/K001_pretest`): `{ code, group, phase, firstLoginAt, lastLoginAt, loginCount }` — hangi kodun hangi aşamada giriş yaptığını tutar (Bölüm 12/1). Zamanlar sunucu saatidir. `/api/login` yazar (`api/_lib/logins.js` → `recordLogin`); Dilim 3'te `/api/chat` de her istekte aynı yardımcıyla günceller. Aşama `settings/experiment` yoksa `'pretest'` varsayılır.
 
@@ -185,6 +187,7 @@ isSample (boolean), engineVersion, createdAt (sunucu zamanı)
 - `vercel dev` — sunucu fonksiyonlarıyla birlikte yerel çalıştırma (Vercel CLI gerekir; Dilim 2–3'te kurulacak)
 - Yayın: GitHub `main` dalına push → Vercel otomatik yayınlar (https://egitim-asistani-2204.vercel.app).
 - `tests/marka-yasagi.test.js`: `src/`, `index.html`, `api/` içinde marka adı arar; `api/_lib/` hariçtir.
+- Firestore kuralları: `firestore.rules` içeriği Firebase konsolu → Firestore Database → Rules sekmesine yapıştırılıp Publish edilir (Firebase CLI kullanılmıyor). Dosya değişirse konsol da güncellenir.
 
 ## 12. Açık kararlar (uygulamadan önce kullanıcıya sor)
 
@@ -203,6 +206,9 @@ isSample (boolean), engineVersion, createdAt (sunucu zamanı)
 60 öğrencilik canlı deney başlamadan önce hepsi tamamlanmış olmalı:
 
 - [ ] **`ADMIN_PASSCODE` değiştirildi.** Şu anki değer geçicidir. Vercel'de (Production) yeni, güçlü bir parola girilip yeniden yayın yapıldı.
+- [x] **Firestore kuralları yayınlandı ve denendi:** Konsoldaki kurallar `firestore.rules` ile aynı; Rules Playground'da `settings/experiment` okuma izinli, yazma reddedildi; `interactions` okuma reddedildi.
+  - ✅ 23.11.2026: Kurallar konsoldan yayınlandı, Playground'da üç senaryo da beklendiği gibi sonuçlandı. `vercel dev` ile iki pencerede aşama geçişi doğrulandı (nötr not göründü, aşama adı görünmedi, Ön Test'e dönünce eski mesajlar geri geldi).
+- [ ] **`VITE_FIREBASE_*` Vercel'de tanımlı ve canlı dinleyici çalışıyor:** Yönetici aşamayı değiştirince açık öğrenci ekranı birkaç saniyede yeni aşamaya geçiyor (okul ağında da denendi).
 - [ ] **Tüm test verileri temizlendi:** `interactions`, `logins`, `rateLimits` (yönetici panelindeki "Verileri Temizle" ile; Bölüm 7). Temizlik sonrası panelde 0 kayıt görüldü.
 - [ ] **Etik kurul ve veli onayı tamamlandı** (Bölüm 12/3).
 - [ ] **Gerçek model eşlemesi ve ücretsiz kota doğrulandı:** Üç ölçek sınıfının gerçekten farklı modellere gittiği kontrol edildi; 60 öğrencinin aynı anda kullanımına benzer bir yük testiyle kota sınırına takılmadığı görüldü.

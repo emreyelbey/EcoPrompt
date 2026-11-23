@@ -105,5 +105,7 @@ export default async function handler(req, res) {
     return sendError(res, 500, 'Yanıt alındı ancak kaydedilemedi. Lütfen tekrar deneyin.');
   }
 
-  return res.status(200).json({ message: toClientMessage(id, record, Date.now()) });
+  // `phase`: kaydın yazıldığı aşama. Tarayıcı bunu ekrandaki aşamayla karşılaştırır; farklıysa
+  // mesajı eklemez ve geçmişi yeniden yükler (canlı dinleyici engellense bile ekran doğru aşamaya geçer).
+  return res.status(200).json({ message: toClientMessage(id, record, Date.now()), phase });
 }

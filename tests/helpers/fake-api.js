@@ -25,9 +25,10 @@ export function createFakeDb(initialDocs = {}, { failWritesTo } = {}) {
       async get() {
         return snapshot(path);
       },
-      async set(data) {
+      // { merge: true } verilirse eski alanlar korunur (Firestore'daki gibi).
+      async set(data, options = {}) {
         if (failWritesTo && path.startsWith(`${failWritesTo}/`)) throw new Error('Sahte yazma hatası');
-        docs.set(path, apply({}, data));
+        docs.set(path, apply(options.merge ? docs.get(path) || {} : {}, data));
       },
     };
   }
