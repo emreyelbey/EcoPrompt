@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, within } from '@testing-library/react';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { fixtureRecords, interaction, loginsFor } from './helpers/stats-fixture.js';
 
 const apiRequest = vi.fn();
 vi.mock('../src/lib/api.js', () => ({ apiRequest: (...args) => apiRequest(...args) }));
@@ -174,6 +175,65 @@ describe('Yönetici paneli', () => {
 
     const k001 = screen.getByText('K001').closest('tr');
     expect(within(k001).getByText('· 2 giriş')).toBeTruthy();
+  });
+
+  it('İstatistik sekmesi: veri yetersizse 4 test de "Hesaplanamadı" ve Türkçe gerekçe gösterir', async () => {
+    mockServer();
+    render(<AdminScreen token="t" onLogout={() => {}} />);
+    await screen.findByText('Aktif Katılımcılar');
+    fireEvent.click(screen.getByRole('button', { name: 'Ön Test – Son Test & İstatistik' }));
+    for (const title of [
+      '1. Başlangıç Denkliği (Ön Test: Kontrol – Deney)',
+      '2. Kontrol Grubu Değişimi (Ön Test → Son Test)',
+      '3. Deney Grubu Değişimi (Ön Test → Son Test)',
+      '4. Son Test Grup Farkı (Son Test: Kontrol – Deney)',
+    ]) {
+      expect(screen.getByRole('heading', { name: title })).toBeTruthy();
+    }
+    expect(screen.getAllByText('Hesaplanamadı')).toHaveLength(4);
+    expect(document.body.textContent).toContain('en az 2 katılımcı gereklidir');
+    expect(screen.getAllByText('p (çift yönlü)')).toHaveLength(4);
+    expect(document.body.textContent).toContain('Etki büyüklüğü nasıl hesaplandı?');
+    expect(document.body.textContent).toContain('havuzlanmış standart sapma');
+  });
+
+  it('İstatistik sekmesi: eşleşen n şeffaf gösterilir, birincil ölçüt enerji, Excel indirilir', async () => {
+    const records = [...fixtureRecords(), interaction('D010', 'pretest', 3.0)];
+    apiRequest.mockImplementation(async () => ({
+      interactions: records,
+      hasMore: false,
+      next: null,
+      logins: loginsFor(records),
+      phase: 'posttest',
+      serverTime: 5000,
+    }));
+    const createObjectURL = vi.fn(() => 'blob:test');
+    URL.createObjectURL = createObjectURL;
+    URL.revokeObjectURL = vi.fn();
+    // jsdom sayfa değiştirmeyi desteklemez; indirme bağlantısının tıklanması taklit edilir.
+    const anchorClick = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+
+    render(<AdminScreen token="t" onLogout={() => {}} />);
+    await screen.findByText('Aktif Katılımcılar');
+    fireEvent.click(screen.getByRole('button', { name: 'Ön Test – Son Test & İstatistik' }));
+
+    expect(screen.getByRole('combobox').value).toBe('energy');
+    expect(screen.getByText('Birincil ölçüt (ana hipotez)')).toBeTruthy();
+    expect(document.body.textContent).toContain("Ön Test'te 6, Son Test'te 5, eşleşen 5 kişi");
+    expect(document.body.textContent).toContain("Ön Test'te 5, Son Test'te 5, eşleşen 5 kişi");
+    expect(screen.getAllByText('Anlamlı')).toHaveLength(2); // Deney değişimi ve Son Test farkı
+
+    // Ölçüt değişince ikincil ölçüt etiketi görünür.
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'prompts' } });
+    expect(screen.getByText('İkincil ölçüt')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Excel İndir (.xlsx)' }));
+    await screen.findByText('Excel dosyası indirildi (4 veri sayfası + değişken sözlüğü).');
+    expect(createObjectURL).toHaveBeenCalledTimes(1);
+    const blob = createObjectURL.mock.calls[0][0];
+    expect(blob.type).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    expect(anchorClick).toHaveBeenCalledTimes(1);
+    anchorClick.mockRestore();
   });
 
   it('Metodoloji sekmesi deney tasarımını gösterir (yalnızca yönetici)', async () => {

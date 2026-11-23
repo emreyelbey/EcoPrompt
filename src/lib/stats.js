@@ -6,6 +6,8 @@
 // studentTTwoTailedP, calcDescriptives, welchTTest, pairedTTest, buildPhaseStudentMap).
 // Prototipten farkı: hesaplanamayan durumlarda sahte değer (t = ±999, p = 1) yazılmaz;
 // bunun yerine { valid: false, reason } ile Türkçe gerekçe döner.
+// Dilim 7 eki: etki büyüklüğü (Cohen's d) ve iki yeni ölçüt (ağırlıklı token, istem başına enerji).
+// Bütün p değerleri ÇİFT YÖNLÜDÜR (two-tailed).
 
 /* ---------------------------------------------------------------------------
  * 1. AYARLAR
@@ -145,6 +147,56 @@ function isEffectivelyZero(sd, values) {
 }
 
 /* ---------------------------------------------------------------------------
+ * 3b. ETKİ BÜYÜKLÜĞÜ (Cohen's d)
+ *     p değeri "fark rastlantı olabilir mi?" sorusunu cevaplar; d ise "fark ne kadar büyük?"
+ *     sorusunu. Formüller SPSS 27 ve sonrasının raporladığı Cohen's d ile aynıdır.
+ * ------------------------------------------------------------------------- */
+
+// Arayüzde ve Excel'de aynen gösterilen formül açıklamaları.
+export const COHENS_D_FORMULAS = {
+  independent:
+    "Bağımsız gruplar (Welch testleri): havuzlanmış standart sapma ile Cohen's d. " +
+    'd = (x̄ Kontrol − x̄ Deney) / sp;  sp = √[((nK − 1)·sK² + (nD − 1)·sD²) / (nK + nD − 2)]',
+  paired:
+    "Eşleştirilmiş testler: Cohen's dz = farkların ortalaması / farkların standart sapması (fark = Son Test − Ön Test)",
+  labels: '|d| < 0,2 ihmal edilebilir · 0,2 ≤ |d| < 0,5 küçük · 0,5 ≤ |d| < 0,8 orta · |d| ≥ 0,8 büyük',
+};
+
+/**
+ * Bağımsız iki grup için Cohen's d (havuzlanmış standart sapma ile).
+ * Girdi calcDescriptives sonuçlarıdır. Hesaplanamıyorsa null döner.
+ */
+export function cohensDIndependent(d1, d2) {
+  if (d1.n < 2 || d2.n < 2) return null;
+  // Havuzlanmış varyans: iki grubun varyanslarının serbestlik derecesiyle ağırlıklı ortalaması.
+  const pooledVariance = ((d1.n - 1) * d1.variance + (d2.n - 1) * d2.variance) / (d1.n + d2.n - 2);
+  const pooledSd = Math.sqrt(pooledVariance);
+  if (!(pooledSd > 0)) return null;
+  return (d1.mean - d2.mean) / pooledSd;
+}
+
+/**
+ * Eşleştirilmiş ölçümler için Cohen's dz = farkların ortalaması / farkların standart sapması.
+ * Hesaplanamıyorsa null döner.
+ */
+export function cohensDPaired(meanDiff, sdDiff) {
+  if (!Number.isFinite(meanDiff) || !(sdDiff > 0)) return null;
+  return meanDiff / sdDiff;
+}
+
+/**
+ * Etki büyüklüğünün Türkçe etiketi (Cohen'in ölçütleri). d yoksa null.
+ */
+export function effectSizeLabel(d) {
+  if (d === null || d === undefined || !Number.isFinite(d)) return null;
+  const size = Math.abs(d);
+  if (size < 0.2) return 'ihmal edilebilir';
+  if (size < 0.5) return 'küçük';
+  if (size < 0.8) return 'orta';
+  return 'büyük';
+}
+
+/* ---------------------------------------------------------------------------
  * 4. t-TESTLERİ
  * ------------------------------------------------------------------------- */
 
@@ -154,8 +206,8 @@ function isEffectivelyZero(sd, values) {
  *
  * @param {number[]} group1  ör. Kontrol grubundaki öğrencilerin değerleri
  * @param {number[]} group2  ör. Deney grubundaki öğrencilerin değerleri
- * @returns Geçerliyse { valid: true, t, df, p, meanDiff, d1, d2 }
- *          Hesaplanamıyorsa { valid: false, reason, d1, d2 }
+ * @returns Geçerliyse { valid: true, t, df, p, meanDiff, d, d1, d2 }   (p çift yönlü, d = Cohen's d)
+ *          Hesaplanamıyorsa { valid: false, reason, d: null, d1, d2 }
  */
 export function welchTTest(group1, group2) {
   const d1 = calcDescriptives(group1);
@@ -165,6 +217,7 @@ export function welchTTest(group1, group2) {
     return {
       valid: false,
       reason: `Bağımsız örneklem t-testi için her iki grupta en az 2 katılımcı gereklidir (şu an: ${d1.n} ve ${d2.n}).`,
+      d: null,
       d1,
       d2,
     };
@@ -176,6 +229,7 @@ export function welchTTest(group1, group2) {
       valid: false,
       reason:
         'Her iki grupta da tüm katılımcıların değeri birbirinin aynı (varyans 0) olduğundan t istatistiği hesaplanamadı.',
+      d: null,
       d1,
       d2,
     };
@@ -195,6 +249,7 @@ export function welchTTest(group1, group2) {
     df,
     p: studentTTwoTailedP(t, df),
     meanDiff: d1.mean - d2.mean,
+    d: cohensDIndependent(d1, d2),
     d1,
     d2,
   };
@@ -206,16 +261,24 @@ export function welchTTest(group1, group2) {
  * Kullanım: Kontrol Ön vs Son, Deney Ön vs Son.
  *
  * @param {{ pre: number, post: number }[]} pairs  her öğrenci için bir çift
- * @returns Geçerliyse { valid: true, t, df, p, meanDiff, sdDiff, n }
- *          Hesaplanamıyorsa { valid: false, reason, meanDiff, n }
+ * @returns Geçerliyse { valid: true, t, df, p, meanDiff, sdDiff, d, preMean, postMean, n }
+ *          Hesaplanamıyorsa { valid: false, reason, meanDiff, d: null, preMean, postMean, n }
+ *          (p çift yönlü; d = Cohen's dz; preMean/postMean yalnızca eşleşen öğrencilerin ortalamasıdır)
  */
 export function pairedTTest(pairs) {
   const n = pairs.length;
+  // Eşleşen öğrencilerin Ön Test ve Son Test ortalamaları (yorumda yönü söylemek için).
+  const preMean = n > 0 ? calcDescriptives(pairs.map((pair) => pair.pre)).mean : null;
+  const postMean = n > 0 ? calcDescriptives(pairs.map((pair) => pair.post)).mean : null;
+
   if (n < 2) {
     return {
       valid: false,
       reason: `Bağımlı örneklem t-testi için hem Ön Test hem Son Test verisine sahip en az 2 katılımcı gereklidir (şu an: ${n}).`,
       meanDiff: null,
+      d: null,
+      preMean,
+      postMean,
       n,
     };
   }
@@ -230,6 +293,9 @@ export function pairedTTest(pairs) {
       reason:
         'Tüm katılımcılarda Ön Test–Son Test farkı aynı olduğundan (farkların standart sapması 0) t istatistiği hesaplanamadı.',
       meanDiff: dStats.mean,
+      d: null,
+      preMean,
+      postMean,
       n,
     };
   }
@@ -244,6 +310,9 @@ export function pairedTTest(pairs) {
     p: studentTTwoTailedP(t, df),
     meanDiff: dStats.mean,
     sdDiff: dStats.sd,
+    d: cohensDPaired(dStats.mean, dStats.sd),
+    preMean,
+    postMean,
     n,
   };
 }
@@ -255,8 +324,11 @@ export function pairedTTest(pairs) {
 
 export const PHASES = ['pretest', 'posttest'];
 
-// Analizde kullanılabilen ölçütler.
-export const METRICS = ['prompts', 'water', 'energy', 'co2', 'lightPct'];
+// Analizde kullanılabilen ölçütler (öğrenci başına).
+// prompts: istem sayısı · weightedTokens: toplam ağırlıklı token · energy: toplam enerji (Wh, BİRİNCİL ölçüt)
+// energyPerPrompt: istem başına ortalama enerji (Wh) · water: toplam su (mL) · co2: toplam CO₂ (g)
+// lightPct: Hafif Model ile yazılan istemlerin yüzdesi
+export const METRICS = ['prompts', 'weightedTokens', 'energy', 'energyPerPrompt', 'water', 'co2', 'lightPct'];
 
 // Katılımcı kodunun ilk harfinden grubu bulur: K → Kontrol, D → Deney.
 // (Sunucu da grubu aynı kuralla koddan belirler.)
@@ -269,8 +341,10 @@ function groupFromCode(code) {
 /**
  * Etkileşim kayıtlarını öğrenci + aşama başına tek satıra toplar.
  *
- * Her satır: { code, group, phase, prompts, water, energy, co2, lightPct }
+ * Her satır: { code, group, phase, prompts, weightedTokens, water, energy, co2, energyPerPrompt, lightPct }
  * - water / energy / co2: o aşamadaki tüm yanıtların ORTALAMA değerlerinin toplamı
+ * - weightedTokens: o aşamadaki ağırlıklı tokenların toplamı (Girdi + 3 × Çıktı)
+ * - energyPerPrompt: energy / prompts. 0 istemde tanımsızdır → null.
  * - lightPct: Hafif Model ile yazılan istemlerin yüzdesi. 0 istemde tanımsızdır → null.
  *
  * @param {object[]} interactions  Firestore'daki interactions kayıtları
@@ -308,6 +382,7 @@ export function aggregateByParticipant(interactions, options = {}) {
         group: it.group,
         phase: it.phase,
         prompts: 0,
+        weightedTokens: 0,
         water: 0,
         energy: 0,
         co2: 0,
@@ -316,6 +391,7 @@ export function aggregateByParticipant(interactions, options = {}) {
     }
     const row = rows.get(key);
     row.prompts += 1;
+    row.weightedTokens += Number(it.weightedTokens) || 0;
     row.water += Number(it.waterAvg) || 0;
     row.energy += Number(it.energyAvg) || 0;
     row.co2 += Number(it.co2Avg) || 0;
@@ -331,16 +407,17 @@ export function aggregateByParticipant(interactions, options = {}) {
         if (rows.has(key)) continue; // istem yazmış, zaten var
         const group = groupFromCode(code);
         if (!group) continue; // geçersiz kod
-        rows.set(key, { code, group, phase, prompts: 0, water: 0, energy: 0, co2: 0, lightCount: 0 });
+        rows.set(key, { code, group, phase, prompts: 0, weightedTokens: 0, water: 0, energy: 0, co2: 0, lightCount: 0 });
       }
     }
   }
 
-  // Hafif model yüzdesini hesapla ve yardımcı sayacı çıkar.
+  // Oran ölçütlerini hesapla (0 istemde tanımsız → null) ve yardımcı sayacı çıkar.
   return Array.from(rows.values()).map((row) => {
     const { lightCount, ...rest } = row;
     return {
       ...rest,
+      energyPerPrompt: row.prompts > 0 ? row.energy / row.prompts : null,
       lightPct: row.prompts > 0 ? (lightCount / row.prompts) * 100 : null,
     };
   });

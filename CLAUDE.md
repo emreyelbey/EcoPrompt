@@ -115,6 +115,20 @@ Zorunlu testler (Vitest):
 
 4 kanonik test: (1) Ön Test K vs D (Welch), (2) Kontrol Ön vs Son (eşleştirilmiş), (3) Deney Ön vs Son (eşleştirilmiş), (4) Son Test K vs D (Welch). α = 0.05, her test için t, sd, p ve otomatik Türkçe yorum.
 
+**Dilim 7 kararları (23.11.2026, uygulandı):**
+- **Birincil ölçüt (ana hipotez): öğrenci başına toplam enerji (Wh).** İkincil (seçilebilir) ölçütler: istem sayısı, ağırlıklı token (toplam), istem başına ortalama enerji, su, CO₂, Hafif Model %. Su ve CO₂ enerjinin sabit katları olduğu için testleri enerjiyle birebir aynıdır; arayüz bunu not eder. Raporda birincil ölçüt dışındakiler ikincil bulgu olarak sunulur (çoklu karşılaştırma eleştirisine karşı).
+- **p değerleri çift yönlüdür** (kartlarda "p (çift yönlü)"; Excel'de de yazılı). p tam 0,05 ise anlamlı sayılmaz (p < 0,05 kuralı).
+- **Cohen's d (SPSS 27+ ile aynı):** bağımsız gruplarda havuzlanmış SS ile d = (x̄K − x̄D) / sp; eşleştirilmişte dz = farkların ortalaması / farkların SS'si (fark = Son − Ön). Etiketler: |d| < 0,2 ihmal edilebilir · 0,2–0,5 küçük · 0,5–0,8 orta · ≥ 0,8 büyük. Metinler tek yerde: `stats.js` → `COHENS_D_FORMULAS`. Test hesaplanamıyorsa d = null.
+- Eşleştirilmiş testte n yalnızca iki aşamada da verisi olanlardır; kart "Ön Test'te x, Son Test'te y, eşleşen n kişi" gösterir.
+- Hesaplar ve yorumlar `src/lib/statsReport.js`'tedir; sekme (`StatsTab.jsx`) ve Excel aynı fonksiyonları kullanır.
+- **Çapraz kontrol:** `python dogrulama/tcheck.py <indirilen>.xlsx` SPSS_Veri_Seti'ni okuyup 7 ölçüt × 4 testi Simpson integraliyle yeniden hesaplar ve Grup_Karsilastirma'daki panel değerleriyle karşılaştırır (23.11.2026 denemesinde en büyük fark 6·10⁻¹⁴).
+
+**Excel (Dilim 7):** `src/lib/excelExport.js` + sıfır bağımlılıklı yazıcı `src/lib/xlsxWriter.js` (yeni paket yok; npm'deki `xlsx` bilinen açıklar içeriyor, ExcelJS çok bağımlılıklı). Yalnızca "Excel İndir" tıklanınca `import()` ile yüklenir. 5 sayfa: `Tum_Kayitlar`, `Ogrenci_Ozetleri`, `Grup_Karsilastirma`, `SPSS_Veri_Seti`, `Degisken_Sozlugu` (veri sayfasına açıklama satırı SPSS aktarımını bozacağı için sözlük ayrı sayfadadır).
+- SPSS_Veri_Seti: 60 satır, geniş format; `Grup_Kodu` 0 = Kontrol / 1 = Deney, `Statu_Kodu` 0 = Asıl / 1 = Yedek, `OnTest_Katilim`, `SonTest_Katilim` (0/1), `OnTest_*`, `SonTest_*`, `Fark_*`. **Eksik veri boş hücredir, 0 yazılmaz** (prototip 0 yazıp sahte düşüş üretiyordu); kural `ZERO_PROMPT_POLICY` ile panelle aynıdır.
+- Ogrenci_Ozetleri aynı eksik veri kuralını izler: o aşamanın analizine girmeyen katılımcının ölçüt hücreleri boştur ("Giriş" sütunu Evet/Hayır kalır); Toplam sütunları yalnızca mevcut aşamaların toplamıdır, iki aşama da boşsa boş. Böylece Excel'de sütun ortalaması paneldeki hücre ortalamasıyla aynı çıkar.
+- Tum_Kayitlar'daki tarih gerçek Excel tarih hücresidir: seri sayı, Türkiye saati (UTC+3, `xlsxWriter.js` → `excelSerialTR`, `dateCell`), `styles.xml`'de özel biçim 164 = `dd.mm.yyyy hh:mm:ss`.
+- Sayılar yuvarlanmadan gerçek sayısal hücre; metinler `inlineStr` (formül çalışmaz); 32.767 karakteri aşan metin kırpılıp "…[kırpıldı]" eklenir; XML'de yasak kontrol karakterleri silinir.
+
 ## 7. Veri modeli (Firestore)
 
 `interactions/{id}`:
@@ -124,7 +138,7 @@ prompt, response, inputTokens, outputTokens, weightedTokens, tokenSource,
 energyMin/Avg/Max, waterMin/Avg/Max, co2Min/Avg/Max, costUsd, savingsPct,
 isSample (boolean), engineVersion, createdAt (sunucu zamanı)
 ```
-- **`engineVersion`:** Yapay zeka yanıtındaki gerçek model sürümü (`modelVersion`). Yanıtta yoksa `null` olur. Tekrarlanabilirlik için yalnızca veritabanında tutulur. Marka yasağı gereği bu alan **Excel'e, CSV'ye ve tarayıcıya giden yanıtlara ASLA girmez.** Tarayıcıya giden mesaj alanları `api/_lib/interactions.js` → `toClientMessage` ile sınırlıdır (`id, modelId, prompt, response, createdAt`). `tests/api-messages.test.js` ve `tests/api-chat.test.js` bunu denetler. Yönetici listesi/detayı (`api/_lib/admin.js`) ve CSV (`src/lib/csv.js`) bu alanı içermez (`tests/api-admin-data.test.js`, `tests/csv.test.js`). Dilim 7'de Excel sütunları da dışarıda bırakmalıdır.
+- **`engineVersion`:** Yapay zeka yanıtındaki gerçek model sürümü (`modelVersion`). Yanıtta yoksa `null` olur. Tekrarlanabilirlik için yalnızca veritabanında tutulur. Marka yasağı gereği bu alan **Excel'e, CSV'ye ve tarayıcıya giden yanıtlara ASLA girmez.** Tarayıcıya giden mesaj alanları `api/_lib/interactions.js` → `toClientMessage` ile sınırlıdır (`id, modelId, prompt, response, createdAt`). `tests/api-messages.test.js` ve `tests/api-chat.test.js` bunu denetler. Yönetici listesi/detayı (`api/_lib/admin.js`) ve CSV (`src/lib/csv.js`) bu alanı içermez (`tests/api-admin-data.test.js`, `tests/csv.test.js`). Excel de bu alanı içermez (`tests/excelExport.test.js` bütün dosya baytlarında `engineVersion`, model sürümü ve marka adı arar).
 - **Öğrenciye giden çevresel alanlar (Dilim 5):** Uç noktalar mesajı `toStudentMessage(id, data, view)` ile döner; `view` sunucuda `getStudentView(grup, aşama)` ile hesaplanır. Yalnızca `'ekotoken'` (Deney + Son Test) görünümünde mesaja `eco` nesnesi eklenir (`toEcoClientMessage`); içeriği açık listedir (`ECO_CLIENT_FIELDS`: `inputTokens, outputTokens, tokenSource, energy*, water*, co2*, savingsPct`). **`costUsd`, `weightedTokens` ve `engineVersion` hiçbir görünümde tarayıcıya çıkmaz.** Kontrol grubunun ve Ön Test'teki Deney grubunun yanıtında `eco` yoktur; `tests/api-chat.test.js`, `tests/api-messages.test.js` ve `tests/chat-ekran.test.jsx` denetler.
 - **Metodoloji penceresi** deney desenini (Kontrol grubunun ne gördüğünü) anlatmaz (kör deney; 23.11.2026 kararı). Sayılar `footprint.js` sabitlerinden üretilir, kaynakça `src/lib/methodology.js`'tedir.
 `settings/experiment`: `{ activePhase: 'pretest' | 'posttest', updatedAt }` — yalnızca `/api/admin/phase` (POST, yönetici token'ı) yazar; `updatedAt` sunucu saatidir. Tarayıcı `src/lib/phaseListener.js` ile salt okunur dinler. Güvenlik kuralları repoda `firestore.rules` dosyasındadır ve Firebase konsolundan elle yayınlanır.
@@ -165,7 +179,7 @@ isSample (boolean), engineVersion, createdAt (sunucu zamanı)
 | 4 | Aktif aşama: `settings/experiment` + yönetici anahtarı + gerçek zamanlı dinleme |
 | 5 | EkoToken arayüzü: rozetler, günlük karşılık, tasarruf ipucu, kişisel rapor, metodoloji ✅ (23.11.2026) |
 | 6 | Yönetici paneli: genel bakış, kayıtlar (+CSV), katılımcı kodları ✅ (23.11.2026) |
-| 7 | Mini SPSS sekmesi + 4 sayfalı Excel |
+| 7 | Mini SPSS sekmesi + 4 sayfalı Excel (+ değişken sözlüğü) ✅ (23.11.2026) |
 | 8 | Örnek veri, Markdown/KaTeX cilası, mobil uyum, UAT hazırlığı |
 
 **Dilim 8 için görsel notlar (Dilim 3 `vercel dev` denemesinden, 23.11.2026):**
@@ -190,7 +204,8 @@ isSample (boolean), engineVersion, createdAt (sunucu zamanı)
 - `npm run build` — üretim derlemesi (`dist/`)
 - `vercel dev` — sunucu fonksiyonlarıyla birlikte yerel çalıştırma (Vercel CLI gerekir; Dilim 2–3'te kurulacak)
 - Yayın: GitHub `main` dalına push → Vercel otomatik yayınlar (https://egitim-asistani-2204.vercel.app).
-- `tests/marka-yasagi.test.js`: `src/`, `index.html`, `api/` içinde marka adı arar; `api/_lib/` hariçtir.
+- `tests/marka-yasagi.test.js`: `src/`, `index.html`, `api/` içinde marka adı arar; `api/_lib/` hariçtir. Yasaklı ad listesi `tests/helpers/brand-patterns.js`'tedir (Excel testi de kullanır).
+- `python dogrulama/tcheck.py` — sabit örneklerin bağımsız hesabı; `python dogrulama/tcheck.py <dosya>.xlsx` — indirilen Excel'in panel değerleriyle çapraz kontrolü (yalnızca Python standart kütüphanesi).
 - Firestore kuralları: `firestore.rules` içeriği Firebase konsolu → Firestore Database → Rules sekmesine yapıştırılıp Publish edilir (Firebase CLI kullanılmıyor). Dosya değişirse konsol da güncellenir.
 - Firestore indeksleri: `firestore.indexes.json` içindeki indeksler konsoldan (Firestore Database → Indexes → Composite) elle oluşturulur. Dosya değişirse konsol da güncellenir.
 
@@ -220,7 +235,9 @@ isSample (boolean), engineVersion, createdAt (sunucu zamanı)
 - [ ] **Tüm test verileri temizlendi:** `interactions`, `logins`, `rateLimits` (yönetici panelindeki "Verileri Temizle" ile; Bölüm 7). Temizlik sonrası panelde 0 kayıt görüldü.
 - [ ] **Etik kurul ve veli onayı tamamlandı** (Bölüm 12/3).
 - [ ] **Gerçek model eşlemesi ve ücretsiz kota doğrulandı:** Üç ölçek sınıfının gerçekten farklı modellere gittiği kontrol edildi; 60 öğrencinin aynı anda kullanımına benzer bir yük testiyle kota sınırına takılmadığı görüldü.
-- [ ] **Excel dışa aktarma bir kez denendi:** 4 sayfa da açılıyor, başlıklar Türkçe, SPSS'e aktarım çalışıyor.
+- [x] **Excel dışa aktarma bir kez denendi:** 5 sayfa da gerçek Excel'de açılıyor (onarım uyarısı yok), başlıklar ve Türkçe karakterler doğru, SPSS_Veri_Seti SPSS'e (veya JASP'a) aktarılıyor, `python dogrulama/tcheck.py <dosya>.xlsx` "UYUMLU" diyor.
+  - ✅ 24.11.2026: Excel Online'da onarım uyarısı olmadan 5 sayfa olarak açıldı. Dosya bağımsız olarak incelendi: ZIP yapısı, sayısal hücreler, boş eksik veri, SPSS değişken adları, tarih biçimi (numFmt 164, Türkiye saati) ve marka taraması doğru. `tcheck.py` çapraz kontrolünde 28 testin hepsi uyumlu çıktı.
+  - Gerçek SPSS'e (veya JASP'a) aktarma henüz denenmedi; canlı veriyle ilk analizde yapılacak.
 - [x] **Gemini API anahtarının bağlı olduğu `egitim-asistani-2204` projesine faturalandırma hesabı bağlandı (ücretli katman).** Bkz. Bölüm 7 → Bilinen sınırlamalar.
   - ✅ 23.11.2026: Proje Cloud Prepay hesabına bağlandı (250 TL ön ödeme, otomatik yükleme KAPALI; aylık 10 $ Google Developer Program kredisi otomatik uygulanıyor). Ücretli katmanda Standart sınıfın modeliyle yapılan test isteği 200 döndü.
   - Otomatik yükleme kapalı olduğu için bakiye biterse istekler başarısız olur. Canlı deneyden önce AI Studio'dan bakiye kontrol edilmeli.

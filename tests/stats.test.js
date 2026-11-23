@@ -14,6 +14,9 @@ import {
   getValues,
   getPairs,
   ZERO_PROMPT_POLICY,
+  cohensDIndependent,
+  cohensDPaired,
+  effectSizeLabel,
 } from '../src/lib/stats.js';
 
 describe('studentTTwoTailedP — zorunlu testler', () => {
@@ -78,6 +81,9 @@ describe('pairedTTest', () => {
     expect(r.p).toBeCloseTo(0.021742978, 6); // bağımsız integral hesabı
     expect(r.meanDiff).toBe(-2);
     expect(r.n).toBe(5);
+    expect(r.d).toBeCloseTo(-1.632993162, 8); // dz (tcheck.py)
+    expect(r.preMean).toBe(11);
+    expect(r.postMean).toBe(9);
   });
 
   it('n < 2 ise hata vermez, Türkçe bilgilendirme döner', () => {
@@ -129,6 +135,7 @@ describe('welchTTest', () => {
     expect(r.df).toBeCloseTo(5.882352941, 8);
     expect(r.p).toBeCloseTo(0.107531195, 6);
     expect(r.meanDiff).toBe(-3);
+    expect(r.d).toBeCloseTo(-1.2, 10); // havuzlanmış SS ile (tcheck.py)
   });
 
   it('örnek B: farklı grup büyüklükleri (6 ve 4)', () => {
@@ -137,6 +144,7 @@ describe('welchTTest', () => {
     expect(r.t).toBeCloseTo(5.0, 8);
     expect(r.df).toBeCloseTo(7.941176471, 8);
     expect(r.p).toBeCloseTo(0.001076317, 6);
+    expect(r.d).toBeCloseTo(2.98142397, 7);
   });
 
   it('yalnızca bir grubun varyansı 0 ise geçerli sonuç verir', () => {
@@ -145,6 +153,7 @@ describe('welchTTest', () => {
     expect(r.t).toBeCloseTo(-0.646996639, 8);
     expect(r.df).toBeCloseTo(4, 8);
     expect(r.p).toBeCloseTo(0.552889434, 6);
+    expect(r.d).toBeCloseTo(-0.382768374, 8);
   });
 
   it('her iki grubun varyansı 0, ortalamalar farklı → sahte p = 1 yazmaz, "hesaplanamadı" der', () => {
@@ -171,13 +180,92 @@ describe('welchTTest', () => {
   });
 });
 
+describe("Cohen's d (etki büyüklüğü)", () => {
+  it('hesaplanamayan testlerde d = null', () => {
+    expect(welchTTest([3, 3, 3], [7, 7]).d).toBeNull();
+    expect(welchTTest([1], [1, 2]).d).toBeNull();
+    expect(pairedTTest([{ pre: 5, post: 3 }, { pre: 8, post: 6 }]).d).toBeNull();
+    expect(pairedTTest([]).d).toBeNull();
+  });
+
+  it('yardımcı fonksiyonlar uç durumlarda null döner', () => {
+    expect(cohensDIndependent({ n: 1, mean: 1, variance: 0 }, { n: 3, mean: 2, variance: 1 })).toBeNull();
+    expect(cohensDIndependent({ n: 2, mean: 1, variance: 0 }, { n: 2, mean: 2, variance: 0 })).toBeNull();
+    expect(cohensDPaired(1, 0)).toBeNull();
+    expect(cohensDPaired(NaN, 1)).toBeNull();
+    expect(cohensDPaired(-1, 2)).toBe(-0.5);
+  });
+
+  it('etiketler: < 0,2 ihmal edilebilir · 0,2–0,5 küçük · 0,5–0,8 orta · ≥ 0,8 büyük (işaret önemsiz)', () => {
+    expect(effectSizeLabel(0.19)).toBe('ihmal edilebilir');
+    expect(effectSizeLabel(0.2)).toBe('küçük');
+    expect(effectSizeLabel(-0.49)).toBe('küçük');
+    expect(effectSizeLabel(0.5)).toBe('orta');
+    expect(effectSizeLabel(-0.79)).toBe('orta');
+    expect(effectSizeLabel(0.8)).toBe('büyük');
+    expect(effectSizeLabel(-4.4)).toBe('büyük');
+    expect(effectSizeLabel(null)).toBeNull();
+  });
+});
+
+// Sabit 5 Kontrol + 5 Deney veri seti. Aynı sayılar dogrulama/tcheck.py içinde de vardır;
+// beklenen değerler o betiğin (Simpson integrali) çıktısından alınmıştır.
+describe('sabit veri seti: 4 kanonik test (tcheck.py ile çapraz kontrol)', () => {
+  const kOn = [3.2, 2.8, 4.1, 3.5, 2.9];
+  const kSon = [3.0, 3.1, 3.8, 3.6, 2.7];
+  const dOn = [3.4, 3.0, 3.9, 2.7, 3.6];
+  const dSon = [1.9, 2.2, 2.5, 1.6, 2.4];
+  const pairs = (a, b) => a.map((v, i) => ({ pre: v, post: b[i] }));
+
+  it('1) Ön Test K vs D (Welch)', () => {
+    const r = welchTTest(kOn, dOn);
+    expect(r.t).toBeCloseTo(-0.06311944031, 9);
+    expect(r.df).toBeCloseTo(7.927520959, 8);
+    expect(r.p).toBeCloseTo(0.95123385, 6);
+    expect(r.d).toBeCloseTo(-0.0399202392, 9);
+  });
+
+  it('2) Kontrol Ön → Son (eşleştirilmiş)', () => {
+    const r = pairedTTest(pairs(kOn, kSon));
+    expect(r.t).toBeCloseTo(-0.5345224838, 9);
+    expect(r.df).toBe(4);
+    expect(r.p).toBeCloseTo(0.6213083, 6);
+    expect(r.d).toBeCloseTo(-0.2390457219, 9);
+  });
+
+  it('3) Deney Ön → Son (eşleştirilmiş)', () => {
+    const r = pairedTTest(pairs(dOn, dSon));
+    expect(r.t).toBeCloseTo(-9.797958971, 8);
+    expect(r.p).toBeCloseTo(0.000608185, 7);
+    expect(r.d).toBeCloseTo(-4.38178046, 8);
+  });
+
+  it('4) Son Test K vs D (Welch)', () => {
+    const r = welchTTest(kSon, dSon);
+    expect(r.t).toBeCloseTo(4.295003938, 8);
+    expect(r.df).toBeCloseTo(7.709493481, 8);
+    expect(r.p).toBeCloseTo(0.002869235, 7);
+    expect(r.d).toBeCloseTo(2.716399, 6);
+  });
+});
+
 /* ---------------------------------------------------------------------------
  * Katılımcı bazında toplama
  * ------------------------------------------------------------------------- */
 
 // Küçük bir örnek veri seti.
 function rec(code, group, phase, modelId, avg = 1, isSample = false) {
-  return { code, group, phase, modelId, waterAvg: avg, energyAvg: avg * 2, co2Avg: avg * 3, isSample };
+  return {
+    code,
+    group,
+    phase,
+    modelId,
+    weightedTokens: avg * 100,
+    waterAvg: avg,
+    energyAvg: avg * 2,
+    co2Avg: avg * 3,
+    isSample,
+  };
 }
 
 const INTERACTIONS = [
@@ -215,9 +303,11 @@ describe('aggregateByParticipant', () => {
       group: 'Kontrol',
       phase: 'pretest',
       prompts: 2,
+      weightedTokens: 300,
       water: 3,
       energy: 6,
       co2: 9,
+      energyPerPrompt: 3,
       lightPct: 50,
     });
   });
@@ -241,9 +331,11 @@ describe('aggregateByParticipant', () => {
       group: 'Kontrol',
       phase: 'posttest',
       prompts: 0,
+      weightedTokens: 0,
       water: 0,
       energy: 0,
       co2: 0,
+      energyPerPrompt: null, // 0 istemde istem başına enerji tanımsız
       lightPct: null, // 0 istemde hafif model oranı tanımsız
     });
   });

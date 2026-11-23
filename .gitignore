@@ -22,3 +22,7 @@ coverage/
 # İşletim sistemi / editör
 .DS_Store
 Thumbs.db
+
+# Python önbelleği (dogrulama/ betikleri çalışınca oluşur)
+__pycache__/
+*.pyc

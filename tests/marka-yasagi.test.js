@@ -4,6 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
+import { BRAND_PATTERNS } from './helpers/brand-patterns.js';
 
 const KOK = process.cwd();
 
@@ -13,25 +14,8 @@ const TARANACAKLAR = ['src', 'api', 'index.html'];
 // Taranmayacak klasör (kök dizine göre).
 const HARIC = join('api', '_lib');
 
-// Yasaklı adlar. \b kelime sınırıdır: "metadata" gibi masum kelimeler yakalanmasın diye.
-const YASAKLI = [
-  /\bopenai\b/i,
-  /\bchatgpt\b/i,
-  /\bgpt\b/i,
-  /\bclaude\b/i,
-  /\banthropic\b/i,
-  /\bgemini\b/i,
-  /\bgoogle\b/i,
-  /\bbard\b/i,
-  /\bcopilot\b/i,
-  /\bmicrosoft\b/i,
-  /\bllama\b/i,
-  /\bmeta ai\b/i,
-  /\bmistral\b/i,
-  /\bdeepseek\b/i,
-  /\bgrok\b/i,
-  /\bperplexity\b/i,
-];
+// Yasaklı adlar ortak listededir (tests/helpers/brand-patterns.js).
+const YASAKLI = BRAND_PATTERNS;
 
 // Bir yolun altındaki tüm dosyaları (alt klasörler dahil) listeler.
 function dosyalariTopla(yol) {

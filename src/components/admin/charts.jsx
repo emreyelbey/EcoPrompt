@@ -91,6 +91,38 @@ export function ModelShareChart({ groups }) {
   );
 }
 
+// Ön Test / Son Test renkleri (grup renklerinden ayrı: burada seri aşamadır, grup eksende yazılı).
+export const PHASE_COLORS = { 'Ön Test': '#94a3b8', 'Son Test': '#4f46e5' };
+
+/**
+ * Ön Test – Son Test gruplandırılmış sütun grafiği (İstatistik sekmesi).
+ * @param {{ name: string, 'Ön Test': number|null, 'Son Test': number|null }[]} data  statsReport.prePostChartData
+ */
+export function PrePostChart({ title, data, format = fmtSmart }) {
+  const label = (v) => (v === null || v === undefined ? '' : format(v));
+  return (
+    <div className="rounded-xl border border-slate-100 p-3">
+      <h4 className="text-xs font-semibold text-slate-700">{title}</h4>
+      <div className="h-52 w-full mt-1">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 20, right: 8, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} vertical={false} />
+            <XAxis dataKey="name" tick={AXIS_TICK} />
+            <YAxis tick={AXIS_TICK} width={52} tickFormatter={format} />
+            <Tooltip formatter={(v, key) => [label(v), key]} cursor={{ fill: '#f1f5f9' }} />
+            <Legend wrapperStyle={{ fontSize: 12 }} />
+            {['Ön Test', 'Son Test'].map((phase) => (
+              <Bar key={phase} dataKey={phase} fill={PHASE_COLORS[phase]} radius={[4, 4, 0, 0]} maxBarSize={48}>
+                <LabelList dataKey={phase} position="top" formatter={label} style={LABEL_STYLE} />
+              </Bar>
+            ))}
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
 // Grafiklerin altındaki "Tablo olarak göster" bölümü.
 export function DataTable({ headers, rows }) {
   return (

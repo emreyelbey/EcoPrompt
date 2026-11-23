@@ -1,5 +1,5 @@
-// Yönetici paneli (Dilim 6): üst çubukta aktif aşama anahtarı ve yenileme; 5 sekme.
-//   1) Genel Bakış & Grafikler  2) Ön Test – Son Test & İstatistik (Dilim 7'de dolacak)
+// Yönetici paneli (Dilim 6–7): üst çubukta aktif aşama anahtarı ve yenileme; 5 sekme.
+//   1) Genel Bakış & Grafikler  2) Ön Test – Son Test & İstatistik (mini SPSS + Excel, Dilim 7)
 //   3) Öğrenci Kayıtları  4) Katılımcı Kodları (60)  5) Metodoloji & Kaynakça
 // Bütün veri requireAdmin korumalı /api/admin/* uç noktalarından gelir (tarayıcı veritabanına erişmez).
 // Veri artımlı yenilenir (useAdminData.js): Firestore okuma kotası korunur.
@@ -14,6 +14,7 @@ import CodesTab from './CodesTab.jsx';
 import ExperimentDesignSection from './ExperimentDesignSection.jsx';
 import OverviewTab from './OverviewTab.jsx';
 import RecordsTab from './RecordsTab.jsx';
+import StatsTab from './StatsTab.jsx';
 import Toast from './Toast.jsx';
 import useAdminData from './useAdminData.js';
 import { apiRequest } from '../../lib/api.js';
@@ -177,7 +178,7 @@ export default function AdminScreen({ token, onLogout }) {
           ) : (
             <>
               {tab === 'overview' && <OverviewTab records={real} logins={data.logins} onClearClick={() => setClearOpen(true)} />}
-              {tab === 'stats' && <StatsPlaceholder />}
+              {tab === 'stats' && <StatsTab records={real} logins={data.logins} onToast={setToast} />}
               {tab === 'records' && (
                 <RecordsTab
                   records={data.records}
@@ -232,17 +233,6 @@ export default function AdminScreen({ token, onLogout }) {
       />
 
       <Toast message={toast} onDone={clearToast} />
-    </div>
-  );
-}
-
-// Sekme 2 yer tutucusu: mini SPSS ve 4 sayfalı Excel Dilim 7'de eklenecek.
-function StatsPlaceholder() {
-  return (
-    <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-8 text-center">
-      <Activity className="w-8 h-8 mx-auto text-slate-300" aria-hidden="true" />
-      <p className="mt-2 font-semibold text-slate-700">Ön Test – Son Test karşılaştırması ve istatistik testleri</p>
-      <p className="mt-1 text-sm text-slate-500">Bu bölüm bir sonraki adımda (Dilim 7) eklenecek.</p>
     </div>
   );
 }
