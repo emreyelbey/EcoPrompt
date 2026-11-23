@@ -6,11 +6,9 @@ import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import LoginScreen from './components/LoginScreen.jsx';
 import Placeholder from './components/Placeholder.jsx';
+import ChatScreen from './components/ChatScreen.jsx';
 import { apiRequest } from './lib/api.js';
 import { saveStudent, saveAdmin, loadSession, clearSession } from './lib/session.js';
-
-// Aşama adlarının Türkçe karşılıkları.
-const PHASE_LABELS = { pretest: 'Ön Test', posttest: 'Son Test' };
 
 export default function App() {
   const [view, setView] = useState('loading');
@@ -96,13 +94,8 @@ export default function App() {
   }
 
   if (view === 'student' && student) {
-    return (
-      <Placeholder
-        title="Eğitim Asistanı"
-        lines={[`Hoş geldiniz, ${student.code}.`, `Aşama: ${PHASE_LABELS[student.phase]}`, 'Sohbet ekranı yakında burada olacak.']}
-        onLogout={handleLogout}
-      />
-    );
+    // Sade sohbet ekranı. (Deney grubu + Son Test için EkoToken arayüzü Dilim 5'te eklenecek.)
+    return <ChatScreen student={student} onLogout={handleLogout} />;
   }
 
   if (view === 'admin' && admin) {

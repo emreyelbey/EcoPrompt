@@ -67,6 +67,12 @@ Her ölçek sınıfı **gerçekten farklı** bir modele bağlanır. Canvas proto
 - Eşleme tek bir sunucu dosyasında tanımlanır (ör. `api/_lib/models.js`). Başka hiçbir yerde model adı geçmez.
 - Şartnamedeki hedef: `light` → en küçük/hızlı model, `standard` → orta model, `reasoning` → düşünme modu açık veya en güçlü model.
 - **Model adlarını ezberden yazma.** Eşlemeyi kurmadan önce sağlayıcının güncel model listesini ve ücretsiz kota sınırlarını kontrol et, kullanıcıya sun, onay al.
+- **Onaylı eşleme (23.11.2026, Dilim 3):** `api/_lib/models.js` içinde. Hafif → en küçük "lite" model (düşünme `minimal`), Standart → orta "flash" model (düşünme `low`), Akıl Yürütme → en yeni nesil model (düşünme `high`). Üçü de ücretsiz katmanda ve kararlı sürümdedir. Model adları yalnızca o dosyadadır.
+  - Ücretsiz katmanın dakika/gün kotaları herkese açık belgelerde yazmıyor; yalnızca sağlayıcının oturum açılmış kota sayfasında görünüyor. Kontrol sırasında ücretsiz katmanda geçici "yoğun talep" (503) yanıtları görüldü. Bu yüzden `api/_lib/ai.js` sınırlı yeniden deneme yapar ve canlı deneyden önce ücretli katmana geçmek zorunludur (Bölüm 13).
+- **Teşhis bulgusu (23.11.2026, `vercel dev` denemesi):** Sohbetin çalışmaması istek gövdesinden kaynaklanmıyordu: `thinkingConfig`, `systemInstruction` ve `temperature` ayrı ayrı çıkarıldığında sonuç değişmedi. Ücretsiz katmanda Standart sınıfın modeli **proje başına dakikada yalnızca 5 istek** kabul ediyor (429 gövdesindeki kota: `GenerateRequestsPerMinutePerProjectPerModel-FreeTier = 5`) ve sık sık 503 ("yoğun talep") veriyor. Akıl Yürütme sınıfının modeli de denemelerde sürekli 503 verdi. Hafif sınıf sorunsuz çalıştı (0,5–2 sn).
+  - **Sonuç:** Standart ve Akıl Yürütme sınıfları ancak faturalandırma açıldıktan sonra (Bölüm 13) gerçek kapasiteyle test edilebilir. O zamana kadar geliştirme ve denemeler Hafif modelle sürer.
+  - 503 gelince sessizce başka bir modele geçilmez: kayıtta yazan sınıf ile yanıtı üreten model farklı olur, bilimsel geçerlilik bozulur.
+- **Süre sınırı:** Vercel Hobby planında (Fluid Compute açık, yeni projelerde varsayılan) bir fonksiyon en çok 300 sn çalışabilir; aşılırsa Vercel 504 `FUNCTION_INVOCATION_TIMEOUT` döner. `api/chat.js` `maxDuration: 60` kullanır. Yapay zekaya isteğin başından itibaren 50 sn bütçe ayrılır. Her denemenin bir üst süresi vardır (`ATTEMPT_TIMEOUT_MS`: Hafif ve Standart 20 sn, Akıl Yürütme 40 sn), böylece asılı kalan tek bir deneme bütün bütçeyi tüketmez. 429'da sağlayıcının önerdiği bekleme süresi (`RetryInfo.retryDelay`) kullanılır. Bekleme veya yeni deneme bütçeye sığmıyorsa yeniden deneme yapılmaz. Böylece Vercel fonksiyonu kesmeden önce Türkçe zaman aşımı hatası döner.
 
 ## 5. Bilimsel hesaplama motoru
 
@@ -76,6 +82,7 @@ Saf fonksiyonlar `src/lib/footprint.js` içinde. Her fonksiyonun birim testi olm
 - API yanıtında gerçek `usageMetadata` varsa o kullanılır. **Çıktı token = `candidatesTokenCount + thoughtsTokenCount`** (düşünme tokenları üretilmiş tokendır, enerji harcar).
 - `usageMetadata` yoksa tahmin: ⌈karakter / 3,6⌉. Boş metin = 0. Gizli/sabit token eklenmez.
 - Hangi yöntemle sayıldığı kayda yazılır: `tokenSource: 'gerçek' | 'tahmini'`.
+- **Metodoloji notu (bilinçli tasarım kararı):** `inputTokens`, yeni istemin yanında sistem talimatını ve son 12 etkileşimin bağlamını da içerir (yapay zeka çok turlu sohbette bu metni her istekte yeniden okur; bu gerçek bir enerji harcamasıdır). Bu nedenle uzun sohbetlerde istem başına girdi token sayısı büyür. Bu durum araştırma raporunda açıklanacaktır.
 
 | Sınıf | Enerji Min / Ort / Maks (Wh, 1000 ağırlıklı token başına) | Maliyet USD/1M (Girdi · Çıktı) |
 |---|---|---|
@@ -111,10 +118,11 @@ Zorunlu testler (Vitest):
 code, group ('Kontrol'|'Deney'), phase ('pretest'|'posttest'), modelId,
 prompt, response, inputTokens, outputTokens, weightedTokens, tokenSource,
 energyMin/Avg/Max, waterMin/Avg/Max, co2Min/Avg/Max, costUsd, savingsPct,
-isSample (boolean), createdAt (sunucu zamanı)
+isSample (boolean), engineVersion, createdAt (sunucu zamanı)
 ```
+- **`engineVersion`:** Yapay zeka yanıtındaki gerçek model sürümü (`modelVersion`). Yanıtta yoksa `null` olur. Tekrarlanabilirlik için yalnızca veritabanında tutulur. Marka yasağı gereği bu alan **Excel'e, CSV'ye ve tarayıcıya giden yanıtlara ASLA girmez.** Tarayıcıya giden mesaj alanları `api/_lib/interactions.js` → `toClientMessage` ile sınırlıdır (`id, modelId, prompt, response, createdAt`). `tests/api-messages.test.js` ve `tests/api-chat.test.js` bunu denetler. Dilim 6–7'de CSV ve Excel sütunları da bu alanı dışarıda bırakmalıdır.
 `settings/experiment`: `{ activePhase: 'pretest' | 'posttest', updatedAt }`
-`rateLimits/{code}`: `{ lastRequestAt }`
+`rateLimits/{code}`: `{ lastRequestAt }` (sunucu saati, milisaniye cinsinden sayı)
 `logins/{code}_{phase}` (ör. `logins/K001_pretest`): `{ code, group, phase, firstLoginAt, lastLoginAt, loginCount }` — hangi kodun hangi aşamada giriş yaptığını tutar (Bölüm 12/1). Zamanlar sunucu saatidir. `/api/login` yazar (`api/_lib/logins.js` → `recordLogin`); Dilim 3'te `/api/chat` de her istekte aynı yardımcıyla günceller. Aşama `settings/experiment` yoksa `'pretest'` varsayılır.
 
 - **Örnek veriler (`isSample: true`) istatistiklere, grafiklere ve Excel'e varsayılan olarak GİRMEZ.** Yönetici panelinde örnekler varken açık bir uyarı bandı gösterilir.
@@ -152,6 +160,10 @@ isSample (boolean), createdAt (sunucu zamanı)
 | 7 | Mini SPSS sekmesi + 4 sayfalı Excel |
 | 8 | Örnek veri, Markdown/KaTeX cilası, mobil uyum, UAT hazırlığı |
 
+**Dilim 8 için görsel notlar (Dilim 3 `vercel dev` denemesinden, 23.11.2026):**
+1. Alt alta yazılan denklemler tek satıra yapışıyor. Yanıttaki tek satır sonları korunmalı (Markdown'da tek satır sonu varsayılan olarak boşluğa dönüşüyor).
+2. Kimyasal formüller (ör. H₂O, CO₂) italik görünüyor. Sistem talimatına kimyasal formüllerde `	ext{}` kullanımı eklenebilir.
+
 ## 10. Çalışma kuralları
 
 - **Kod sade olacak.** Bu proje lise öğrencileri tarafından jüriye savunulacak. Her dosyanın başında ne yaptığını anlatan kısa bir Türkçe yorum olsun. Karmaşık satırlara Türkçe açıklama yaz. Akıllıca ama anlaşılmaz kısa yollardan kaçın.
@@ -179,8 +191,9 @@ isSample (boolean), createdAt (sunucu zamanı)
    - Bunun için toplama fonksiyonu her aşamada giriş yapmış kodların listesini parametre olarak alır (`{ pretest: [...], posttest: [...] }`).
    - **Dilim 2'de yapıldı:** Giriş kayıtları `logins/{code}_{phase}` koleksiyonunda tutuluyor (Bölüm 7).
    - Hafif model oranı 0 istemde tanımsızdır; bu metrikte 0 istemli katılımcı her iki politikada da dışarıda kalır.
-2. **Model adları:** Güncel model listesi kontrol edilip onaylanacak (Bölüm 4).
+2. **Model adları:** ✅ 23.11.2026'da onaylandı (Bölüm 4). Ücretsiz kota sayıları sağlayıcının kota sayfasından okunup buraya eklenecek.
 3. **Etik/veli onayı:** Kod meselesi değil, ama UAT ve canlı deneyden önce tamamlanmış olmalı.
+4. **Varsayılan seçili model:** Sohbet ekranı şu an "Standart Model" seçili açılıyor (prototiple aynı, `src/components/ChatScreen.jsx`). Varsayılan seçim, Hafif model tercih oranı metriğini etkileyebilir (öğrenciler çoğu zaman varsayılanı değiştirmez). Danışman öğretmenle karar verilecek: Standart, Hafif veya seçim yapılmadan gönderilemeyen (varsayılansız) seçici. Karar ne olursa olsun Ön Test ve Son Test'te ve iki grupta aynı kalmalı.
 
 ## 13. Canlı deney öncesi kontrol listesi
 

@@ -7,3 +7,30 @@ body {
   height: 100%;
   overflow: hidden; /* Yalnızca <main> kayar (proje rehberi, Bölüm 8). */
 }
+
+/* Asistan yanıtlarındaki Markdown öğeleri (RichMessage). Tailwind tüm varsayılan
+   biçimleri sıfırladığı için başlık, liste, tablo, alıntı ve kod görünümü burada verilir. */
+.rich-message > * + * { margin-top: 0.75em; }
+.rich-message h1 { font-size: 1.375rem; font-weight: 700; }
+.rich-message h2 { font-size: 1.25rem; font-weight: 700; }
+.rich-message h3 { font-size: 1.125rem; font-weight: 700; }
+.rich-message h4 { font-size: 1rem; font-weight: 700; }
+.rich-message h5 { font-size: 0.9375rem; font-weight: 600; }
+.rich-message h6 { font-size: 0.875rem; font-weight: 600; color: #475569; }
+.rich-message ul { list-style: disc; padding-left: 1.5em; }
+.rich-message ol { list-style: decimal; padding-left: 1.5em; }
+.rich-message li > ul,
+.rich-message li > ol { margin-top: 0.25em; }
+.rich-message ul ul { list-style: circle; }
+.rich-message li + li { margin-top: 0.25em; }
+.rich-message a { color: #4f46e5; text-decoration: underline; }
+.rich-message hr { border-color: #e2e8f0; }
+.rich-message blockquote { border-left: 3px solid #cbd5e1; padding-left: 0.75em; color: #475569; }
+.rich-message code { background: #f1f5f9; border-radius: 0.25rem; padding: 0.1em 0.3em; font-size: 0.875em; }
+.rich-message pre { background: #0f172a; color: #e2e8f0; border-radius: 0.5rem; padding: 0.75em 1em; overflow-x: auto; }
+.rich-message pre code { background: transparent; padding: 0; color: inherit; }
+.rich-message table { display: block; overflow-x: auto; border-collapse: collapse; max-width: 100%; }
+.rich-message th,
+.rich-message td { border: 1px solid #e2e8f0; padding: 0.375em 0.625em; text-align: left; }
+.rich-message th { background: #f8fafc; font-weight: 600; }
+.rich-message .katex-display { overflow-x: auto; overflow-y: hidden; padding: 0.25em 0; }
