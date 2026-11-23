@@ -69,6 +69,7 @@ Her ölçek sınıfı **gerçekten farklı** bir modele bağlanır. Canvas proto
 - **Model adlarını ezberden yazma.** Eşlemeyi kurmadan önce sağlayıcının güncel model listesini ve ücretsiz kota sınırlarını kontrol et, kullanıcıya sun, onay al.
 - **Onaylı eşleme (23.11.2026, Dilim 3):** `api/_lib/models.js` içinde. Hafif → en küçük "lite" model (düşünme `minimal`), Standart → orta "flash" model (düşünme `low`), Akıl Yürütme → en yeni nesil model (düşünme `high`). Üçü de ücretsiz katmanda ve kararlı sürümdedir. Model adları yalnızca o dosyadadır.
   - Ücretsiz katmanın dakika/gün kotaları herkese açık belgelerde yazmıyor; yalnızca sağlayıcının oturum açılmış kota sayfasında görünüyor. Kontrol sırasında ücretsiz katmanda geçici "yoğun talep" (503) yanıtları görüldü. Bu yüzden `api/_lib/ai.js` sınırlı yeniden deneme yapar ve canlı deneyden önce ücretli katmana geçmek zorunludur (Bölüm 13).
+  - **23.11.2026'da ücretli katmana geçildi** (Bölüm 13). Aşağıdaki teşhis bulgusu ücretsiz katman dönemine aittir; Standart ve Akıl Yürütme sınıfları artık gerçek kapasiteyle test edilebilir.
 - **Teşhis bulgusu (23.11.2026, `vercel dev` denemesi):** Sohbetin çalışmaması istek gövdesinden kaynaklanmıyordu: `thinkingConfig`, `systemInstruction` ve `temperature` ayrı ayrı çıkarıldığında sonuç değişmedi. Ücretsiz katmanda Standart sınıfın modeli **proje başına dakikada yalnızca 5 istek** kabul ediyor (429 gövdesindeki kota: `GenerateRequestsPerMinutePerProjectPerModel-FreeTier = 5`) ve sık sık 503 ("yoğun talep") veriyor. Akıl Yürütme sınıfının modeli de denemelerde sürekli 503 verdi. Hafif sınıf sorunsuz çalıştı (0,5–2 sn).
   - **Sonuç:** Standart ve Akıl Yürütme sınıfları ancak faturalandırma açıldıktan sonra (Bölüm 13) gerçek kapasiteyle test edilebilir. O zamana kadar geliştirme ve denemeler Hafif modelle sürer.
   - 503 gelince sessizce başka bir modele geçilmez: kayıtta yazan sınıf ile yanıtı üreten model farklı olur, bilimsel geçerlilik bozulur.
@@ -90,6 +91,7 @@ Saf fonksiyonlar `src/lib/footprint.js` içinde. Her fonksiyonun birim testi olm
 | standard | 0.45 / 0.65 / 0.90 | 1.25 · 5.00 |
 | reasoning | 1.40 / 2.10 / 3.00 | 3.00 · 15.00 |
 
+- **`costUsd` gerçek fatura değildir.** Yukarıdaki tablodaki şartname referans fiyatlarıyla hesaplanan, sınıflar arası karşılaştırma amaçlı bir tahmindir. Gerçek harcama AI Studio'nun faturalandırma/kullanım sayfasından izlenir.
 - Su (WUE, mL/Wh): 0.2 / 1.0 / 1.8 — min enerji × min WUE, ort × ort, maks × maks
 - Karbon (g CO₂/Wh): 0.30 / 0.43 / 0.55 — aynı eşleşme
 - Tasarruf % = (seçilen ort. enerji katsayısı − hafif ort.) / seçilen ort. × 100
@@ -204,4 +206,6 @@ isSample (boolean), engineVersion, createdAt (sunucu zamanı)
 - [ ] **Etik kurul ve veli onayı tamamlandı** (Bölüm 12/3).
 - [ ] **Gerçek model eşlemesi ve ücretsiz kota doğrulandı:** Üç ölçek sınıfının gerçekten farklı modellere gittiği kontrol edildi; 60 öğrencinin aynı anda kullanımına benzer bir yük testiyle kota sınırına takılmadığı görüldü.
 - [ ] **Excel dışa aktarma bir kez denendi:** 4 sayfa da açılıyor, başlıklar Türkçe, SPSS'e aktarım çalışıyor.
-- [ ] **Gemini API anahtarının bağlı olduğu `egitim-asistani-2204` projesine faturalandırma hesabı bağlandı (ücretli katman).** Bkz. Bölüm 7 → Bilinen sınırlamalar.
+- [x] **Gemini API anahtarının bağlı olduğu `egitim-asistani-2204` projesine faturalandırma hesabı bağlandı (ücretli katman).** Bkz. Bölüm 7 → Bilinen sınırlamalar.
+  - ✅ 23.11.2026: Proje Cloud Prepay hesabına bağlandı (250 TL ön ödeme, otomatik yükleme KAPALI; aylık 10 $ Google Developer Program kredisi otomatik uygulanıyor). Ücretli katmanda Standart sınıfın modeliyle yapılan test isteği 200 döndü.
+  - Otomatik yükleme kapalı olduğu için bakiye biterse istekler başarısız olur. Canlı deneyden önce AI Studio'dan bakiye kontrol edilmeli.
