@@ -52,7 +52,7 @@ Tarayıcı (React)  ──HTTP──>  Vercel sunucu fonksiyonları (/api/*)  �
 ### Ortam değişkenleri (asla koda veya git'e yazılmaz)
 | Değişken | Nerede | Açıklama |
 |---|---|---|
-| `GEMINI_API_KEY` | Sunucu | Yapay zeka API anahtarı |
+| `GEMINI_API_KEY` | Sunucu | Yapay zeka API anahtarı. Tanımlı: Vercel (Production, Secret) ve `.env.local` |
 | `ADMIN_PASSCODE` | Sunucu | Yönetici parolası |
 | `SESSION_SECRET` | Sunucu | Yönetici token imzası |
 | `FIREBASE_SERVICE_ACCOUNT` | Sunucu | Admin SDK kimlik bilgisi (JSON) |
@@ -123,6 +123,9 @@ isSample (boolean), createdAt (sunucu zamanı)
 
 ### Bilinen sınırlamalar
 - **Katılımcı kodları tahmin edilebilir** (K001–K030, D001–D030 sıralı ve parolasız). Bir öğrenci başkasının kodunu yazarak giriş yapabilir. Önlem: deney oturumları öğretmen gözetiminde yapılır; yönetici `logins.loginCount` (ve `lastLoginAt`) ile şüpheli çoklu girişleri kontrol eder.
+- **Yapay zeka sağlayıcısı riski:** Gemini API şartları (23 Mart 2026) 18 yaş altına yönelik uygulamalarda kullanımı yasaklıyor. Ayrıca ücretsiz katmanda gönderilen içerik ürün geliştirme için kullanılabiliyor ve insan değerlendiriciler tarafından okunabiliyor. Proje ekibi bu riski bilerek Gemini ile devam etme kararı aldı.
+  - Önlem: Canlı deneyden önce faturalandırma hesabı bağlanarak ücretli katmana geçilecek; böylece veri kullanımı ve insan incelemesi kapanır (Bölüm 13). Bu önlem veri kullanımını kapsar; 18 yaş sınırını kaldırmaz.
+  - Sağlayıcı değişirse yalnızca `api/_lib/models.js` ve `api/_lib/` içindeki ilgili yapay zeka istemci kodu değişmeli; uç noktalar ve arayüz etkilenmemeli.
 
 ## 8. Arayüz kuralları (önceki denemelerde yaşanmış hatalar)
 
@@ -188,3 +191,4 @@ isSample (boolean), createdAt (sunucu zamanı)
 - [ ] **Etik kurul ve veli onayı tamamlandı** (Bölüm 12/3).
 - [ ] **Gerçek model eşlemesi ve ücretsiz kota doğrulandı:** Üç ölçek sınıfının gerçekten farklı modellere gittiği kontrol edildi; 60 öğrencinin aynı anda kullanımına benzer bir yük testiyle kota sınırına takılmadığı görüldü.
 - [ ] **Excel dışa aktarma bir kez denendi:** 4 sayfa da açılıyor, başlıklar Türkçe, SPSS'e aktarım çalışıyor.
+- [ ] **Gemini API anahtarının bağlı olduğu `egitim-asistani-2204` projesine faturalandırma hesabı bağlandı (ücretli katman).** Bkz. Bölüm 7 → Bilinen sınırlamalar.
