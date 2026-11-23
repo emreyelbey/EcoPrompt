@@ -12,6 +12,7 @@ import {
   testVerdict,
   pPhrase,
 } from '../src/lib/statsReport.js';
+import { generateSampleData, SAMPLE_CODES, SAMPLE_CODE_GROUPS } from '../src/lib/sampleData.js';
 import { fixtureRecords, interaction, loginsFor } from './helpers/stats-fixture.js';
 
 const records = fixtureRecords();
@@ -165,6 +166,22 @@ describe('uç durumlar ve eksik veri', () => {
     const b = buildStatsReport(withSamples, logins);
     expect(b.tests.map((t) => t.result.t)).toEqual(a.tests.map((t) => t.result.t));
     expect(b.descriptives).toEqual(a.descriptives);
+  });
+
+  it('60 kodun dışındaki kodlar (ör. örnek veri kodları) varsayılan raporu değiştirmez', () => {
+    const foreign = [interaction('OK01', 'pretest', 500), interaction('OD01', 'posttest', 0.01)];
+    const a = buildStatsReport(records, logins);
+    const b = buildStatsReport([...records, ...foreign], [...logins, { code: 'OK01', phase: 'pretest' }]);
+    expect(b.tests.map((t) => t.result.t)).toEqual(a.tests.map((t) => t.result.t));
+    expect(b.descriptives).toEqual(a.descriptives);
+  });
+
+  it('örnek önizlemesi: codeGroups verilince yalnızca örnek kodlar sayılır, gerçek kayıtlar girmez', () => {
+    const { records: sample, logins: sampleLogins } = generateSampleData(1_700_000_000_000);
+    const mixed = [...records, ...sample];
+    const report = buildStatsReport(mixed, [...logins, ...sampleLogins], { sample: { codeGroups: SAMPLE_CODE_GROUPS } });
+    expect(report.rows.every((r) => SAMPLE_CODES.includes(r.code))).toBe(true);
+    expect(report.rows).toHaveLength(80); // 40 kod × 2 aşama
   });
 
   it("su ve CO₂ testleri enerjiyle aynı t, p ve d'yi verir", () => {

@@ -1,5 +1,6 @@
 // Kayıt önizleme penceresi: tam öğrenci istemi + biçimlendirilmiş asistan yanıtı (RichMessage).
 // Tam yanıt listede yoktur; pencere açılınca /api/admin/record?id=... ile tek kayıt istenir.
+// localRecord verilirse (örnek veri önizlemesi: yanıt kaydın içinde) sunucuya istek atılmaz.
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import Modal from '../Modal.jsx';
@@ -9,15 +10,19 @@ import { PHASE_LABELS } from '../../lib/adminSummary.js';
 import { MODEL_SCALES } from '../../lib/footprint.js';
 import { fmtSmart } from '../../lib/format.js';
 
-export default function RecordPreviewModal({ id, token, onUnauthorized, onClose }) {
+export default function RecordPreviewModal({ id, localRecord = null, token, onUnauthorized, onClose }) {
   const [record, setRecord] = useState(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (!id) return undefined;
+    setError('');
+    if (localRecord) {
+      setRecord(localRecord);
+      return undefined;
+    }
     let cancelled = false;
     setRecord(null);
-    setError('');
     apiRequest(`/api/admin/record?id=${encodeURIComponent(id)}`, { token })
       .then((data) => {
         if (!cancelled) setRecord(data.record);
@@ -30,7 +35,7 @@ export default function RecordPreviewModal({ id, token, onUnauthorized, onClose 
     return () => {
       cancelled = true;
     };
-  }, [id, token, onUnauthorized]);
+  }, [id, localRecord, token, onUnauthorized]);
 
   const subtitle = record
     ? `${PHASE_LABELS[record.phase] ?? record.phase} · ${MODEL_SCALES[record.modelId]?.name ?? record.modelId} · ${

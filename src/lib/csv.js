@@ -11,6 +11,7 @@
 // Kaynak: reference/canvas-prototip.tsx (downloadCsvFile).
 import { MODEL_SCALES } from './footprint.js';
 import { PHASE_LABELS } from './adminSummary.js';
+import { PARTICIPANT_CODE_GROUPS } from './participants.js';
 
 const BOM = '﻿';
 const SEPARATOR = ';';
@@ -68,7 +69,9 @@ export function fileDate(now = new Date()) {
 }
 
 // Öğrenci Kayıtları CSV'si. Yanıt metni yoktur (liste yanıt taşımaz; Excel'de de yalnızca istem var).
-export function recordsCsv(records) {
+// Örnek kayıtlar (isSample) ve 60 katılımcı kodunun dışındaki kodlar CSV'ye ASLA girmez (Dilim 8).
+export function recordsCsv(allRecords) {
+  const records = allRecords.filter((r) => r.isSample !== true && Object.hasOwn(PARTICIPANT_CODE_GROUPS, r.code));
   const headers = [
     'Tarih',
     'Aşama',
@@ -90,7 +93,6 @@ export function recordsCsv(records) {
     'CO2 Maks (g)',
     'Tahmini Maliyet (USD)',
     'Tasarruf (%)',
-    'Örnek Kayıt',
     'İstem',
   ];
   const rows = records.map((r) => [
@@ -114,7 +116,6 @@ export function recordsCsv(records) {
     r.co2Max,
     r.costUsd,
     r.savingsPct,
-    r.isSample ? 'Evet' : 'Hayır',
     r.prompt,
   ]);
   return toCsv(headers, rows);

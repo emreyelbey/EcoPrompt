@@ -1,6 +1,8 @@
 // Sekme 3: Öğrenci Kayıtları.
-// Kod/istem arama, grup/aşama/model filtreleri, örnekleri gösterme anahtarı, filtrelenmiş CSV.
+// Kod/istem arama, grup/aşama/model filtreleri, filtrelenmiş CSV.
 // Liste yanıt metnini taşımaz; satıra tıklanınca tam yanıt RecordPreviewModal'da ayrı istekle gelir.
+// Örnek veri önizlemesinde (Dilim 8) AdminScreen örnek kayıtları verir: yanıt kaydın içindedir (sunucuya
+// istek yok), CSV ve silme pasiftir.
 // Tek kayıt silme kendi onay penceremizle yapılır (tarayıcı confirm() kullanılmaz).
 import { useMemo, useState } from 'react';
 import { Search, FileDown, Eye, Trash2 } from 'lucide-react';
@@ -11,6 +13,7 @@ import { filterRecords, PHASE_LABELS } from '../../lib/adminSummary.js';
 import { MODEL_ORDER, MODEL_SCALES } from '../../lib/footprint.js';
 import { fmtSmart } from '../../lib/format.js';
 import { recordsCsv, downloadCsv, fileDate } from '../../lib/csv.js';
+import { usePreview } from './PreviewContext.jsx';
 
 // Tablodaki kısa tarih: 23.11 14:05
 function shortDate(ms) {
@@ -21,16 +24,19 @@ function shortDate(ms) {
 const SELECT_CLASS = 'px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700 bg-white';
 
 export default function RecordsTab({ records, token, onUnauthorized, onDeleted, onToast }) {
-  const [filters, setFilters] = useState({ query: '', group: 'all', phase: 'all', model: 'all', showSamples: false });
+  const preview = usePreview();
+  const [filters, setFilters] = useState({ query: '', group: 'all', phase: 'all', model: 'all' });
   const [previewId, setPreviewId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null); // silinecek kayıt
   const [deleting, setDeleting] = useState(false);
 
   const list = useMemo(() => filterRecords(records, filters), [records, filters]);
-  const hasSamples = records.some((r) => r.isSample);
-  const set = (key) => (e) => setFilters((f) => ({ ...f, [key]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }));
+  const set = (key) => (e) => setFilters((f) => ({ ...f, [key]: e.target.value }));
+  // Örnek kayıtların yanıtı kaydın içindedir; önizleme penceresi sunucuya gitmez.
+  const previewRecord = previewId ? records.find((r) => r.id === previewId && typeof r.response === 'string') : null;
 
   const exportCsv = () => {
+    if (preview) return; // örnek veri önizlemesinde dışa aktarma yok
     downloadCsv(`Kayitlar_${fileDate()}.csv`, recordsCsv(list));
     onToast(`${list.length} kayıt CSV olarak indirildi.`);
   };
@@ -86,16 +92,11 @@ export default function RecordsTab({ records, token, onUnauthorized, onDeleted, 
             </option>
           ))}
         </select>
-        {hasSamples && (
-          <label className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-            <input type="checkbox" checked={filters.showSamples} onChange={set('showSamples')} />
-            Örnekleri göster
-          </label>
-        )}
         <button
           type="button"
           onClick={exportCsv}
-          disabled={list.length === 0}
+          disabled={list.length === 0 || preview}
+          title={preview ? 'Örnek veri önizlemesinde CSV indirilemez' : undefined}
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold disabled:opacity-50"
         >
           <FileDown className="w-4 h-4" aria-hidden="true" />
@@ -151,9 +152,10 @@ export default function RecordsTab({ records, token, onUnauthorized, onDeleted, 
                     <button
                       type="button"
                       onClick={() => setDeleteTarget(r)}
-                      title="Kaydı Sil"
+                      disabled={preview}
+                      title={preview ? 'Örnek kayıt silinemez' : 'Kaydı Sil'}
                       aria-label={`${r.code} kaydını sil`}
-                      className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-100 hover:text-rose-700"
+                      className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-100 hover:text-rose-700 disabled:opacity-40 disabled:pointer-events-none"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -165,7 +167,13 @@ export default function RecordsTab({ records, token, onUnauthorized, onDeleted, 
         </table>
       </div>
 
-      <RecordPreviewModal id={previewId} token={token} onUnauthorized={onUnauthorized} onClose={() => setPreviewId(null)} />
+      <RecordPreviewModal
+        id={previewId}
+        localRecord={previewRecord}
+        token={token}
+        onUnauthorized={onUnauthorized}
+        onClose={() => setPreviewId(null)}
+      />
 
       <ConfirmModal
         open={deleteTarget !== null}

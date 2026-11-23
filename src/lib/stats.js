@@ -8,6 +8,8 @@
 // bunun yerine { valid: false, reason } ile Türkçe gerekçe döner.
 // Dilim 7 eki: etki büyüklüğü (Cohen's d) ve iki yeni ölçüt (ağırlıklı token, istem başına enerji).
 // Bütün p değerleri ÇİFT YÖNLÜDÜR (two-tailed).
+// Dilim 8 eki: kod izin listesi (codeGroups). Listede olmayan koda ait kayıt hiçbir hesaba girmez.
+import { PARTICIPANT_CODE_GROUPS } from './participants.js';
 
 /* ---------------------------------------------------------------------------
  * 1. AYARLAR
@@ -330,14 +332,6 @@ export const PHASES = ['pretest', 'posttest'];
 // lightPct: Hafif Model ile yazılan istemlerin yüzdesi
 export const METRICS = ['prompts', 'weightedTokens', 'energy', 'energyPerPrompt', 'water', 'co2', 'lightPct'];
 
-// Katılımcı kodunun ilk harfinden grubu bulur: K → Kontrol, D → Deney.
-// (Sunucu da grubu aynı kuralla koddan belirler.)
-function groupFromCode(code) {
-  if (typeof code === 'string' && code.startsWith('K')) return 'Kontrol';
-  if (typeof code === 'string' && code.startsWith('D')) return 'Deney';
-  return null;
-}
-
 /**
  * Etkileşim kayıtlarını öğrenci + aşama başına tek satıra toplar.
  *
@@ -353,12 +347,16 @@ function groupFromCode(code) {
  * @param {{ pretest: string[], posttest: string[] }} [options.loggedInCodes]
  *        Her aşamada giriş yapmış kodlar. 'zero' politikasında zorunludur.
  * @param {boolean} [options.includeSamples]  örnek veriler dahil edilsin mi? (varsayılan: hayır)
+ * @param {Object<string, string>} [options.codeGroups]  İZİN LİSTESİ: kod → grup. Varsayılan: 60 katılımcı kodu.
+ *        Listede olmayan koda ait kayıt atlanır (savunma katmanı: örnek veri kodları gerçek analize giremez).
+ *        Örnek veri önizlemesi burada örnek kodların listesini verir.
  * @returns {object[]}
  */
 export function aggregateByParticipant(interactions, options = {}) {
   const policy = options.policy === undefined ? ZERO_PROMPT_POLICY : options.policy;
   const includeSamples = options.includeSamples === true;
   const loggedInCodes = options.loggedInCodes;
+  const codeGroups = options.codeGroups || PARTICIPANT_CODE_GROUPS;
 
   if (policy !== 'exclude' && policy !== 'zero') {
     throw new Error(`Bilinmeyen sıfır istem politikası: ${policy}`);
@@ -374,6 +372,7 @@ export function aggregateByParticipant(interactions, options = {}) {
   for (const it of interactions) {
     if (it.isSample === true && !includeSamples) continue; // örnek veri varsayılan olarak girmez
     if (!PHASES.includes(it.phase)) continue;
+    if (!Object.hasOwn(codeGroups, it.code)) continue; // izin listesinde olmayan kod hesaba girmez
 
     const key = keyOf(it.code, it.phase);
     if (!rows.has(key)) {
@@ -405,8 +404,8 @@ export function aggregateByParticipant(interactions, options = {}) {
       for (const code of codes) {
         const key = keyOf(code, phase);
         if (rows.has(key)) continue; // istem yazmış, zaten var
-        const group = groupFromCode(code);
-        if (!group) continue; // geçersiz kod
+        if (!Object.hasOwn(codeGroups, code)) continue; // izin listesinde olmayan kod
+        const group = codeGroups[code];
         rows.set(key, { code, group, phase, prompts: 0, weightedTokens: 0, water: 0, energy: 0, co2: 0, lightCount: 0 });
       }
     }

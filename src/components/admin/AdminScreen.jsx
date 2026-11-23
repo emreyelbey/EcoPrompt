@@ -5,14 +5,20 @@
 // Veri artımlı yenilenir (useAdminData.js): Firestore okuma kotası korunur.
 // Bu dosya App.jsx'te React.lazy ile yüklenir; öğrenci tarayıcısı panel ve grafik kodunu indirmez.
 // Düzen kuralları proje rehberi Bölüm 8'e uyar (sabit üst/alt çubuk, yalnızca orta alan kayar).
+// Örnek veri önizlemesi (Dilim 8): örnek veri tarayıcıda üretilir (src/lib/sampleData.js), veritabanına
+// HİÇ yazılmaz. Önizleme açıkken Genel Bakış, İstatistik ve Kayıtlar sekmeleri YALNIZCA örnek veriyi
+// (ayrı kodlar, OK/OD) gösterir; gerçek veriyle asla karışmaz. Uyarı bandı sabit üst çubuktadır (kaydırınca
+// kaybolmaz), her kartta "ÖRNEK VERİ" işareti çıkar, Excel/CSV, silme ve temizleme pasiftir.
+// Katılımcı Kodları sekmesi ve aşama anahtarı her zaman gerçek veriyle çalışır.
 import { useCallback, useMemo, useState } from 'react';
-import { LogOut, Loader2, AlertCircle, RefreshCw, BarChart3, Activity, Database, Users, BookOpen, AlertTriangle } from 'lucide-react';
+import { LogOut, Loader2, AlertCircle, RefreshCw, BarChart3, Activity, Database, Users, BookOpen, AlertTriangle, FlaskConical } from 'lucide-react';
 import ConfirmModal from '../ConfirmModal.jsx';
 import MethodologyContent from '../eko/MethodologyContent.jsx';
 import ClearDataModal from './ClearDataModal.jsx';
 import CodesTab from './CodesTab.jsx';
 import ExperimentDesignSection from './ExperimentDesignSection.jsx';
 import OverviewTab from './OverviewTab.jsx';
+import { PreviewContext } from './PreviewContext.jsx';
 import RecordsTab from './RecordsTab.jsx';
 import StatsTab from './StatsTab.jsx';
 import Toast from './Toast.jsx';
@@ -20,6 +26,7 @@ import useAdminData from './useAdminData.js';
 import { apiRequest } from '../../lib/api.js';
 import { PHASES } from '../../lib/phases.js';
 import { PHASE_LABELS, realRecords } from '../../lib/adminSummary.js';
+import { generateSampleData, SAMPLE_CODE_GROUPS } from '../../lib/sampleData.js';
 
 export default function AdminScreen({ token, onLogout }) {
   const data = useAdminData(token, onLogout);
@@ -29,10 +36,20 @@ export default function AdminScreen({ token, onLogout }) {
   const [clearOpen, setClearOpen] = useState(false);
   const [toast, setToast] = useState('');
   const clearToast = useCallback(() => setToast(''), []);
+  // Örnek veri önizlemesi: açılınca örnek set bir kez üretilir (sabit tohumlu, her seferinde aynı veri).
+  const [sample, setSample] = useState(null); // null = önizleme kapalı
+  const preview = sample !== null;
+  const togglePreview = () => setSample((current) => (current ? null : generateSampleData()));
 
-  // Örnek kayıtlar istatistiklere ve grafiklere girmez; kayıtlar sekmesi isterse gösterir.
+  // Veritabanındaki örnek kayıtlar (eski sürümlerden kalmış olabilir) hiçbir hesaba girmez.
   const real = useMemo(() => realRecords(data.records), [data.records]);
   const sampleCount = data.records.length - real.length;
+
+  // Sekmelere giden veri: önizlemede YALNIZCA örnek set ve örnek kod listesi; değilse gerçek veri.
+  // undefined → hesaplar varsayılan izin listesini (60 katılımcı kodu) kullanır.
+  const shown = preview
+    ? { records: sample.records, logins: sample.logins, codeGroups: SAMPLE_CODE_GROUPS }
+    : { records: real, logins: data.logins, codeGroups: undefined };
 
   const confirmPhase = async () => {
     setSavingPhase(true);
@@ -58,12 +75,13 @@ export default function AdminScreen({ token, onLogout }) {
   const tabs = [
     { id: 'overview', label: 'Genel Bakış & Grafikler', icon: BarChart3 },
     { id: 'stats', label: 'Ön Test – Son Test & İstatistik', icon: Activity },
-    { id: 'records', label: `Öğrenci Kayıtları (${real.length})`, icon: Database },
+    { id: 'records', label: `Öğrenci Kayıtları (${shown.records.length})`, icon: Database },
     { id: 'codes', label: 'Katılımcı Kodları (60)', icon: Users },
     { id: 'methodology', label: 'Metodoloji & Kaynakça', icon: BookOpen },
   ];
 
   return (
+    <PreviewContext.Provider value={preview}>
     <div className="fixed inset-0 w-full h-full flex flex-col overflow-hidden bg-slate-50 text-slate-800">
       <header className="shrink-0 bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-3 sm:px-5 py-2.5 flex flex-wrap items-center justify-between gap-2">
@@ -142,6 +160,32 @@ export default function AdminScreen({ token, onLogout }) {
             })}
           </div>
         </nav>
+
+        {/* Önizleme bandı: sabit üst çubuğun içinde, sayfa kaydırılınca kaybolmaz */}
+        {preview && (
+          <div
+            role="status"
+            data-testid="onizleme-bandi"
+            className="border-t-2 border-amber-500 bg-amber-400 text-amber-950"
+          >
+            <div className="max-w-7xl mx-auto px-3 sm:px-5 py-2 flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
+              <p className="flex items-start gap-2 font-semibold">
+                <FlaskConical className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
+                <span>
+                  ÖRNEK VERİ ÖNİZLEMESİ — gerçek deney verisi değildir. Excel/CSV, silme ve temizleme kapalı.
+                  <span className="font-normal"> Katılımcı Kodları sekmesi ve aşama anahtarı gerçek veriyi gösterir.</span>
+                </span>
+              </p>
+              <button
+                type="button"
+                onClick={togglePreview}
+                className="shrink-0 rounded-lg bg-amber-950 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-900"
+              >
+                Önizlemeden Çık
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
       <main className="flex-1 min-h-0 overflow-y-auto px-3 sm:px-5 py-4">
@@ -177,11 +221,21 @@ export default function AdminScreen({ token, onLogout }) {
             </div>
           ) : (
             <>
-              {tab === 'overview' && <OverviewTab records={real} logins={data.logins} onClearClick={() => setClearOpen(true)} />}
-              {tab === 'stats' && <StatsTab records={real} logins={data.logins} onToast={setToast} />}
+              {tab === 'overview' && (
+                <OverviewTab
+                  records={shown.records}
+                  logins={shown.logins}
+                  codeGroups={shown.codeGroups}
+                  onClearClick={() => setClearOpen(true)}
+                  onTogglePreview={togglePreview}
+                />
+              )}
+              {tab === 'stats' && (
+                <StatsTab records={shown.records} logins={shown.logins} codeGroups={shown.codeGroups} onToast={setToast} />
+              )}
               {tab === 'records' && (
                 <RecordsTab
-                  records={data.records}
+                  records={shown.records}
                   token={token}
                   onUnauthorized={onLogout}
                   onDeleted={data.removeRecord}
@@ -234,5 +288,6 @@ export default function AdminScreen({ token, onLogout }) {
 
       <Toast message={toast} onDone={clearToast} />
     </div>
+    </PreviewContext.Provider>
   );
 }

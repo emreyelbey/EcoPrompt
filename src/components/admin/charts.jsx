@@ -7,6 +7,7 @@
 import { ResponsiveContainer, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LabelList } from 'recharts';
 import { MODEL_ORDER, MODEL_SCALES } from '../../lib/footprint.js';
 import { fmtNum, fmtSmart } from '../../lib/format.js';
+import { PreviewMark } from './PreviewContext.jsx';
 
 export const GROUP_COLORS = { Kontrol: '#6250d6', Deney: '#eda100' };
 export const MODEL_COLORS = { light: '#2a78d6', standard: '#eb6834', reasoning: '#1baf7a' };
@@ -17,7 +18,8 @@ const LABEL_STYLE = { fontSize: 11, fontWeight: 600, fill: '#334155' }; // metin
 
 export function ChartCard({ title, subtitle, children }) {
   return (
-    <section className="bg-white rounded-2xl border border-slate-200 p-4">
+    <section className="relative bg-white rounded-2xl border border-slate-200 p-4">
+      <PreviewMark />
       <h3 className="text-sm font-bold text-slate-900">{title}</h3>
       {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
       <div className="mt-3">{children}</div>

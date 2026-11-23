@@ -47,6 +47,18 @@ describe('overviewStats', () => {
     expect(s.loggedInParticipants).toBe(1);
   });
 
+  it('kod izin listesi: 60 kodun dışındaki kodlar sayılmaz; başka liste verilirse yalnızca o kodlar sayılır', () => {
+    const foreign = [r({ id: 'x1', code: 'OK01', group: 'Kontrol', phase: 'pretest', modelId: 'light' })];
+    const base = overviewStats(realRecords(RECORDS), [], 'all');
+    const withForeign = overviewStats([...realRecords(RECORDS), ...foreign], [{ code: 'OK01', phase: 'pretest' }], 'all');
+    expect(withForeign).toEqual(base);
+    expect(base.totalCodes).toBe(60);
+
+    const only = overviewStats([...realRecords(RECORDS), ...foreign], [], 'all', { OK01: 'Kontrol' });
+    expect(only.totalPrompts).toBe(1);
+    expect(only.totalCodes).toBe(1);
+  });
+
   it('boş veride sıfıra bölme olmaz', () => {
     const s = overviewStats([], [], 'all');
     expect(s.groups.Deney).toMatchObject({ prompts: 0, users: 0, avgPrompts: 0, avgEnergy: 0 });
@@ -55,14 +67,11 @@ describe('overviewStats', () => {
 });
 
 describe('filterRecords', () => {
-  const all = { query: '', group: 'all', phase: 'all', model: 'all', showSamples: false };
+  const all = { query: '', group: 'all', phase: 'all', model: 'all' };
 
-  it('varsayılan: örnekler gizli, en yeni önce', () => {
-    expect(filterRecords(RECORDS, all).map((x) => x.id)).toEqual(['4', '3', '2', '1']);
-  });
-
-  it('örnekleri göster', () => {
-    expect(filterRecords(RECORDS, { ...all, showSamples: true })[0].id).toBe('ornek');
+  it('en yeni önce; örnek ayıklamaz (hangi listenin gösterileceğine AdminScreen karar verir)', () => {
+    expect(filterRecords(RECORDS, all).map((x) => x.id)).toEqual(['ornek', '4', '3', '2', '1']);
+    expect(filterRecords(realRecords(RECORDS), all).map((x) => x.id)).toEqual(['4', '3', '2', '1']);
   });
 
   it('kod ve istemde Türkçe büyük/küçük harf duyarsız arama', () => {

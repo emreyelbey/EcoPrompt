@@ -3,7 +3,7 @@
 // Kural: örnek kayıtlar (isSample) istatistiklere ve grafiklere varsayılan olarak GİRMEZ (proje rehberi Bölüm 7).
 // Kaynak: reference/canvas-prototip.tsx (AdminDashboard → overviewStats, filteredRecords, codeRows).
 import { MODEL_ORDER } from './footprint.js';
-import { ALL_CODES, getGroup, getStatus } from './participants.js';
+import { ALL_CODES, PARTICIPANT_CODE_GROUPS, getGroup, getStatus } from './participants.js';
 
 // Aşamaların yönetici ekranındaki adları (öğrenci ekranında aşama adı hiç yazmaz).
 export const PHASE_LABELS = { pretest: 'Ön Test', posttest: 'Son Test' };
@@ -55,10 +55,13 @@ function groupSummary(records) {
  * @param {object[]} records  örnek kayıtlar çıkarılmış etkileşim listesi
  * @param {object[]} logins   giriş kayıtları
  * @param {'all'|'pretest'|'posttest'} phase
+ * @param {Object<string, string>} [codeGroups]  İZİN LİSTESİ (kod → grup); varsayılan 60 katılımcı kodu.
+ *        Listede olmayan koda ait kayıt sayılmaz. Örnek veri önizlemesi örnek kodların listesini verir.
  */
-export function overviewStats(records, logins, phase) {
-  const list = filterByPhase(records, phase);
-  const loginList = filterByPhase(logins, phase);
+export function overviewStats(records, logins, phase, codeGroups = PARTICIPANT_CODE_GROUPS) {
+  const allowed = (item) => Object.hasOwn(codeGroups, item.code);
+  const list = filterByPhase(records, phase).filter(allowed);
+  const loginList = filterByPhase(logins, phase).filter(allowed);
 
   const groups = {};
   for (const g of GROUPS) groups[g] = groupSummary(list.filter((r) => r.group === g));
@@ -71,18 +74,19 @@ export function overviewStats(records, logins, phase) {
     totalWater: sum(list, 'waterAvg'),
     totalCo2: sum(list, 'co2Avg'),
     groups,
+    totalCodes: Object.keys(codeGroups).length, // "Aktif Katılımcılar x / 60" kartındaki payda
   };
 }
 
 /**
  * Öğrenci Kayıtları sekmesindeki filtreler. Sonuç en yeniden en eskiye sıralıdır.
- * @param {object} f  { query, group, phase, model, showSamples }  ('all' = filtre yok)
+ * Hangi kayıtların (gerçek veya örnek önizleme) listeleneceğine AdminScreen karar verir; burada ayıklanmaz.
+ * @param {object} f  { query, group, phase, model }  ('all' = filtre yok)
  */
 export function filterRecords(records, f) {
   const q = (f.query || '').trim().toLocaleLowerCase('tr-TR');
   return records
     .filter((r) => {
-      if (!f.showSamples && r.isSample === true) return false;
       if (f.group !== 'all' && r.group !== f.group) return false;
       if (f.phase !== 'all' && r.phase !== f.phase) return false;
       if (f.model !== 'all' && r.modelId !== f.model) return false;

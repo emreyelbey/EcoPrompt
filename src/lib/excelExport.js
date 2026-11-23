@@ -1,5 +1,5 @@
 // Excel (.xlsx) dışa aktarma: şartnamedeki 4 sayfa + değişken sözlüğü.
-//   1) Tum_Kayitlar        her etkileşim bir satır (örnek kayıtlar hariç)
+//   1) Tum_Kayitlar        her etkileşim bir satır (örnek kayıtlar ve 60 kod dışındaki kodlar hariç)
 //   2) Ogrenci_Ozetleri    60 kodun tamamı; Ön Test / Son Test / Toplam
 //   3) Grup_Karsilastirma  4 hücre (Kontrol/Deney × Ön/Son) betimsel tablo + her ölçüt için 4 test
 //   4) SPSS_Veri_Seti      geniş format: her katılımcı tek satır, SPSS kurallarına uygun değişken adları
@@ -13,7 +13,7 @@
 // Bu dosya yalnızca "Excel İndir" tıklanınca import() ile yüklenir; öğrenci tarayıcısı hiç indirmez.
 import { MODEL_SCALES } from './footprint.js';
 import { COHENS_D_FORMULAS, ZERO_PROMPT_POLICY } from './stats.js';
-import { ALL_CODES, getGroup, getStatus } from './participants.js';
+import { ALL_CODES, PARTICIPANT_CODE_GROUPS, getGroup, getStatus } from './participants.js';
 import { formatCsvDate, fileDate } from './csv.js';
 import {
   METRIC_META,
@@ -393,10 +393,14 @@ function dictionarySheet(policy, now) {
 /**
  * 5 sayfanın içeriği (saf fonksiyon; testler doğrudan bunu kullanır).
  * @param {object[]} allRecords  panel kayıtları (örnekler burada ayıklanır)
- * @param {object[]} logins      giriş kayıtları
+ * @param {object[]} allLogins   giriş kayıtları
+ * İki kat ayıklama: isSample kayıtları ve 60 katılımcı kodunun DIŞINDAKİ kodlar (ör. örnek veri kodları)
+ * dosyaya hiç girmez.
  */
-export function buildWorkbookSheets(allRecords, logins = [], { policy = ZERO_PROMPT_POLICY, now = new Date() } = {}) {
-  const records = allRecords.filter((r) => r.isSample !== true);
+export function buildWorkbookSheets(allRecords, allLogins = [], { policy = ZERO_PROMPT_POLICY, now = new Date() } = {}) {
+  const isParticipant = (item) => Object.hasOwn(PARTICIPANT_CODE_GROUPS, item.code);
+  const records = allRecords.filter((r) => r.isSample !== true && isParticipant(r));
+  const logins = allLogins.filter(isParticipant);
   const rows = participantRows(records, logins, policy);
   return [
     allRecordsSheet(records),

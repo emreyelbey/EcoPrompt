@@ -2,12 +2,15 @@
 // Aşama filtresi, 5 KPI kartı, Kontrol vs Deney istem karşılaştırması, istem başına ortalama
 // enerji/su/CO₂ ve model tercih dağılımı. Örnek kayıtlar hesaplara girmez (AdminScreen ayıklar).
 // Verileri Temizle butonu da buradadır (onay penceresi AdminScreen'de).
+// "Örnek veriyle önizle" anahtarı da buradadır (Dilim 8). Önizleme açıkken AdminScreen örnek seti ve
+// örnek kod listesini (codeGroups) verir; Verileri Temizle pasiftir.
 import { useMemo, useState } from 'react';
-import { Users, MessageSquare, Zap, Droplets, Cloud, Trash2 } from 'lucide-react';
+import { Users, MessageSquare, Zap, Droplets, Cloud, Trash2, FlaskConical } from 'lucide-react';
 import { overviewStats, PHASE_LABELS } from '../../lib/adminSummary.js';
 import { MODEL_ORDER, MODEL_SCALES } from '../../lib/footprint.js';
 import { fmtNum, fmtSmart } from '../../lib/format.js';
 import { ChartCard, GroupBarChart, ModelShareChart, DataTable } from './charts.jsx';
+import { PreviewMark, usePreview } from './PreviewContext.jsx';
 
 const PHASE_FILTERS = [
   { id: 'all', label: 'Tümü' },
@@ -18,9 +21,10 @@ const PHASE_FILTERS = [
 const fmtInt = (v) => Number(v).toLocaleString('tr-TR');
 const fmtAvg = (v) => fmtNum(v, 2);
 
-export default function OverviewTab({ records, logins, onClearClick }) {
+export default function OverviewTab({ records, logins, codeGroups, onClearClick, onTogglePreview }) {
+  const preview = usePreview();
   const [phase, setPhase] = useState('all');
-  const s = useMemo(() => overviewStats(records, logins, phase), [records, logins, phase]);
+  const s = useMemo(() => overviewStats(records, logins, phase, codeGroups), [records, logins, phase, codeGroups]);
   const k = s.groups.Kontrol;
   const d = s.groups.Deney;
 
@@ -43,19 +47,37 @@ export default function OverviewTab({ records, logins, onClearClick }) {
             </button>
           ))}
         </div>
-        <button
-          type="button"
-          onClick={onClearClick}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold"
-        >
-          <Trash2 className="w-4 h-4" aria-hidden="true" />
-          Verileri Temizle
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Örnek veri yalnızca tarayıcıda üretilir; veritabanına hiçbir şey yazılmaz. */}
+          <button
+            type="button"
+            onClick={onTogglePreview}
+            aria-pressed={preview}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold ${
+              preview
+                ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-500'
+                : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200'
+            }`}
+          >
+            <FlaskConical className="w-4 h-4" aria-hidden="true" />
+            {preview ? 'Önizlemeden Çık' : 'Örnek Veriyle Önizle'}
+          </button>
+          <button
+            type="button"
+            onClick={onClearClick}
+            disabled={preview}
+            title={preview ? 'Örnek veri önizlemesinde veri temizlenemez' : undefined}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold disabled:opacity-50"
+          >
+            <Trash2 className="w-4 h-4" aria-hidden="true" />
+            Verileri Temizle
+          </button>
+        </div>
       </div>
 
       {/* 5 KPI kartı */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <Kpi icon={Users} label="Aktif Katılımcılar" value={fmtInt(s.activeParticipants)} unit="/ 60" note={`Giriş yapan: ${s.loggedInParticipants}`} />
+        <Kpi icon={Users} label="Aktif Katılımcılar" value={fmtInt(s.activeParticipants)} unit={`/ ${s.totalCodes}`} note={`Giriş yapan: ${s.loggedInParticipants}`} />
         <Kpi icon={MessageSquare} label="Toplam İstem" value={fmtInt(s.totalPrompts)} />
         <Kpi icon={Zap} label="Toplam Enerji" value={fmtSmart(s.totalEnergy)} unit="Wh" />
         <Kpi icon={Droplets} label="Toplam Su" value={fmtSmart(s.totalWater)} unit="mL" />
@@ -112,7 +134,8 @@ export default function OverviewTab({ records, logins, onClearClick }) {
 
 function Kpi({ icon: Icon, label, value, unit, note, className = '' }) {
   return (
-    <div className={`bg-white rounded-2xl border border-slate-200 p-4 ${className}`}>
+    <div className={`relative bg-white rounded-2xl border border-slate-200 p-4 ${className}`}>
+      <PreviewMark />
       <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
         <span>{label}</span>
         <Icon className="w-4 h-4 text-slate-400" aria-hidden="true" />

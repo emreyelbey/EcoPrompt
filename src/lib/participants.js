@@ -47,3 +47,7 @@ export function getStatus(code) {
   if (!isValidCode(code)) return null;
   return Number(code.slice(1)) <= MAIN_COUNT ? 'Asıl' : 'Yedek';
 }
+
+// 60 kodun kod → grup eşlemesi. İstatistik ve Excel hesapları bunu İZİN LİSTESİ olarak kullanır:
+// burada olmayan bir koda ait kayıt (ör. örnek veri kodu veya bozuk kayıt) hiçbir hesaba girmez.
+export const PARTICIPANT_CODE_GROUPS = Object.fromEntries(ALL_CODES.map((code) => [code, getGroup(code)]));

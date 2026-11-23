@@ -28,8 +28,11 @@ const records = [
   ...fixtureRecords(),
   interaction('D010', 'pretest', 2.5, { engineVersion: 'gemini-test-001', modelId: 'light', prompt: '=1+1 nedir?' }),
   interaction('K020', 'pretest', 99, { isSample: true, prompt: 'ÖRNEK KAYIT' }),
+  // 60 kodun dışındaki örnek veri kodu (isSample işareti OLMASA bile hiçbir sayfaya girmemeli)
+  interaction('OK01', 'pretest', 7, { prompt: 'YABANCI KOD' }),
 ];
 const logins = loginsFor(records.filter((r) => !r.isSample));
+// loginsFor yabancı kodun girişini de üretir; Excel onu da ayıklamalı.
 
 const sheets = buildWorkbookSheets(records, logins, { now: NOW });
 const sheetByName = Object.fromEntries(sheets.map((s) => [s.name, s]));
@@ -53,6 +56,12 @@ describe('Tum_Kayitlar', () => {
   it('örnek kayıtlar girmez; her gerçek etkileşim bir satır', () => {
     expect(rows).toHaveLength(1 + 21);
     expect(JSON.stringify(sheetByName.Tum_Kayitlar.rows)).not.toContain('ÖRNEK KAYIT');
+  });
+
+  it('60 kodun dışındaki kodlar (örnek veri kodları) hiçbir sayfada yok', () => {
+    const all = JSON.stringify(sheets.map((s) => s.rows));
+    expect(all).not.toContain('YABANCI KOD');
+    expect(all).not.toContain('OK01');
   });
 
   it('model yalnızca ölçek sınıfı adıyla yazılır; sayılar sayısal hücredir', () => {

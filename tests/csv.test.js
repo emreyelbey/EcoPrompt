@@ -102,11 +102,24 @@ describe('recordsCsv: istemdeki özel karakterler dosyayı bozmaz', () => {
     ]);
     const rows = parseCsv(csv.slice(1));
     expect(rows).toHaveLength(3); // başlık + 2 kayıt; istemdeki satır sonları yeni satır açmadı
-    expect(rows[0]).toHaveLength(22);
-    for (const row of rows) expect(row).toHaveLength(22);
-    expect(rows[1][21]).toBe(prompt);
+    expect(rows[0]).toHaveLength(21); // Dilim 8: "Örnek Kayıt" sütunu kalktı
+    for (const row of rows) expect(row).toHaveLength(21);
+    expect(rows[1][20]).toBe(prompt);
     expect(rows[1][10]).toBe('0,016452'); // Enerji Ort (Wh), yuvarlanmış
-    expect(rows[2][21]).toBe('düz soru');
+    expect(rows[2][20]).toBe('düz soru');
+  });
+});
+
+describe('recordsCsv: örnek veri asla girmez', () => {
+  it('isSample kayıtları ve 60 kodun dışındaki kodlar (OK/OD) dosyada yok', () => {
+    const csv = recordsCsv([
+      { id: 'a', createdAt: 0, phase: 'pretest', code: 'K001', group: 'Kontrol', modelId: 'light', prompt: 'gerçek soru' },
+      { id: 'b', createdAt: 0, phase: 'pretest', code: 'K002', group: 'Kontrol', modelId: 'light', prompt: 'eski örnek', isSample: true },
+      { id: 'c', createdAt: 0, phase: 'pretest', code: 'OK01', group: 'Kontrol', modelId: 'light', prompt: 'örnek kod' },
+    ]);
+    expect(csv).toContain('gerçek soru');
+    expect(csv).not.toContain('eski örnek');
+    expect(csv).not.toContain('OK01');
   });
 });
 
@@ -148,7 +161,8 @@ describe('recordsCsv', () => {
     expect(header.split(';')[0]).toBe('Tarih');
     expect(header.split(';')).toContain('Enerji Ort (Wh)');
     expect(row).toContain('23.11.2026 14:05:33;Son Test;D001;Deney;Akıl Yürütme Modeli;100;50;250;gerçek;0,35;0,525');
-    expect(row.endsWith('Hayır;"Soru; ikinci kısım"')).toBe(true);
+    expect(row.endsWith('91;"Soru; ikinci kısım"')).toBe(true); // Tasarruf (%) ardından istem
+    expect(header.split(';')).not.toContain('Örnek Kayıt');
   });
 
   it('engineVersion CSV dosyasına girmez (marka yasağı)', () => {

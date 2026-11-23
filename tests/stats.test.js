@@ -312,6 +312,26 @@ describe('aggregateByParticipant', () => {
     });
   });
 
+  it('kod izin listesi: 60 katılımcı kodunun dışındaki kod (isSample olmasa bile) hiçbir satıra girmez', () => {
+    const extra = [rec('OK01', 'Kontrol', 'pretest', 'light', 5), rec('X999', 'Deney', 'pretest', 'light', 5)];
+    const rows = aggregateByParticipant([...INTERACTIONS, ...extra]);
+    expect(find(rows, 'OK01', 'pretest')).toBeUndefined();
+    expect(find(rows, 'X999', 'pretest')).toBeUndefined();
+    // 'zero' politikasında giriş listesindeki yabancı kod da 0 istemle eklenmez.
+    const zero = aggregateByParticipant(INTERACTIONS, { policy: 'zero', loggedInCodes: { pretest: ['OK01'], posttest: [] } });
+    expect(find(zero, 'OK01', 'pretest')).toBeUndefined();
+  });
+
+  it('başka bir izin listesi verilirse (örnek önizleme) yalnızca o kodlar sayılır; grup listeden gelir', () => {
+    const codeGroups = { OK01: 'Kontrol', OD01: 'Deney' };
+    const recs = [rec('OK01', 'Kontrol', 'pretest', 'light', 5), ...INTERACTIONS];
+    const rows = aggregateByParticipant(recs, { codeGroups });
+    expect(rows.map((r) => r.code)).toEqual(['OK01']);
+    const zero = aggregateByParticipant(recs, { codeGroups, policy: 'zero', loggedInCodes: { pretest: ['OD01', 'K001'], posttest: [] } });
+    expect(find(zero, 'OD01', 'pretest')).toMatchObject({ group: 'Deney', prompts: 0 });
+    expect(find(zero, 'K001', 'pretest')).toBeUndefined();
+  });
+
   it('örnek veriler varsayılan olarak dahil edilmez, istenirse edilir', () => {
     expect(find(aggregateByParticipant(INTERACTIONS), 'K003', 'pretest')).toBeUndefined();
     const withSamples = aggregateByParticipant(INTERACTIONS, { includeSamples: true });

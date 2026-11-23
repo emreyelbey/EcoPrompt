@@ -78,13 +78,16 @@ export const PHASE_NAMES = { pretest: 'Ön Test', posttest: 'Son Test' };
 /**
  * Kayıtları öğrenci + aşama başına satırlara çevirir (stats.js → aggregateByParticipant).
  * logins: giriş kayıtları; 'zero' politikasında "o aşamada giriş yapmış" listesi buradan çıkar.
+ * scope (yalnızca örnek veri önizlemesi kullanır):
+ *   codeGroups: izin verilen kodlar (kod → grup). Verilmezse 60 katılımcı kodu.
+ *   includeSamples: örnek kayıtlar sayılsın mı? Verilmezse hayır.
  */
-export function participantRows(records, logins = [], policy = ZERO_PROMPT_POLICY) {
+export function participantRows(records, logins = [], policy = ZERO_PROMPT_POLICY, { codeGroups, includeSamples = false } = {}) {
   const loggedInCodes = { pretest: [], posttest: [] };
   for (const login of logins) {
     if (loggedInCodes[login.phase]) loggedInCodes[login.phase].push(login.code);
   }
-  return aggregateByParticipant(records, { policy, loggedInCodes });
+  return aggregateByParticipant(records, { policy, loggedInCodes, codeGroups, includeSamples });
 }
 
 /* ---------------------------------------------------------------------------
@@ -313,10 +316,13 @@ export function prePostChartData(rows, metric) {
  * İstatistik sekmesinin bütün içeriği.
  * @param {object[]} records  etkileşim kayıtları (örnekler otomatik dışlanır)
  * @param {object[]} logins   giriş kayıtları
- * @param {{ metric?: string, policy?: 'exclude'|'zero' }} options
+ * @param {{ metric?: string, policy?: 'exclude'|'zero', sample?: { codeGroups: object } }} options
+ *        sample: YALNIZCA örnek veri önizlemesi verir. Verilince yalnızca bu listedeki örnek kodlar sayılır
+ *        (örnek kayıtlar dahil). Verilmezse 60 katılımcı kodu ve gerçek kayıtlar (varsayılan).
  */
-export function buildStatsReport(records, logins, { metric = PRIMARY_METRIC, policy = ZERO_PROMPT_POLICY } = {}) {
-  const rows = participantRows(records, logins, policy);
+export function buildStatsReport(records, logins, { metric = PRIMARY_METRIC, policy = ZERO_PROMPT_POLICY, sample } = {}) {
+  const scope = sample ? { codeGroups: sample.codeGroups, includeSamples: true } : {};
+  const rows = participantRows(records, logins, policy, scope);
   return {
     metric,
     policy,

@@ -142,6 +142,50 @@ describe('Yönetici paneli', () => {
     expect(apiRequest).toHaveBeenCalledWith('/api/admin/record?id=r1', { token: 't' });
   });
 
+  it('örnek veri önizlemesi: sabit bant, her kartta ÖRNEK VERİ etiketi, Excel/CSV pasif, istek yok', async () => {
+    mockServer();
+    render(<AdminScreen token="t" onLogout={() => {}} />);
+    await screen.findByText('Aktif Katılımcılar');
+    const callsBefore = apiRequest.mock.calls.length;
+    expect(screen.queryByTestId('onizleme-bandi')).toBeNull();
+    expect(screen.queryAllByTestId('ornek-etiket')).toHaveLength(0);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Örnek Veriyle Önizle' }));
+
+    // Bant kayan alanda değil, sabit üst çubukta (header) durur.
+    const band = screen.getByTestId('onizleme-bandi');
+    expect(band.closest('header')).not.toBeNull();
+    expect(band.closest('main')).toBeNull();
+    expect(band.textContent).toContain('ÖRNEK VERİ ÖNİZLEMESİ');
+
+    // Genel Bakış: KPI ve grafik kartlarının hepsinde etiket; payda örnek kod sayısı (40).
+    expect(screen.getAllByTestId('ornek-etiket').length).toBeGreaterThanOrEqual(8);
+    expect(document.body.textContent).toContain('/ 40');
+    expect(screen.getByRole('button', { name: 'Verileri Temizle' }).disabled).toBe(true);
+
+    // İstatistik: test kartlarında etiket, Excel pasif.
+    fireEvent.click(screen.getByRole('button', { name: 'Ön Test – Son Test & İstatistik' }));
+    expect(screen.getAllByTestId('ornek-etiket').length).toBeGreaterThanOrEqual(10);
+    expect(screen.getByRole('button', { name: /Excel İndir/ }).disabled).toBe(true);
+
+    // Kayıtlar: yalnızca örnek kodlar; gerçek kayıt yok; CSV pasif; yanıt sunucuya gitmeden açılır.
+    fireEvent.click(screen.getByRole('button', { name: /^Öğrenci Kayıtları/ }));
+    expect(screen.queryByText('Fotosentez nedir?')).toBeNull();
+    expect(screen.getAllByText(/^O[KD]\d\d$/).length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: /CSV İndir/ }).disabled).toBe(true);
+    fireEvent.click(screen.getAllByRole('button', { name: /kaydını önizle/ })[0]);
+    await screen.findByText('Asistan Yanıtı');
+
+    // Önizleme hiçbir sunucu isteği yapmadı (veritabanına yazma da yok).
+    expect(apiRequest.mock.calls.length).toBe(callsBefore);
+
+    // Çıkınca bant ve etiketler kalkar, gerçek veri geri gelir.
+    fireEvent.click(within(band).getByRole('button', { name: 'Önizlemeden Çık' }));
+    expect(screen.queryByTestId('onizleme-bandi')).toBeNull();
+    expect(screen.queryAllByTestId('ornek-etiket')).toHaveLength(0);
+    expect(screen.getByRole('button', { name: 'Öğrenci Kayıtları (1)' })).toBeTruthy();
+  });
+
   it('Verileri Temizle butonu onay penceresini açar', async () => {
     mockServer();
     apiRequest.mockImplementationOnce(async () => ({ interactions: [], hasMore: false, next: null, logins: [], phase: 'pretest' }));
