@@ -29,8 +29,8 @@ export default async function handler(req, res) {
     const db = getDb();
     const phase = await getActivePhase(db);
 
-    // 3) Bu aşamadaki giriş kaydını oluştur/güncelle.
-    await recordLogin(db, { code, group, phase });
+    // 3) Bu aşamadaki giriş kaydını oluştur/güncelle (isLogin: giriş sayacı da artar).
+    await recordLogin(db, { code, group, phase, isLogin: true });
 
     return res.status(200).json({ code, group, phase });
   } catch (err) {

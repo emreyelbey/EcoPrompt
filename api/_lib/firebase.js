@@ -2,7 +2,7 @@
 // Kimlik bilgisi FIREBASE_SERVICE_ACCOUNT ortam değişkenindeki JSON metninden okunur.
 // Admin SDK güvenlik kurallarını atlar; bu yüzden bu dosya asla tarayıcıya gitmez.
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue, FieldPath, Timestamp } from 'firebase-admin/firestore';
 
 // Kullanıcıya gösterilecek genel hata. Ayrıntı (ve gizli bilgi) asla dışarı sızmaz.
 const SETUP_ERROR = 'Sunucu veritabanı ayarları eksik veya hatalı.';
@@ -75,4 +75,14 @@ export function serverTimestamp() {
 // Bir sayısal alanı veritabanında atomik olarak artırır.
 export function increment(n) {
   return FieldValue.increment(n);
+}
+
+// Milisaniyeyi Firestore zaman damgasına çevirir (zaman aralığı sorguları için).
+export function timestampFromMillis(ms) {
+  return Timestamp.fromMillis(ms);
+}
+
+// Sorgularda belge kimliğine göre sıralamak için özel alan yolu.
+export function documentIdField() {
+  return FieldPath.documentId();
 }

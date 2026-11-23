@@ -4,15 +4,26 @@
 // /api/admin/session ile sunucuda yeniden doğrulanır.
 // Aktif aşama iki yoldan öğrenilir: canlı dinleyici (hızlı) ve API yanıtları (doğru kaynak).
 // İkisi de applyPhaseReport ile aynı yere yazar; dinleyici hiç çalışmasa da ekran doğru aşamaya geçer.
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import LoginScreen from './components/LoginScreen.jsx';
-import AdminScreen from './components/AdminScreen.jsx';
 import ChatScreen from './components/ChatScreen.jsx';
 import { apiRequest } from './lib/api.js';
 import { applyPhaseReport, getStudentView } from './lib/phases.js';
 import { subscribeToPhase } from './lib/phaseListener.js';
 import { saveStudent, saveAdmin, loadSession, clearSession } from './lib/session.js';
+
+// Yönetici paneli ayrı bir parçada yüklenir: öğrencinin tarayıcısı panel ve grafik kodunu hiç indirmez.
+const AdminScreen = lazy(() => import('./components/admin/AdminScreen.jsx'));
+
+// Yükleniyor ekranı (ilk açılış ve panel parçası inerken).
+function FullScreenLoader() {
+  return (
+    <div className="fixed inset-0 w-full h-full flex items-center justify-center overflow-hidden bg-slate-50 text-slate-500">
+      <Loader2 className="w-6 h-6 animate-spin" aria-label="Yükleniyor" />
+    </div>
+  );
+}
 
 export default function App() {
   const [view, setView] = useState('loading');
@@ -94,20 +105,18 @@ export default function App() {
     setView('admin');
   };
 
-  const handleLogout = () => {
+  // useCallback: yönetici panelinin veri kancası bu fonksiyona bağlı; her çizimde yeniden
+  // oluşursa panel gereksiz yere tam yükleme yapardı.
+  const handleLogout = useCallback(() => {
     clearSession();
     setStudent(null);
     setAdmin(null);
     setLoginHint({ code: '', error: '' });
     setView('login');
-  };
+  }, []);
 
   if (view === 'loading') {
-    return (
-      <div className="fixed inset-0 w-full h-full flex items-center justify-center overflow-hidden bg-slate-50 text-slate-500">
-        <Loader2 className="w-6 h-6 animate-spin" aria-label="Yükleniyor" />
-      </div>
-    );
+    return <FullScreenLoader />;
   }
 
   if (view === 'student' && student) {
@@ -124,7 +133,11 @@ export default function App() {
   }
 
   if (view === 'admin' && admin) {
-    return <AdminScreen token={admin.token} onLogout={handleLogout} />;
+    return (
+      <Suspense fallback={<FullScreenLoader />}>
+        <AdminScreen token={admin.token} onLogout={handleLogout} />
+      </Suspense>
+    );
   }
 
   return (

@@ -131,6 +131,8 @@ describe('/api/chat — başarılı istek', () => {
     fakeDb.docs.set('rateLimits/K003', { lastRequestAt: 0 }); // hız sınırını sıfırla
     await post({ code: 'K003', modelId: 'light', prompt: 'iki' });
     expect(fakeDb.docs.get('logins/K003_pretest').loginCount).toBe(2);
+    // İstemler giriş sayılmaz: giriş sayacı (sessionCount) yalnızca /api/login'de artar.
+    expect(fakeDb.docs.get('logins/K003_pretest').sessionCount).toBe(0);
   });
 
   it('geçmiş yalnızca kendi kodu + aktif aşamadan, eskiden yeniye gelir; örnek kayıtlar hariç', async () => {

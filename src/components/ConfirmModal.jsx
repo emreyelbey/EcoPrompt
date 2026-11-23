@@ -1,8 +1,19 @@
 // Onay penceresi: tarayıcının confirm() kutusu yerine kullanılır (proje rehberi Bölüm 8).
 // Kullanım: <ConfirmModal open title="..." message="..." confirmLabel="..." onConfirm={...} onCancel={...} />
 // Arka plana veya "Vazgeç"e tıklamak pencereyi kapatır.
+// danger: geri alınamaz işlemler (silme) için kırmızı onay butonu. busyLabel: işlem sürerken buton yazısı.
 
-export default function ConfirmModal({ open, title, message, confirmLabel = 'Onayla', busy = false, onConfirm, onCancel }) {
+export default function ConfirmModal({
+  open,
+  title,
+  message,
+  confirmLabel = 'Onayla',
+  busy = false,
+  busyLabel = 'Kaydediliyor…',
+  danger = false,
+  onConfirm,
+  onCancel,
+}) {
   if (!open) return null;
 
   return (
@@ -34,9 +45,11 @@ export default function ConfirmModal({ open, title, message, confirmLabel = 'Ona
             type="button"
             onClick={onConfirm}
             disabled={busy}
-            className="px-3 py-2 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300"
+            className={`px-3 py-2 rounded-xl text-sm font-semibold text-white ${
+              danger ? 'bg-rose-600 hover:bg-rose-700 disabled:bg-rose-300' : 'bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300'
+            }`}
           >
-            {busy ? 'Kaydediliyor…' : confirmLabel}
+            {busy ? busyLabel : confirmLabel}
           </button>
         </div>
       </div>

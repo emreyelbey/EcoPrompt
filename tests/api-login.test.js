@@ -34,17 +34,19 @@ describe('/api/login', () => {
       firstLoginAt: 'SUNUCU_ZAMANI',
       lastLoginAt: 'SUNUCU_ZAMANI',
       loginCount: 1,
+      sessionCount: 1,
     });
     // settings/experiment yokken oluşturulmaz.
     expect(fakeDb.docs.has('settings/experiment')).toBe(false);
   });
 
-  it('aynı kod tekrar girince tek belge kalır, loginCount artar', async () => {
+  it('aynı kod tekrar girince tek belge kalır, loginCount ve sessionCount artar', async () => {
     await post({ code: 'D010' });
     await post({ code: 'D010' });
     await post({ code: 'd010' });
     const doc = fakeDb.docs.get('logins/D010_pretest');
     expect(doc.loginCount).toBe(3);
+    expect(doc.sessionCount).toBe(3);
     expect(doc.group).toBe('Deney');
     expect([...fakeDb.docs.keys()].filter((k) => k.startsWith('logins/'))).toEqual(['logins/D010_pretest']);
   });
