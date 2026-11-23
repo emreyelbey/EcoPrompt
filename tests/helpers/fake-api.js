@@ -42,8 +42,9 @@ export function createFakeDb(initialDocs = {}, { failWritesTo } = {}) {
     return field === '__name__' ? id : data[field];
   }
 
-  // Sorgu zincirini taklit eder: where ('==', '>='), orderBy (artan), startAfter, select, limit, count.
-  // Zaman damgaları testlerde düz sayıdır.
+  // Sorgu zincirini taklit eder: where ('==', '>='), orderBy (artan veya 'desc' ile azalan),
+  // startAfter, select, limit, count. Zaman damgaları testlerde düz sayıdır.
+  // state.orders: [{ field, dir }] ; dir = 1 (artan) veya -1 (azalan).
   function query(name, state = { filters: [], orders: [], after: null, fields: null, max: null }) {
     const next = (change) => query(name, { ...state, ...change });
     async function run() {
@@ -57,14 +58,14 @@ export function createFakeDb(initialDocs = {}, { failWritesTo } = {}) {
           return v === f.value;
         });
         // Firestore'da orderBy edilen alanı olmayan belge sonuçta yer almaz.
-        if (ok && state.orders.every((o) => fieldValue(id, data, o) !== undefined)) result.push({ id, path, data });
+        if (ok && state.orders.every((o) => fieldValue(id, data, o.field) !== undefined)) result.push({ id, path, data });
       }
       const compare = (a, b) => {
         for (const o of state.orders) {
-          const x = fieldValue(a.id, a.data, o);
-          const y = fieldValue(b.id, b.data, o);
-          if (x < y) return -1;
-          if (x > y) return 1;
+          const x = fieldValue(a.id, a.data, o.field);
+          const y = fieldValue(b.id, b.data, o.field);
+          if (x < y) return -o.dir;
+          if (x > y) return o.dir;
         }
         return 0;
       };
@@ -72,8 +73,8 @@ export function createFakeDb(initialDocs = {}, { failWritesTo } = {}) {
       if (state.after) {
         const cursor = { id: null, data: {} };
         state.orders.forEach((o, i) => {
-          if (o === '__name__') cursor.id = state.after[i];
-          else cursor.data[o] = state.after[i];
+          if (o.field === '__name__') cursor.id = state.after[i];
+          else cursor.data[o.field] = state.after[i];
         });
         result = result.filter((r) => compare(r, cursor) > 0);
       }
@@ -82,7 +83,8 @@ export function createFakeDb(initialDocs = {}, { failWritesTo } = {}) {
     }
     return {
       where: (field, op, value) => next({ filters: [...state.filters, { field, op, value }] }),
-      orderBy: (field) => next({ orders: [...state.orders, field] }),
+      orderBy: (field, direction = 'asc') =>
+        next({ orders: [...state.orders, { field, dir: direction === 'desc' ? -1 : 1 }] }),
       startAfter: (...values) => next({ after: values }),
       select: (...fields) => next({ fields }),
       limit: (n) => next({ max: n }),
@@ -94,7 +96,8 @@ export function createFakeDb(initialDocs = {}, { failWritesTo } = {}) {
       }),
       async get() {
         const all = await run();
-        selectCalls.push({ collection: name, fields: state.fields });
+        // returned: sorgunun döndürdüğü belge sayısı (Firestore'da okuma sayısı); testler okuma kotasını denetler.
+        selectCalls.push({ collection: name, fields: state.fields, limit: state.max, returned: all.length });
         return {
           docs: all.map((r) => ({
             id: r.id,
@@ -115,7 +118,7 @@ export function createFakeDb(initialDocs = {}, { failWritesTo } = {}) {
 
   return {
     docs,
-    selectCalls, // Hangi sorguda hangi alanların istendiği (testler response/engineVersion okunmadığını denetler)
+    selectCalls, // Her sorgunun alanları, limiti ve döndürdüğü belge sayısı (testler okunan alanları ve okuma sayısını denetler)
     collection(name) {
       const base = query(name);
       return {

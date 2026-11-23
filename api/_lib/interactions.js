@@ -12,7 +12,9 @@ function toMillis(value) {
 }
 
 /**
- * Bir kodun belirli bir aşamadaki gerçek (örnek olmayan) kayıtlarını eskiden yeniye döner.
+ * Bir kodun belirli bir aşamadaki gerçek (örnek olmayan) kayıtlarının HEPSİNİ eskiden yeniye döner.
+ * Ekrandaki mesaj geçmişi (/api/messages) için kullanılır; geçmiş kısaltılmaz.
+ * Sayfa yüklenince bir kez çağrılır (her istemde değil).
  * Sorguda yalnızca iki eşitlik filtresi var; Firestore bunun için ek indeks istemez.
  * Sıralama bellekte yapılır (bir öğrencinin bir aşamadaki kayıt sayısı küçüktür).
  * @returns {Promise<{ id: string, data: object }[]>}
@@ -27,11 +29,30 @@ export async function getOwnInteractions(db, code, phase) {
 }
 
 /**
- * Yapay zekaya bağlam olarak verilecek son HISTORY_LIMIT etkileşim (yalnızca istem ve yanıt).
+ * Yapay zekaya bağlam olarak verilecek son HISTORY_LIMIT etkileşim (yalnızca istem ve yanıt), eskiden yeniye.
+ * Her istemde çağrılır. Firestore her dönen belgeyi bir okuma sayar (Spark: günlük 50.000),
+ * bu yüzden bütün kayıtlar değil yalnızca son HISTORY_LIMIT kayıt okunur:
+ * en yeniden eskiye sıralayıp ilk 12'yi alır, sonra sırayı ters çeviririz.
+ * Bu sorgu konsolda tanımlı bileşik indeksi gerektirir (firestore.indexes.json):
+ *   code ↑, phase ↑, isSample ↑, createdAt ↓
+ * isSample filtresi sorgudadır; böylece örnek kayıtlar araya girse bile bağlam 12 gerçek kayıttır.
  */
 export async function getHistory(db, code, phase) {
-  const all = await getOwnInteractions(db, code, phase);
-  return all.slice(-HISTORY_LIMIT).map(({ data }) => ({ prompt: data.prompt, response: data.response }));
+  const snap = await db
+    .collection('interactions')
+    .where('code', '==', code)
+    .where('phase', '==', phase)
+    .where('isSample', '==', false)
+    .orderBy('createdAt', 'desc') // En yeni kayıt en başta
+    .limit(HISTORY_LIMIT)
+    .select('prompt', 'response') // Okuma sayısını değiştirmez; yalnızca gereken alanlar gelir
+    .get();
+
+  // Sorgu en yeniden eskiye döner; yapay zekaya eskiden yeniye verilmeli.
+  return snap.docs
+    .map((doc) => doc.data())
+    .reverse()
+    .map((data) => ({ prompt: data.prompt, response: data.response }));
 }
 
 /**

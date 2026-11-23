@@ -137,10 +137,10 @@ describe('/api/chat — başarılı istek', () => {
 
   it('geçmiş yalnızca kendi kodu + aktif aşamadan, eskiden yeniye gelir; örnek kayıtlar hariç', async () => {
     fakeDb = createFakeDb({
-      'interactions/a': { code: 'K004', phase: 'pretest', prompt: 'ikinci', response: 'y2', createdAt: 200 },
-      'interactions/b': { code: 'K004', phase: 'pretest', prompt: 'birinci', response: 'y1', createdAt: 100 },
-      'interactions/c': { code: 'K004', phase: 'posttest', prompt: 'başka aşama', response: 'x', createdAt: 50 },
-      'interactions/d': { code: 'K005', phase: 'pretest', prompt: 'başka öğrenci', response: 'x', createdAt: 50 },
+      'interactions/a': { code: 'K004', phase: 'pretest', prompt: 'ikinci', response: 'y2', createdAt: 200, isSample: false },
+      'interactions/b': { code: 'K004', phase: 'pretest', prompt: 'birinci', response: 'y1', createdAt: 100, isSample: false },
+      'interactions/c': { code: 'K004', phase: 'posttest', prompt: 'başka aşama', response: 'x', createdAt: 50, isSample: false },
+      'interactions/d': { code: 'K005', phase: 'pretest', prompt: 'başka öğrenci', response: 'x', createdAt: 50, isSample: false },
       'interactions/e': { code: 'K004', phase: 'pretest', prompt: 'örnek', response: 'x', createdAt: 10, isSample: true },
     });
     await post({ code: 'K004', modelId: 'light', prompt: 'üçüncü' });
@@ -157,7 +157,14 @@ describe('/api/chat — başarılı istek', () => {
   it('geçmiş en fazla son 12 etkileşimdir', async () => {
     const initial = {};
     for (let i = 1; i <= 15; i++) {
-      initial[`interactions/m${i}`] = { code: 'K006', phase: 'pretest', prompt: `s${i}`, response: `c${i}`, createdAt: i };
+      initial[`interactions/m${i}`] = {
+        code: 'K006',
+        phase: 'pretest',
+        prompt: `s${i}`,
+        response: `c${i}`,
+        createdAt: i,
+        isSample: false,
+      };
     }
     fakeDb = createFakeDb(initial);
     await post({ code: 'K006', modelId: 'light', prompt: 'yeni' });
@@ -165,6 +172,63 @@ describe('/api/chat — başarılı istek', () => {
     expect(history).toHaveLength(12);
     expect(history[0].prompt).toBe('s4');
     expect(history[11].prompt).toBe('s15');
+  });
+});
+
+// OKUMA KOTASI: geçmiş sorgusu her istemde yalnızca son 12 kaydı okumalı (Spark: günlük 50.000 okuma).
+describe('/api/chat — geçmiş okuma kotası', () => {
+  // Bir kod için n gerçek kayıt (createdAt = 1..n).
+  function records(code, n, extra = {}) {
+    const result = {};
+    for (let i = 1; i <= n; i++) {
+      result[`interactions/${code}_${i}`] = {
+        code,
+        phase: 'pretest',
+        prompt: `s${i}`,
+        response: `c${i}`,
+        createdAt: i,
+        isSample: false,
+        ...extra,
+      };
+    }
+    return result;
+  }
+
+  // interactions koleksiyonuna yapılan sorgu kayıtları (geçmiş sorgusu).
+  function interactionQueries() {
+    return fakeDb.selectCalls.filter((c) => c.collection === 'interactions');
+  }
+
+  it('30 kayıt varken geçmiş sorgusu limit 12 ile çalışır ve yalnızca 12 belge okur', async () => {
+    fakeDb = createFakeDb(records('K007', 30));
+    await post({ code: 'K007', modelId: 'light', prompt: 'yeni' });
+    const queries = interactionQueries();
+    expect(queries).toHaveLength(1);
+    expect(queries[0].limit).toBe(12);
+    expect(queries[0].returned).toBe(12);
+    // Yalnızca istem ve yanıt alanları istenir.
+    expect(queries[0].fields).toEqual(['prompt', 'response']);
+    const { history } = generateReply.mock.calls[0][0];
+    expect(history.map((h) => h.prompt)).toEqual(Array.from({ length: 12 }, (_, i) => `s${i + 19}`));
+  });
+
+  it('örnek kayıtlar en yeni kayıtlar olsa bile bağlam 12 gerçek kayıttır', async () => {
+    fakeDb = createFakeDb({
+      ...records('K008', 15),
+      'interactions/ornek1': { code: 'K008', phase: 'pretest', prompt: 'örnek', response: 'x', createdAt: 100, isSample: true },
+      'interactions/ornek2': { code: 'K008', phase: 'pretest', prompt: 'örnek', response: 'x', createdAt: 101, isSample: true },
+    });
+    await post({ code: 'K008', modelId: 'light', prompt: 'yeni' });
+    const { history } = generateReply.mock.calls[0][0];
+    expect(history).toHaveLength(12);
+    expect(history.every((h) => h.prompt !== 'örnek')).toBe(true);
+    expect(history[0].prompt).toBe('s4');
+    expect(history[11].prompt).toBe('s15');
+  });
+
+  it('hiç kayıt yokken geçmiş boş dizidir', async () => {
+    await post({ code: 'K009', modelId: 'light', prompt: 'ilk soru' });
+    expect(generateReply.mock.calls[0][0].history).toEqual([]);
   });
 });
 

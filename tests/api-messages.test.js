@@ -153,6 +153,19 @@ describe('/api/messages', () => {
     for (const word of ['costUsd', 'weightedTokens', 'engineVersion', 'motor-surum-9']) expect(json).not.toContain(word);
   });
 
+  // Okuma kotası düzeltmesi yalnızca modele giden bağlamı (son 12) sınırlar; ekrandaki geçmiş kısalmaz.
+  it('15 kayıt varken ekran geçmişi 15 mesajın hepsini eskiden yeniye döner', async () => {
+    const initial = {};
+    for (let i = 1; i <= 15; i++) {
+      initial[`interactions/m${i}`] = { ...fullRecord, prompt: `s${i}`, createdAt: i };
+    }
+    fakeDb = createFakeDb(initial);
+    const res = await post({ code: 'D003' });
+    expect(res.body.messages).toHaveLength(15);
+    expect(res.body.messages[0].prompt).toBe('s1');
+    expect(res.body.messages[14].prompt).toBe('s15');
+  });
+
   it('geçersiz kod 400', async () => {
     const res = await post({ code: 'A1' });
     expect(res.statusCode).toBe(400);
