@@ -166,6 +166,53 @@ describe('/api/chat — başarılı istek', () => {
   });
 });
 
+// KÖR DENEY: çevresel alanlar yalnızca Deney grubu + Son Test yanıtına eklenir.
+// Bu alanlardan herhangi birinin adı sade yanıtta geçmemeli.
+const ECO_WORDS = ['eco', 'energy', 'water', 'co2', 'savingsPct', 'inputTokens', 'outputTokens', 'tokenSource'];
+// Hiçbir görünümde tarayıcıya çıkmaması gerekenler.
+const NEVER_WORDS = ['costUsd', 'weightedTokens', 'engineVersion', 'motor-surum-1'];
+
+describe('/api/chat — kör deney: çevresel alanlar', () => {
+  it.each([
+    ['Kontrol grubu, Ön Test', 'K020', 'pretest'],
+    ['Kontrol grubu, Son Test', 'K021', 'posttest'],
+    ['Deney grubu, Ön Test', 'D020', 'pretest'],
+  ])('%s → sade yanıt, çevresel alan yok', async (_ad, code, phase) => {
+    fakeDb = createFakeDb({ 'settings/experiment': { activePhase: phase } });
+    const res = await post({ code, modelId: 'reasoning', prompt: 'merhaba' });
+    expect(res.statusCode).toBe(200);
+    expect(Object.keys(res.body.message).sort()).toEqual(['createdAt', 'id', 'modelId', 'prompt', 'response']);
+    const json = JSON.stringify(res.body);
+    for (const word of [...ECO_WORDS, ...NEVER_WORDS]) expect(json).not.toContain(word);
+  });
+
+  it('Deney grubu, Son Test → eco alanı var ve değerler calculateFootprint ile aynı', async () => {
+    const { calculateFootprint } = await import('../src/lib/footprint.js');
+    fakeDb = createFakeDb({ 'settings/experiment': { activePhase: 'posttest' } });
+    const res = await post({ code: 'D021', modelId: 'standard', prompt: 'merhaba' });
+    expect(res.statusCode).toBe(200);
+
+    const fp = calculateFootprint(120, 80, 'standard'); // okReply: girdi 120, çıktı 30 + 50
+    expect(res.body.message.eco).toEqual({
+      inputTokens: 120,
+      outputTokens: 80,
+      tokenSource: 'gerçek',
+      energyMin: fp.energyMin,
+      energyAvg: fp.energyAvg,
+      energyMax: fp.energyMax,
+      waterMin: fp.waterMin,
+      waterAvg: fp.waterAvg,
+      waterMax: fp.waterMax,
+      co2Min: fp.co2Min,
+      co2Avg: fp.co2Avg,
+      co2Max: fp.co2Max,
+      savingsPct: fp.savingsPct,
+    });
+    const json = JSON.stringify(res.body);
+    for (const word of NEVER_WORDS) expect(json).not.toContain(word);
+  });
+});
+
 describe('/api/chat — hız sınırı, hatalar ve süre', () => {
   it('3 saniye içinde ikinci istek 429 alır ve yapay zekaya gitmez', async () => {
     await post({ code: 'K010', modelId: 'light', prompt: 'bir' });

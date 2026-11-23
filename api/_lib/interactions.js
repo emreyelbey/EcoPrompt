@@ -47,8 +47,9 @@ export async function saveInteraction(db, record) {
 /**
  * Tarayıcıya gönderilecek mesaj. YALNIZCA bu alanlar çıkar:
  *   id, modelId, prompt, response, createdAt
- * Çevresel ölçümler (kör deney) ve engineVersion (gerçek model sürümü; marka yasağı)
- * tarayıcıya ASLA gitmez. Yeni alan eklemek bilinçli bir karar olmalı; test bunu denetler.
+ * Sade görünümde (Kontrol grubu ve Ön Test'teki Deney grubu) çevresel ölçümler tarayıcıya ASLA gitmez
+ * (kör deney). engineVersion (gerçek model sürümü; marka yasağı) hiçbir görünümde gitmez.
+ * Yeni alan eklemek bilinçli bir karar olmalı; test bunu denetler.
  */
 export function toClientMessage(id, data, createdAtMs) {
   const ms = createdAtMs ?? toMillis(data.createdAt);
@@ -59,4 +60,47 @@ export function toClientMessage(id, data, createdAtMs) {
     response: data.response,
     createdAt: ms ? new Date(ms).toISOString() : null,
   };
+}
+
+/**
+ * EkoToken görünümündeki öğrenciye (YALNIZCA Deney grubu + Son Test) eklenen çevresel alanlar.
+ * Açık liste: burada olmayan hiçbir alan tarayıcıya çıkmaz.
+ * Bilerek dışarıda bırakılanlar: costUsd (gerçek fatura değil, öğrenciye gösterilmiyor),
+ * weightedTokens, engineVersion (marka yasağı), code, group, phase, isSample.
+ */
+export const ECO_CLIENT_FIELDS = [
+  'inputTokens',
+  'outputTokens',
+  'tokenSource',
+  'energyMin',
+  'energyAvg',
+  'energyMax',
+  'waterMin',
+  'waterAvg',
+  'waterMax',
+  'co2Min',
+  'co2Avg',
+  'co2Max',
+  'savingsPct',
+];
+
+/**
+ * EkoToken görünümü için mesaj: sade mesaj + `eco` nesnesi (yalnızca ECO_CLIENT_FIELDS).
+ */
+export function toEcoClientMessage(id, data, createdAtMs) {
+  const eco = {};
+  for (const field of ECO_CLIENT_FIELDS) {
+    eco[field] = data[field] ?? null; // Eksik alan null olur; tarayıcı bunu güvenle gösterir.
+  }
+  return { ...toClientMessage(id, data, createdAtMs), eco };
+}
+
+/**
+ * Uç noktaların kullandığı tek giriş: görünüme göre mesaj biçimini seçer.
+ * view, sunucuda getStudentView(grup, aşama) ile hesaplanır; tarayıcıdan gelmez.
+ *   'ekotoken' → çevresel alanlarla, diğer her durum → sade.
+ */
+export function toStudentMessage(id, data, view, createdAtMs) {
+  if (view === 'ekotoken') return toEcoClientMessage(id, data, createdAtMs);
+  return toClientMessage(id, data, createdAtMs);
 }

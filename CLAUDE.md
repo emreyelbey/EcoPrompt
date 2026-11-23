@@ -48,7 +48,8 @@ Tarayıcı (React)  ──HTTP──>  Vercel sunucu fonksiyonları (/api/*)  �
 - Sunucu: Vercel Serverless Functions (`/api`), `firebase-admin`
 - Veritabanı: Firebase Firestore (ücretsiz Spark planı)
 - Yapay zeka: Google AI Studio (Gemini API) ücretsiz kota
-- Test: Vitest
+- Test: Vitest (+ ekran testleri için `jsdom` ve `@testing-library/react`; bu dosyalar başına `// @vitest-environment jsdom` yazar)
+- Grafikler: `recharts`. Kişisel Rapor `React.lazy` ile ayrı parçada yüklenir; sade ekran bu kodu indirmez.
 
 ### Ortam değişkenleri (asla koda veya git'e yazılmaz)
 | Değişken | Nerede | Açıklama |
@@ -124,6 +125,8 @@ energyMin/Avg/Max, waterMin/Avg/Max, co2Min/Avg/Max, costUsd, savingsPct,
 isSample (boolean), engineVersion, createdAt (sunucu zamanı)
 ```
 - **`engineVersion`:** Yapay zeka yanıtındaki gerçek model sürümü (`modelVersion`). Yanıtta yoksa `null` olur. Tekrarlanabilirlik için yalnızca veritabanında tutulur. Marka yasağı gereği bu alan **Excel'e, CSV'ye ve tarayıcıya giden yanıtlara ASLA girmez.** Tarayıcıya giden mesaj alanları `api/_lib/interactions.js` → `toClientMessage` ile sınırlıdır (`id, modelId, prompt, response, createdAt`). `tests/api-messages.test.js` ve `tests/api-chat.test.js` bunu denetler. Dilim 6–7'de CSV ve Excel sütunları da bu alanı dışarıda bırakmalıdır.
+- **Öğrenciye giden çevresel alanlar (Dilim 5):** Uç noktalar mesajı `toStudentMessage(id, data, view)` ile döner; `view` sunucuda `getStudentView(grup, aşama)` ile hesaplanır. Yalnızca `'ekotoken'` (Deney + Son Test) görünümünde mesaja `eco` nesnesi eklenir (`toEcoClientMessage`); içeriği açık listedir (`ECO_CLIENT_FIELDS`: `inputTokens, outputTokens, tokenSource, energy*, water*, co2*, savingsPct`). **`costUsd`, `weightedTokens` ve `engineVersion` hiçbir görünümde tarayıcıya çıkmaz.** Kontrol grubunun ve Ön Test'teki Deney grubunun yanıtında `eco` yoktur; `tests/api-chat.test.js`, `tests/api-messages.test.js` ve `tests/chat-ekran.test.jsx` denetler.
+- **Metodoloji penceresi** deney desenini (Kontrol grubunun ne gördüğünü) anlatmaz (kör deney; 23.11.2026 kararı). Sayılar `footprint.js` sabitlerinden üretilir, kaynakça `src/lib/methodology.js`'tedir.
 `settings/experiment`: `{ activePhase: 'pretest' | 'posttest', updatedAt }` — yalnızca `/api/admin/phase` (POST, yönetici token'ı) yazar; `updatedAt` sunucu saatidir. Tarayıcı `src/lib/phaseListener.js` ile salt okunur dinler. Güvenlik kuralları repoda `firestore.rules` dosyasındadır ve Firebase konsolundan elle yayınlanır.
 - **Aşama değişince öğrenci ekranı:** aşama adı (Ön Test / Son Test) öğrenci ekranında HİÇ yazmaz (kör deney). Ekran açıkken aşama değişirse eski mesajlar kalkar, yalnızca nötr bir not çıkar ("Yeni oturum başladı. Önceki mesajlar bu ekranda gösterilmiyor.") ve yeni aşamanın mesajları `/api/messages` ile yüklenir (bu çağrı `recordLogin` ile öğrenciyi yeni aşamada giriş yapmış sayar).
 `rateLimits/{code}`: `{ lastRequestAt }` (sunucu saati, milisaniye cinsinden sayı)
@@ -159,7 +162,7 @@ isSample (boolean), engineVersion, createdAt (sunucu zamanı)
 | 2 | Giriş ekranı + `/api/login` (kod doğrulama) + yönetici girişi |
 | 3 | Sade sohbet ekranı + `/api/chat` (gerçek model eşlemesi, hız sınırı, kayıt) |
 | 4 | Aktif aşama: `settings/experiment` + yönetici anahtarı + gerçek zamanlı dinleme |
-| 5 | EkoToken arayüzü: rozetler, günlük karşılık, tasarruf ipucu, kişisel rapor, metodoloji |
+| 5 | EkoToken arayüzü: rozetler, günlük karşılık, tasarruf ipucu, kişisel rapor, metodoloji ✅ (23.11.2026) |
 | 6 | Yönetici paneli: genel bakış, kayıtlar (+CSV), katılımcı kodları |
 | 7 | Mini SPSS sekmesi + 4 sayfalı Excel |
 | 8 | Örnek veri, Markdown/KaTeX cilası, mobil uyum, UAT hazırlığı |

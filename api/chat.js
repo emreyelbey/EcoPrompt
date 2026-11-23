@@ -7,7 +7,8 @@ import { getDb, serverTimestamp } from './_lib/firebase.js';
 import { getActivePhase } from './_lib/phase.js';
 import { recordLogin } from './_lib/logins.js';
 import { claimRateSlot } from './_lib/rateLimit.js';
-import { getHistory, saveInteraction, toClientMessage } from './_lib/interactions.js';
+import { getHistory, saveInteraction, toStudentMessage } from './_lib/interactions.js';
+import { getStudentView } from '../src/lib/phases.js';
 import { generateReply, AiError } from './_lib/ai.js';
 import { allowMethod, readBody, sendError } from './_lib/http.js';
 import { normalizeCode, isValidCode, getGroup } from '../src/lib/participants.js';
@@ -107,5 +108,8 @@ export default async function handler(req, res) {
 
   // `phase`: kaydın yazıldığı aşama. Tarayıcı bunu ekrandaki aşamayla karşılaştırır; farklıysa
   // mesajı eklemez ve geçmişi yeniden yükler (canlı dinleyici engellense bile ekran doğru aşamaya geçer).
-  return res.status(200).json({ message: toClientMessage(id, record, Date.now()), phase });
+  // Çevresel alanlar yalnızca EkoToken görünümüne (Deney + Son Test) eklenir; grup koddan,
+  // aşama veritabanından gelir. Kontrol grubunun ve Ön Test'in yanıtında bu alanlar yoktur.
+  const view = getStudentView(group, phase);
+  return res.status(200).json({ message: toStudentMessage(id, record, view, Date.now()), phase });
 }

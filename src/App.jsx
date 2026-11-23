@@ -112,11 +112,11 @@ export default function App() {
 
   if (view === 'student' && student) {
     const studentView = getStudentView(student.group, student.phase);
-    // DİLİM 5: studentView === 'ekotoken' (Deney + Son Test) olduğunda EkoToken arayüzü gösterilecek.
-    // Şimdilik iki durumda da sade sohbet ekranı açılır; aşama bilgisinin doğru aktığı testlerle doğrulanır.
+    // 'ekotoken' (yalnızca Deney + Son Test) → EkoToken arayüzü; diğer üç durumda sade ekran.
     return (
       <ChatScreen
         student={student}
+        view={studentView}
         onServerPhase={handlePhaseReport}
         onLogout={handleLogout}
       />

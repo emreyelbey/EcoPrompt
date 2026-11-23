@@ -1,18 +1,43 @@
-// Sade sohbet ekranı: "Eğitim Asistanı". Ön Testte iki grup da, Son Testte Kontrol grubu bunu görür.
-// ÇEVRESEL GÖSTERGE YOKTUR: enerji, su, CO₂, maliyet veya tasarruf bilgisi bu ekranda geçmez
-// (sunucu da bu verileri tarayıcıya göndermez).
+// Öğrenci sohbet ekranı. İki görünümü vardır (view, App.jsx'te getStudentView ile belirlenir):
+// - 'sade': "Eğitim Asistanı". Ön Testte iki grup da, Son Testte Kontrol grubu bunu görür.
+//   ÇEVRESEL GÖSTERGE YOKTUR (sunucu da bu verileri tarayıcıya göndermez).
+// - 'ekotoken': yalnızca Deney grubu + Son Test. Üstte özet şeridi, yanıt altında rozetler ve
+//   tasarruf ipucu, üst çubukta Kişisel Rapor ve Metodoloji pencereleri. Veriler, sunucunun yalnızca
+//   bu görünümde eklediği `eco` alanından gelir.
+// Gönderme ve aşama güvencesi mantığı iki görünümde ortaktır (kopyalanmaz).
 // Düzen kuralları (proje rehberi Bölüm 8): tam ekran kilitli yerleşim, yalnızca mesaj listesi kayar,
 // kaydırma yalnızca container.scrollTo ile yapılır (scrollIntoView YOK), model seçici grid-cols-3.
 // Aşama (Ön Test / Son Test) bu ekranda HİÇ YAZMAZ (kör deney). Aşama değişince yalnızca nötr bir
 // "Yeni oturum başladı" notu çıkar ve yeni aşamanın mesajları yüklenir.
 // Sunucu doğru kaynaktır: /api/messages yanıtındaki aşama onServerPhase ile üst bileşene bildirilir;
 // /api/chat yanıtındaki aşama ekrandakinden farklıysa geçmiş yeniden yüklenir.
-import { useEffect, useRef, useState } from 'react';
-import { GraduationCap, LogOut, Send, RefreshCw, AlertCircle, X, Sparkles, Loader2, Info } from 'lucide-react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  GraduationCap,
+  LogOut,
+  Send,
+  RefreshCw,
+  AlertCircle,
+  X,
+  Sparkles,
+  Loader2,
+  Info,
+  Leaf,
+  PieChart as PieChartIcon,
+  BookOpen,
+} from 'lucide-react';
 import RichMessage from './RichMessage.jsx';
+import EcoSummaryBar from './eko/EcoSummaryBar.jsx';
+import EcoImpactFooter from './eko/EcoImpactFooter.jsx';
+import { summarizeSession } from '../lib/ecoSummary.js';
 import { apiRequest } from '../lib/api.js';
 import { MODEL_ORDER, MODEL_SCALES } from '../lib/footprint.js';
 import { chatResponseAction } from '../lib/phases.js';
+
+// Pencereler ihtiyaç anında yüklenir: grafik kütüphanesi ayrı bir parçaya düşer ve
+// sade ekrandaki öğrencinin tarayıcısı bu kodu hiç indirmez.
+const PersonalReportModal = lazy(() => import('./eko/PersonalReportModal.jsx'));
+const MethodologyModal = lazy(() => import('./eko/MethodologyModal.jsx'));
 
 // Sunucudaki sınırlarla aynı değerler (asıl kontrol sunucuda yapılır).
 const MAX_PROMPT_LENGTH = 4000;
@@ -31,7 +56,8 @@ function formatTime(iso) {
   return new Date(iso).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 }
 
-export default function ChatScreen({ student, onServerPhase, onLogout }) {
+export default function ChatScreen({ student, view = 'sade', onServerPhase, onLogout }) {
+  const isEco = view === 'ekotoken';
   const [messages, setMessages] = useState([]); // Sunucudan gelen, kaydı yazılmış mesajlar
   const [historyState, setHistoryState] = useState('loading'); // 'loading' | 'ready' | hata metni
   const [selectedModel, setSelectedModel] = useState('standard');
@@ -41,6 +67,11 @@ export default function ChatScreen({ student, onServerPhase, onLogout }) {
   const [error, setError] = useState(''); // Son gönderimin hata mesajı
   const [cooldown, setCooldown] = useState(false); // İki gönderim arası 3 sn bekleme
   const [sessionNote, setSessionNote] = useState(false); // Nötr "Yeni oturum başladı" notu
+  const [reportOpen, setReportOpen] = useState(false); // Kişisel Rapor penceresi (yalnız EkoToken)
+  const [methodologyOpen, setMethodologyOpen] = useState(false); // Metodoloji penceresi (yalnız EkoToken)
+
+  // EkoToken özeti: yalnızca `eco` alanı olan mesajlardan hesaplanır (sade görünümde gösterilmez).
+  const ecoSummary = useMemo(() => summarizeSession(messages), [messages]);
 
   const containerRef = useRef(null);
   // Ekranda mesajları gösterilen aşama (son başarılı /api/messages yanıtından). İlk açılışta null.
@@ -157,19 +188,55 @@ export default function ChatScreen({ student, onServerPhase, onLogout }) {
         <div className="max-w-5xl mx-auto px-3 sm:px-5 py-2.5 flex flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-indigo-600 text-white">
-                <GraduationCap className="w-5 h-5" />
+              <div
+                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-white ${
+                  isEco ? 'bg-emerald-600' : 'bg-indigo-600'
+                }`}
+              >
+                {isEco ? <Leaf className="w-5 h-5" /> : <GraduationCap className="w-5 h-5" />}
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <h1 className="text-sm sm:text-base font-bold text-slate-900 truncate">Eğitim Asistanı</h1>
-                  <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700">
+                  {/* Not: sekme başlığı her görünümde "Eğitim Asistanı" kalır (kör deney). */}
+                  <h1 className="text-sm sm:text-base font-bold text-slate-900 truncate">
+                    {isEco ? 'EkoToken' : 'Eğitim Asistanı'}
+                  </h1>
+                  <span
+                    className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${
+                      isEco ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'
+                    }`}
+                  >
                     {student.code}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-500 truncate hidden sm:block">Ders ve araştırma destek sohbet arayüzü</p>
+                <p className="text-[11px] text-slate-500 truncate hidden sm:block">
+                  {isEco ? 'Yapay zeka çevresel ayak izi farkındalık asistanı' : 'Ders ve araştırma destek sohbet arayüzü'}
+                </p>
               </div>
             </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              {isEco && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setReportOpen(true)}
+                    aria-label="Kişisel Rapor"
+                    className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors"
+                  >
+                    <PieChartIcon className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Kişisel Rapor</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMethodologyOpen(true)}
+                    aria-label="Metodoloji"
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors"
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    <span className="hidden md:inline">Metodoloji</span>
+                  </button>
+                </>
+              )}
             <button
               type="button"
               onClick={onLogout}
@@ -178,6 +245,7 @@ export default function ChatScreen({ student, onServerPhase, onLogout }) {
               <LogOut className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Çıkış</span>
             </button>
+            </div>
           </div>
 
           {/* Model seçici: mobilde de sağdan taşmayan 3 eşit sütun */}
@@ -191,7 +259,11 @@ export default function ChatScreen({ student, onServerPhase, onLogout }) {
                   onClick={() => setSelectedModel(id)}
                   aria-pressed={active}
                   className={`py-1.5 px-1.5 sm:px-3 rounded-lg text-center transition-all text-[11px] sm:text-xs font-semibold truncate ${
-                    active ? 'bg-white text-indigo-700 shadow-xs ring-1 ring-indigo-200' : 'text-slate-600 hover:text-slate-900'
+                    !active
+                      ? 'text-slate-600 hover:text-slate-900'
+                      : isEco
+                        ? 'bg-white text-emerald-800 shadow-xs ring-1 ring-emerald-300'
+                        : 'bg-white text-indigo-700 shadow-xs ring-1 ring-indigo-200'
                   }`}
                 >
                   <span className="sm:hidden">{MODEL_LABELS[id].short}</span>
@@ -201,6 +273,9 @@ export default function ChatScreen({ student, onServerPhase, onLogout }) {
             })}
           </div>
         </div>
+
+        {/* EkoToken canlı özet şeridi (yalnızca Deney + Son Test) */}
+        {isEco && <EcoSummaryBar summary={ecoSummary} />}
       </header>
 
       {/* KAYAN MESAJ LİSTESİ */}
@@ -259,6 +334,8 @@ export default function ChatScreen({ student, onServerPhase, onLogout }) {
                     <span className="text-[11px] text-slate-400">{formatTime(item.createdAt)}</span>
                   </div>
                   <RichMessage content={item.response} showCopyButton />
+                  {/* Rozetler yalnızca EkoToken görünümünde ve sunucu eco alanını gönderdiyse */}
+                  {isEco && item.eco && <EcoImpactFooter eco={item.eco} />}
                 </div>
               </div>
             </div>
@@ -317,6 +394,21 @@ export default function ChatScreen({ student, onServerPhase, onLogout }) {
           </div>
         </form>
       </footer>
+
+      {/* EkoToken pencereleri: yalnızca açıldıklarında yüklenir */}
+      {isEco && (reportOpen || methodologyOpen) && (
+        <Suspense fallback={null}>
+          {reportOpen && (
+            <PersonalReportModal
+              open
+              onClose={() => setReportOpen(false)}
+              summary={ecoSummary}
+              participantCode={student.code}
+            />
+          )}
+          {methodologyOpen && <MethodologyModal open onClose={() => setMethodologyOpen(false)} />}
+        </Suspense>
+      )}
     </div>
   );
 }

@@ -6,7 +6,8 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   test: {
-    // Testlerimiz saf fonksiyonlar ve dosya taramaları; tarayıcı ortamı gerekmez.
+    // Varsayılan ortam Node'dur (saf fonksiyonlar, sunucu uç noktaları, dosya taramaları).
+    // Ekran testleri dosyanın başına `// @vitest-environment jsdom` yazarak tarayıcı ortamı ister.
     environment: 'node',
   },
 });

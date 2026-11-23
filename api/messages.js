@@ -4,9 +4,10 @@
 import { getDb } from './_lib/firebase.js';
 import { getActivePhase } from './_lib/phase.js';
 import { recordLogin } from './_lib/logins.js';
-import { getOwnInteractions, toClientMessage } from './_lib/interactions.js';
+import { getOwnInteractions, toStudentMessage } from './_lib/interactions.js';
 import { allowMethod, readBody, sendError } from './_lib/http.js';
 import { normalizeCode, isValidCode, getGroup } from '../src/lib/participants.js';
+import { getStudentView } from '../src/lib/phases.js';
 
 export default async function handler(req, res) {
   if (!allowMethod(req, res, 'POST')) return;
@@ -22,8 +23,10 @@ export default async function handler(req, res) {
     const phase = await getActivePhase(db);
     await recordLogin(db, { code, group, phase });
 
+    // Çevresel alanlar yalnızca EkoToken görünümüne (Deney + Son Test) eklenir.
+    const view = getStudentView(group, phase);
     const items = await getOwnInteractions(db, code, phase);
-    const messages = items.map(({ id, data }) => toClientMessage(id, data));
+    const messages = items.map(({ id, data }) => toStudentMessage(id, data, view));
     return res.status(200).json({ phase, messages });
   } catch (err) {
     console.error('Mesaj geçmişi hatası:', err.message);
