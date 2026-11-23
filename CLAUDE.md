@@ -21,6 +21,7 @@ Kapsam: Şartnamedeki **tüm** özellikler yapılacak. Hiçbir özellik kesilmey
 2. **Yalnızca 3 ölçek sınıfı:** `light` = Hafif Model, `standard` = Standart Model, `reasoning` = Akıl Yürütme Modeli.
 3. **Dil:** Arayüz, hata mesajları, grafikler, istatistik yorumları ve Excel başlıkları tamamen Türkçedir.
 4. **Giriş ekranında demo/önizleme butonu yoktur.** Yalnızca geçerli 60 koddan biriyle giriş yapılır. Altta sade bir "Yönetici Girişi" bağlantısı bulunur.
+5. **Kör deney için nötr adlar:** Yayın adresi, Vercel proje adı ve sekme başlığı (`<title>`) nötr olmalı; "eko" veya çevre (enerji, su, karbon, yeşil vb.) çağrışımı yapmamalı. Kontrol grubu deneyin amacını adres çubuğundan veya sekmeden tahmin edememeli. Mevcut adres: `https://egitim-asistani-2204.vercel.app`, sekme başlığı: "Eğitim Asistanı".
 
 ## 3. Mimari (KARARLAŞTIRILDI — değiştirmeden önce sor)
 
@@ -159,7 +160,7 @@ isSample (boolean), createdAt (sunucu zamanı)
 - `npm test` — Vitest (tek sefer); `npm run test:watch` — izleme modu
 - `npm run build` — üretim derlemesi (`dist/`)
 - `vercel dev` — sunucu fonksiyonlarıyla birlikte yerel çalıştırma (Vercel CLI gerekir; Dilim 2–3'te kurulacak)
-- Yayın: GitHub `main` dalına push → Vercel otomatik yayınlar.
+- Yayın: GitHub `main` dalına push → Vercel otomatik yayınlar (https://egitim-asistani-2204.vercel.app).
 - `tests/marka-yasagi.test.js`: `src/`, `index.html`, `api/` içinde marka adı arar; `api/_lib/` hariçtir.
 
 ## 12. Açık kararlar (uygulamadan önce kullanıcıya sor)
