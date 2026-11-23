@@ -166,5 +166,10 @@ isSample (boolean), createdAt (sunucu zamanı)
 ## 12. Açık kararlar (uygulamadan önce kullanıcıya sor)
 
 1. **Hiç istem yazmayan katılımcılar:** O aşamada 0 istem yazan bir öğrenci analize 0 değeriyle mi girecek, dışarıda mı kalacak? Prototip dışarıda bırakıyordu; bu, istem sayısındaki düşüşü sistematik olarak gizleyebilir. Danışman öğretmenin kararı bekleniyor. Karar verilene kadar istatistik kodunda bu nokta tek bir yapılandırma değeri olarak tutulur.
+   - **Uygulama (Dilim 1'de kararlaştırıldı):** `src/lib/stats.js` içinde `ZERO_PROMPT_POLICY = 'exclude' | 'zero'`. Varsayılan `'exclude'` (prototip davranışı).
+   - `'zero'` politikası yalnızca **o aşamada giriş yapmış** katılımcıları 0 istemle dahil eder. "Herhangi bir aşamada kaydı olan" ölçütü KULLANILMAZ: Son Test'e hiç gelmeyen öğrenci 0 istem yazmış sayılır ve sahte bir düşüş görünür.
+   - Bunun için toplama fonksiyonu her aşamada giriş yapmış kodların listesini parametre olarak alır (`{ pretest: [...], posttest: [...] }`).
+   - **Dilim 2'de yapılacak:** Giriş kayıtları (kod + aşama) Firestore'da tutulacak. Bu, Bölüm 7'deki veri modeline yeni bir koleksiyon ekler; Dilim 2 planında koleksiyonun adı ve alanları netleştirilecek.
+   - Hafif model oranı 0 istemde tanımsızdır; bu metrikte 0 istemli katılımcı her iki politikada da dışarıda kalır.
 2. **Model adları:** Güncel model listesi kontrol edilip onaylanacak (Bölüm 4).
 3. **Etik/veli onayı:** Kod meselesi değil, ama UAT ve canlı deneyden önce tamamlanmış olmalı.
