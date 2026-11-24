@@ -21,7 +21,8 @@ function shortDate(ms) {
   return new Date(ms).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
-const SELECT_CLASS = 'px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700 bg-white';
+// Mobilde yazı 16 px (text-base): iOS Safari daha küçük yazılı kutuya dokununca sayfayı yakınlaştırır.
+const SELECT_CLASS = 'px-3 py-2 rounded-xl border border-slate-300 text-base sm:text-xs font-semibold text-slate-700 bg-white';
 
 export default function RecordsTab({ records, token, onUnauthorized, onDeleted, onToast }) {
   const preview = usePreview();
@@ -71,7 +72,7 @@ export default function RecordsTab({ records, token, onUnauthorized, onDeleted, 
             onChange={set('query')}
             placeholder="Kod veya istem içinde ara…"
             aria-label="Kod veya istem içinde ara"
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 text-base sm:text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
         <select value={filters.group} onChange={set('group')} aria-label="Grup" className={SELECT_CLASS}>

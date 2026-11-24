@@ -3,7 +3,7 @@
 // EkoToken görünümünde özet şeridi, rozetler, tasarruf ipucu ve pencereler çalışır.
 // Sunucu istekleri (apiRequest) taklit edilir; gerçek ağa istek gitmez.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup, within } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, within, act } from '@testing-library/react';
 import { calculateFootprint } from '../src/lib/footprint.js';
 
 const apiRequest = vi.fn();
@@ -206,5 +206,67 @@ describe('Model seçiminin hatırlanması', () => {
     expect(sessionStorage.getItem('model:D001:posttest')).toBe('standard');
     // Ön Test seçimi kendi anahtarında durur ama Son Test'e taşınmadı.
     expect(sessionStorage.getItem('model:D001:pretest')).toBe('light');
+  });
+});
+
+// Dilim 8d: mobilde klavye açıkken (yazma alanı odakta) iki grubun ekranı eşit sıkışıklıkta olmalı.
+// jsdom CSS çizmez; bu yüzden gizlemeyi sağlayan sınıflar (hidden sm:…) denetlenir.
+describe('Mobil: yazarken ikincil satırlar gizlenir', () => {
+  it('EkoToken özet şeridi odakta gizlenir, odak gidince (200 ms sonra) geri gelir', async () => {
+    await renderScreen({
+      view: 'ekotoken',
+      student: { code: 'D001', group: 'Deney', phase: 'posttest' },
+      messages: [ecoMessage('a', 'light', 100, 50)],
+      phase: 'posttest',
+    });
+    const wrapper = screen.getByTestId('eko-ozet-kapsayici');
+    const textarea = screen.getByLabelText('İstem');
+    expect(wrapper.className).not.toContain('hidden');
+
+    fireEvent.focus(textarea);
+    expect(wrapper.className).toContain('hidden sm:block');
+
+    vi.useFakeTimers();
+    try {
+      fireEvent.blur(textarea);
+      // Hemen geri gelmez: klavye açıkken bir butona dokunulursa ekran dokunuş sırasında kaymasın.
+      expect(wrapper.className).toContain('hidden');
+      await act(() => vi.advanceTimersByTimeAsync(250)); // Zamanlayıcı çalışsın, ekran güncellensin.
+      expect(wrapper.className).not.toContain('hidden');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('model açıklaması iki görünümde de odakta gizlenir; sınıra yaklaşınca sayaç görünür', async () => {
+    for (const view of ['sade', 'ekotoken']) {
+      await renderScreen({
+        view,
+        student: { code: 'D001', group: 'Deney', phase: 'posttest' },
+        messages: [ecoMessage('a', 'light', 100, 50)],
+        phase: 'posttest',
+      });
+      const textarea = screen.getByLabelText('İstem');
+      const helperRow = screen.getByText('0/4000').parentElement;
+      expect(helperRow.className).not.toContain('hidden');
+
+      fireEvent.focus(textarea);
+      expect(helperRow.className).toContain('hidden sm:flex');
+
+      fireEvent.change(textarea, { target: { value: 'a'.repeat(3700) } });
+      expect(helperRow.className).not.toContain('hidden');
+      cleanup();
+    }
+  });
+
+  it('mobilde ikon olarak görünen Gönder ve Çıkış butonlarının erişilebilir adı vardır', async () => {
+    await renderScreen({
+      view: 'sade',
+      student: { code: 'K001', group: 'Kontrol', phase: 'pretest' },
+      messages: [plainMessage('a', 'light')],
+      phase: 'pretest',
+    });
+    expect(screen.getByRole('button', { name: 'Gönder' }).getAttribute('aria-label')).toBe('Gönder');
+    expect(screen.getByRole('button', { name: 'Çıkış' }).getAttribute('aria-label')).toBe('Çıkış');
   });
 });

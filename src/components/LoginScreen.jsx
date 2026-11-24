@@ -60,9 +60,11 @@ export default function LoginScreen({ onStudentLogin, onAdminLogin, initialCode 
   };
 
   return (
-    <div className="fixed inset-0 w-full h-full flex flex-col overflow-hidden bg-gradient-to-br from-slate-50 via-white to-indigo-50/60">
-      <main className="flex-1 min-h-0 overflow-y-auto flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200/90 overflow-hidden">
+    <div className="app-viewport fixed inset-0 w-full h-full flex flex-col overflow-hidden bg-gradient-to-br from-slate-50 via-white to-indigo-50/60">
+      {/* Kart m-auto ile ortalanır (items-center/justify-center ile değil): klavye açılıp alan daralınca
+          kartın üstü kaydırılamayan bölgeye düşmez, sayfa yukarı-aşağı kaydırılabilir. */}
+      <main className="flex-1 min-h-0 overflow-y-auto flex p-4">
+        <div className="m-auto w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200/90 overflow-hidden">
           {/* Üst başlık */}
           <div className="px-6 pt-7 pb-5 bg-gradient-to-br from-slate-900 to-slate-800 text-white text-center">
             <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center mx-auto mb-3">
@@ -170,7 +172,7 @@ export default function LoginScreen({ onStudentLogin, onAdminLogin, initialCode 
                   type="button"
                   onClick={() => switchMode('admin')}
                   disabled={busy}
-                  className="text-xs font-medium text-slate-400 hover:text-slate-700 transition-colors"
+                  className="px-3 py-2 text-xs font-medium text-slate-400 hover:text-slate-700 transition-colors"
                 >
                   Yönetici Girişi
                 </button>
@@ -179,7 +181,7 @@ export default function LoginScreen({ onStudentLogin, onAdminLogin, initialCode 
                   type="button"
                   onClick={() => switchMode('student')}
                   disabled={busy}
-                  className="text-xs font-medium text-slate-500 hover:text-slate-800 transition-colors"
+                  className="px-3 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 transition-colors"
                 >
                   ← Öğrenci Girişine Dön
                 </button>

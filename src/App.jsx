@@ -10,6 +10,7 @@ import LoginScreen from './components/LoginScreen.jsx';
 import { apiRequest } from './lib/api.js';
 import { applyPhaseReport, getStudentView } from './lib/phases.js';
 import { subscribeToPhase } from './lib/phaseListener.js';
+import { trackVisualViewport } from './lib/viewport.js';
 import { saveStudent, saveAdmin, loadSession, clearSession } from './lib/session.js';
 
 // Sohbet ekranı ayrı bir parçada yüklenir (Markdown, KaTeX ve KaTeX'in CSS'i bu parçadadır):
@@ -36,7 +37,7 @@ const AdminScreen = lazy(() => import('./components/admin/AdminScreen.jsx'));
 // Yükleniyor ekranı (ilk açılış ve sohbet/panel parçası inerken).
 function FullScreenLoader() {
   return (
-    <div className="fixed inset-0 w-full h-full flex items-center justify-center overflow-hidden bg-slate-50 text-slate-500">
+    <div className="app-viewport fixed inset-0 w-full h-full flex items-center justify-center overflow-hidden bg-slate-50 text-slate-500">
       <Loader2 className="w-6 h-6 animate-spin" aria-label="Yükleniyor" />
     </div>
   );
@@ -97,6 +98,9 @@ export default function App() {
       cancelled = true;
     };
   }, []);
+
+  // Mobil klavye açıkken ana görünümler ekranın görünen kısmına otursun (src/lib/viewport.js).
+  useEffect(() => trackVisualViewport(), []);
 
   // Giriş ekranı açıkken sohbet ekranı parçasını boşta önceden indir.
   useEffect(() => {

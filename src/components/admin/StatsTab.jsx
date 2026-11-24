@@ -68,7 +68,7 @@ export default function StatsTab({ records, logins, codeGroups, onToast }) {
           <select
             value={metric}
             onChange={(e) => setMetric(e.target.value)}
-            className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm font-medium text-slate-800"
+            className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-base sm:text-sm font-medium text-slate-800"
           >
             {METRIC_ORDER.map((id) => (
               <option key={id} value={id}>

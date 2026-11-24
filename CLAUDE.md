@@ -162,6 +162,7 @@ isSample (boolean), engineVersion, configHash, createdAt (sunucu zamanı)
 ## 8. Arayüz kuralları (önceki denemelerde yaşanmış hatalar)
 
 - Ana görünümler: `fixed inset-0 w-full h-full flex flex-col overflow-hidden`. `body` kaydırması kapalı.
+- Giriş ve sohbet ekranı (ve yükleniyor ekranı) ek olarak `app-viewport` sınıfını taşır (Dilim 8d): `src/lib/viewport.js` mobil klavye açıkken görünen alanı `--app-height` / `--app-top` değişkenlerine yazar, `index.css` → `.app-viewport` görünümü bu alana oturtur (iOS). Android için `index.html` viewport etiketinde `interactive-widget=resizes-content` vardır. Yeni bir ana görünüm eklenirse o da `app-viewport` almalıdır. Pencereler yüksekliği `dvh` ile sınırlar (`max-h-[90dvh]`), `vh` kullanılmaz.
 - `header` ve `footer` sabit (`shrink-0`). Yalnızca mesaj listesi (`main`) `flex-1 min-h-0 overflow-y-auto` ile kayar.
 - **`scrollIntoView()` KULLANILMAZ.** Yalnızca `container.scrollTo({ top: container.scrollHeight })`.
 - Model seçici mobilde `grid-cols-3`, sağdan taşmaz.
@@ -222,6 +223,7 @@ isSample (boolean), engineVersion, configHash, createdAt (sunucu zamanı)
 2. **Model adları:** ✅ 23.11.2026'da onaylandı (Bölüm 4). Ücretsiz kota sayıları sağlayıcının kota sayfasından okunup buraya eklenecek.
 3. **Etik/veli onayı:** Kod meselesi değil, ama UAT ve canlı deneyden önce tamamlanmış olmalı.
 4. **Varsayılan seçili model:** Sohbet ekranı şu an "Standart Model" seçili açılıyor (prototiple aynı, `src/components/ChatScreen.jsx`). Varsayılan seçim, Hafif model tercih oranı metriğini etkileyebilir (öğrenciler çoğu zaman varsayılanı değiştirmez). Danışman öğretmenle karar verilecek: Standart, Hafif veya seçim yapılmadan gönderilemeyen (varsayılansız) seçici. Karar ne olursa olsun Ön Test ve Son Test'te ve iki grupta aynı kalmalı.
+5. **Mobilde yazarken EkoToken özet şeridi gizleniyor (Dilim 8d, 24.11.2026):** Danışmana sorulacak, raporda belirtilmeli. Yazma alanı odaktayken (klavye açık) 640 px'ten dar ekranda Deney grubunun özet şeridi ve iki grupta da model açıklama satırı gizlenir; odak gidince 200 ms sonra geri gelir (`src/components/ChatScreen.jsx`). Sebep: klavye açıkken iki grubun mesaj alanı eşit kalsın. Rozetler, tasarruf ipucu, Kişisel Rapor ve Metodoloji etkilenmez. Proje ekibi kabul etti; danışman onayı bekleniyor.
 
 ## 13. Canlı deney öncesi kontrol listesi
 

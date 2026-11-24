@@ -7,6 +7,9 @@
 // Gönderme ve aşama güvencesi mantığı iki görünümde ortaktır (kopyalanmaz).
 // Düzen kuralları (proje rehberi Bölüm 8): tam ekran kilitli yerleşim, yalnızca mesaj listesi kayar,
 // kaydırma yalnızca container.scrollTo ile yapılır (scrollIntoView YOK), model seçici grid-cols-3.
+// Mobil (Dilim 8d): dokunma hedefleri en az 40 px. Yazma alanı odaktayken (klavye açık) mobilde ikincil
+// satırlar (EkoToken özet şeridi, model açıklaması) gizlenir; böylece klavye açıkken Deney grubunun
+// ekranı Kontrol grubununkinden daha sıkışık olmaz (iki grupta üst ve alt çubuk aynı yükseklikte kalır).
 // Aşama (Ön Test / Son Test) bu ekranda HİÇ YAZMAZ (kör deney). Aşama değişince yalnızca nötr bir
 // "Yeni oturum başladı" notu çıkar ve yeni aşamanın mesajları yüklenir.
 // Sunucu doğru kaynaktır: /api/messages yanıtındaki aşama onServerPhase ile üst bileşene bildirilir;
@@ -71,11 +74,13 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
   const [sessionNote, setSessionNote] = useState(false); // Nötr "Yeni oturum başladı" notu
   const [reportOpen, setReportOpen] = useState(false); // Kişisel Rapor penceresi (yalnız EkoToken)
   const [methodologyOpen, setMethodologyOpen] = useState(false); // Metodoloji penceresi (yalnız EkoToken)
+  const [inputFocused, setInputFocused] = useState(false); // Yazma alanı odakta mı (mobilde klavye açık demek)
 
   // EkoToken özeti: yalnızca `eco` alanı olan mesajlardan hesaplanır (sade görünümde gösterilmez).
   const ecoSummary = useMemo(() => summarizeSession(messages), [messages]);
 
   const containerRef = useRef(null);
+  const blurTimerRef = useRef(null); // Odak kaybını biraz geciktiren zamanlayıcı (aşağıda açıklama var)
   // Ekranda mesajları gösterilen aşama (son başarılı /api/messages yanıtından). İlk açılışta null.
   const loadedPhaseRef = useRef(null);
   // Her geçmiş yüklemesine sıra numarası verilir; geç gelen eski yanıt yok sayılır.
@@ -134,6 +139,19 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
     }
     loadHistory();
   }, [student.code, student.phase]);
+
+  // Yazma alanı odak kazandı/kaybetti. Odak kaybı 200 ms gecikmeyle uygulanır: öğrenci klavye açıkken bir
+  // butona (Gönder, Tekrar Dene, Kopyala…) dokunduğunda gizli satırlar hemen geri gelirse ekran kayar ve
+  // dokunuş butonu ıskalayabilir. Gecikme, dokunuş tamamlandıktan sonra düzenin değişmesini sağlar.
+  const handleInputFocus = () => {
+    clearTimeout(blurTimerRef.current);
+    setInputFocused(true);
+  };
+  const handleInputBlur = () => {
+    clearTimeout(blurTimerRef.current);
+    blurTimerRef.current = setTimeout(() => setInputFocused(false), 200);
+  };
+  useEffect(() => () => clearTimeout(blurTimerRef.current), []); // Ekran kapanınca zamanlayıcıyı temizle.
 
   // Yeni mesaj, bekleme göstergesi veya hata kartı gelince listenin en altına kaydır.
   useEffect(() => {
@@ -201,10 +219,12 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
     setError('');
   };
 
+  // Sınıra 400 karakterden az kaldıysa sayaç, mobilde yazarken de görünür.
+  const nearLimit = input.length > MAX_PROMPT_LENGTH - 400;
   const canSend = input.trim().length > 0 && !isSending && !cooldown && historyState === 'ready';
 
   return (
-    <div className="fixed inset-0 w-full h-full flex flex-col overflow-hidden bg-slate-50 text-slate-800">
+    <div className="app-viewport fixed inset-0 w-full h-full flex flex-col overflow-hidden bg-slate-50 text-slate-800">
       {/* SABİT ÜST ÇUBUK */}
       <header className="shrink-0 border-b border-slate-200 bg-white">
         <div className="max-w-5xl mx-auto px-3 sm:px-5 py-2.5 flex flex-col gap-2">
@@ -243,7 +263,7 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
                     type="button"
                     onClick={() => setReportOpen(true)}
                     aria-label="Kişisel Rapor"
-                    className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors"
+                    className="inline-flex items-center justify-center gap-1.5 min-h-10 min-w-10 sm:min-h-0 sm:min-w-0 px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors"
                   >
                     <PieChartIcon className="w-3.5 h-3.5" />
                     <span className="hidden sm:inline">Kişisel Rapor</span>
@@ -252,7 +272,7 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
                     type="button"
                     onClick={() => setMethodologyOpen(true)}
                     aria-label="Metodoloji"
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors"
+                    className="inline-flex items-center justify-center gap-1 min-h-10 min-w-10 sm:min-h-0 sm:min-w-0 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors"
                   >
                     <BookOpen className="w-3.5 h-3.5" />
                     <span className="hidden md:inline">Metodoloji</span>
@@ -262,7 +282,8 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
             <button
               type="button"
               onClick={onLogout}
-              className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-600 text-xs font-semibold transition-colors"
+              aria-label="Çıkış" // Mobilde yazı gizli; ekran okuyucu yine de butonun adını söyler.
+              className="shrink-0 inline-flex items-center justify-center gap-1 min-h-10 min-w-10 sm:min-h-0 sm:min-w-0 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-600 text-xs font-semibold transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Çıkış</span>
@@ -270,8 +291,9 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
             </div>
           </div>
 
-          {/* Model seçici: mobilde de sağdan taşmayan 3 eşit sütun */}
-          <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-slate-100 border border-slate-200/80">
+          {/* Model seçici: mobilde de sağdan taşmayan 3 eşit sütun. Mobilde her buton en az 40 px yüksek ve
+              aralarında 8 px boşluk var: yanlış dokunma (= kayıtta yanlış ölçek sınıfı) olasılığı azalır. */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-1.5 p-1 rounded-xl bg-slate-100 border border-slate-200/80">
             {MODEL_ORDER.map((id) => {
               const active = selectedModel === id;
               return (
@@ -280,7 +302,7 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
                   type="button"
                   onClick={() => chooseModel(id)}
                   aria-pressed={active}
-                  className={`py-1.5 px-1.5 sm:px-3 rounded-lg text-center transition-all text-[11px] sm:text-xs font-semibold truncate ${
+                  className={`min-h-10 sm:min-h-0 py-1.5 px-1.5 sm:px-3 rounded-lg text-center touch-manipulation transition-all text-xs font-semibold truncate ${
                     !active
                       ? 'text-slate-600 hover:text-slate-900'
                       : isEco
@@ -296,8 +318,13 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
           </div>
         </div>
 
-        {/* EkoToken canlı özet şeridi (yalnızca Deney + Son Test) */}
-        {isEco && <EcoSummaryBar summary={ecoSummary} />}
+        {/* EkoToken canlı özet şeridi (yalnızca Deney + Son Test). Mobilde yazarken (klavye açık) gizlenir,
+            yazma bitince geri gelir: klavye açıkken iki grubun mesaj alanı eşit kalır. */}
+        {isEco && (
+          <div data-testid="eko-ozet-kapsayici" className={inputFocused ? 'hidden sm:block' : undefined}>
+            <EcoSummaryBar summary={ecoSummary} />
+          </div>
+        )}
       </header>
 
       {/* KAYAN MESAJ LİSTESİ */}
@@ -312,7 +339,7 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
                   type="button"
                   onClick={() => setSessionNote(false)}
                   aria-label="Kapat"
-                  className="shrink-0 text-slate-400 hover:text-slate-700"
+                  className="shrink-0 p-2 -m-2 text-slate-400 hover:text-slate-700"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -394,21 +421,31 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
               value={input}
               onChange={(e) => setInput(e.target.value.slice(0, MAX_PROMPT_LENGTH))}
               onKeyDown={handleKeyDown}
+              onFocus={handleInputFocus}
+              onBlur={handleInputBlur}
               rows={2}
               placeholder="Sorunu buraya yaz…"
               aria-label="İstem"
-              className="flex-1 min-w-0 resize-none rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
+              // Mobilde yazı 16 px (text-base): iOS Safari 16 px'ten küçük yazı alanına dokununca sayfayı yakınlaştırır.
+              // Mobilde tek satır yükseklik (h-11, kutu içinde kayar): klavye açıkken mesaj alanına yer kalsın.
+              className="flex-1 min-w-0 h-11 sm:h-auto resize-none rounded-xl border border-slate-300 px-3 py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
             />
             <button
               type="submit"
               disabled={!canSend}
-              className="shrink-0 inline-flex items-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white text-sm font-semibold transition-colors"
+              aria-label="Gönder" // Mobilde yalnızca ikon görünür; erişilebilir ad buradan gelir.
+              className="shrink-0 inline-flex items-center justify-center gap-1.5 h-11 min-w-11 sm:h-10 sm:min-w-0 px-3 sm:px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white text-sm font-semibold transition-colors"
             >
               <Send className="w-4 h-4" />
               <span className="hidden sm:inline">Gönder</span>
             </button>
           </div>
-          <div className="mt-1.5 flex items-center justify-between gap-2 text-[11px] text-slate-400 px-0.5">
+          {/* Model açıklaması ve sayaç. Mobilde yazarken (klavye açık) gizlenir; sınıra yaklaşınca görünür. */}
+          <div
+            className={`mt-1.5 items-center justify-between gap-2 text-[11px] text-slate-400 px-0.5 ${
+              inputFocused && !nearLimit ? 'hidden sm:flex' : 'flex'
+            }`}
+          >
             <span className="truncate">{MODEL_LABELS[selectedModel].desc}</span>
             <span className="shrink-0">
               {input.length}/{MAX_PROMPT_LENGTH}
@@ -454,7 +491,7 @@ function ErrorCard({ message, onRetry, retryDisabled = false, onDismiss }) {
         <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
         <p className="flex-1">{message}</p>
         {onDismiss && (
-          <button type="button" onClick={onDismiss} aria-label="Kapat" className="shrink-0 text-rose-400 hover:text-rose-700">
+          <button type="button" onClick={onDismiss} aria-label="Kapat" className="shrink-0 p-2 -m-2 text-rose-400 hover:text-rose-700">
             <X className="w-4 h-4" />
           </button>
         )}
@@ -465,7 +502,7 @@ function ErrorCard({ message, onRetry, retryDisabled = false, onDismiss }) {
             type="button"
             onClick={onRetry}
             disabled={retryDisabled}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:bg-rose-300 text-white text-xs font-semibold transition-colors"
+            className="inline-flex items-center gap-1.5 min-h-10 sm:min-h-0 px-4 sm:px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:bg-rose-300 text-white text-xs font-semibold transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Tekrar Dene

@@ -33,6 +33,13 @@ const TOKEN_COLORS = { Girdi: '#2a78d6', Çıktı: '#eb6834' };
 const AXIS_TICK = { fontSize: 11, fill: '#64748b' };
 const GRID_COLOR = '#e2e8f0';
 
+// Y ekseni yazılarına ayrılan genişlik (px). "0,0012" veya "120.000" gibi değerler dar ekranda kesilmesin.
+const Y_AXIS_WIDTH = 56;
+
+// Token grafiğinde etkileşim başına en az genişlik (px). Etkileşim çoksa ve ekran darsa (mobil 360 px)
+// çubuklar sıkışmaz; grafik bu genişliği aşınca kendi kutusu içinde yatay kayar.
+const MIN_PX_PER_INTERACTION = 24;
+
 // Araç ipucundaki sayıları Türkçe biçimde yazar.
 const formatTooltip = (value) => fmtSmart(value);
 
@@ -93,18 +100,20 @@ function ReportBody({ summary }) {
 
       {/* Etkileşim bazlı girdi / çıktı token grafiği */}
       <ChartCard title="Etkileşim Bazlı Girdi ve Çıktı Token Sayısı">
-        <div className="h-56 w-full">
+        <div className="overflow-x-auto">
+          <div className="h-56 w-full" style={{ minWidth: summary.perInteraction.length * MIN_PX_PER_INTERACTION }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={summary.perInteraction} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} barGap={2}>
               <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} vertical={false} />
               <XAxis dataKey="name" tick={AXIS_TICK} />
-              <YAxis tick={AXIS_TICK} width={48} />
+              <YAxis tick={AXIS_TICK} width={Y_AXIS_WIDTH} />
               <Tooltip formatter={(v) => Number(v).toLocaleString('tr-TR')} cursor={{ fill: '#f1f5f9' }} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               <Bar dataKey="Girdi" fill={TOKEN_COLORS.Girdi} radius={[4, 4, 0, 0]} maxBarSize={28} />
               <Bar dataKey="Çıktı" fill={TOKEN_COLORS.Çıktı} radius={[4, 4, 0, 0]} maxBarSize={28} />
             </BarChart>
           </ResponsiveContainer>
+          </div>
         </div>
       </ChartCard>
 
@@ -229,7 +238,7 @@ function TrendChart({ title, dataKey, color, data }) {
           <AreaChart data={data} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} vertical={false} />
             <XAxis dataKey="name" tick={AXIS_TICK} />
-            <YAxis tick={AXIS_TICK} width={48} tickFormatter={formatTooltip} />
+            <YAxis tick={AXIS_TICK} width={Y_AXIS_WIDTH} tickFormatter={formatTooltip} />
             <Tooltip formatter={formatTooltip} />
             <Area
               type="monotone"

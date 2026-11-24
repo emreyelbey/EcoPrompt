@@ -8,6 +8,15 @@ body {
   overflow: hidden; /* Yalnızca <main> kayar (proje rehberi, Bölüm 8). */
 }
 
+/* Ana görünümleri (giriş, sohbet) ekranın gerçekten görünen kısmına oturtur (Dilim 8d).
+   Değişkenleri src/lib/viewport.js yazar; yoksa (eski tarayıcı) tam ekran kullanılır.
+   Bu kural Tailwind katmanlarının dışında olduğu için h-full ve inset-0'ın üstüne yazar:
+   top + height verildiğinde bottom yok sayılır. */
+.app-viewport {
+  top: var(--app-top, 0px);
+  height: var(--app-height, 100%);
+}
+
 /* Asistan yanıtlarındaki Markdown öğeleri (RichMessage). Tailwind tüm varsayılan
    biçimleri sıfırladığı için başlık, liste, tablo, alıntı ve kod görünümü burada verilir. */
 .rich-message > * + * { margin-top: 0.75em; }

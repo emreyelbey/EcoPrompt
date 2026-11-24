@@ -51,7 +51,7 @@ export default function RichMessage({ content, showCopyButton = false }) {
           <button
             type="button"
             onClick={handleCopy}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+            className="inline-flex items-center gap-1 min-h-9 sm:min-h-0 px-2.5 sm:px-2 py-1 rounded-lg text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
           >
             {copyState === 'done' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
             <span>{copyState === 'done' ? 'Kopyalandı' : copyState === 'failed' ? 'Kopyalanamadı' : 'Kopyala'}</span>

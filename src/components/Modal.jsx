@@ -1,6 +1,8 @@
 // Ortak pencere kabuğu: Kişisel Rapor ve Metodoloji pencereleri bunu kullanır.
 // Arka plana, ✕ butonuna veya Escape tuşuna basınca kapanır. İçerik pencerenin içinde kayar,
 // böylece sayfanın kendisi (body) hiç kaymaz (proje rehberi Bölüm 8).
+// Yükseklik dvh ile sınırlanır: mobilde vh adres çubuğu gizliyken ölçülür ve pencerenin altı araç çubuğunun
+// altında kalabilirdi; dvh o an gerçekten görünen yüksekliği kullanır.
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
 
@@ -23,7 +25,7 @@ export default function Modal({ open, title, subtitle, onClose, maxWidth = 'max-
         role="dialog"
         aria-modal="true"
         aria-labelledby="pencere-baslik"
-        className={`w-full ${maxWidth} max-h-[90vh] flex flex-col overflow-hidden rounded-2xl bg-white shadow-xl`}
+        className={`w-full ${maxWidth} max-h-[90dvh] flex flex-col overflow-hidden rounded-2xl bg-white shadow-xl`}
         onClick={(e) => e.stopPropagation()} // Pencerenin içine tıklamak onu kapatmasın.
       >
         <div className="shrink-0 flex items-start justify-between gap-3 px-4 sm:px-5 py-3.5 border-b border-slate-200">

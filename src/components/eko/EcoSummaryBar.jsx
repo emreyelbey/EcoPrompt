@@ -1,6 +1,8 @@
 // EkoToken üst özet şeridi (yalnızca Deney grubu + Son Test).
 // Bu aşamadaki istem ve token sayısı, toplam enerji, su, CO₂ ve bir günlük karşılık gösterir.
 // Toplamlar src/lib/ecoSummary.js → summarizeSession ile hesaplanır (yeni formül yok).
+// Mobil (Dilim 8d): sayılar tek satırda kalır (sığmazsa yatay kayar), günlük karşılık satırı kırpılmaz,
+// alt satıra kayar. Yazarken (klavye açık) şeridin tamamı ChatScreen tarafından mobilde gizlenir.
 import { Zap, Droplets, Cloud } from 'lucide-react';
 import { fmtSmart } from '../../lib/format.js';
 
@@ -13,7 +15,7 @@ export default function EcoSummaryBar({ summary }) {
       className="bg-gradient-to-r from-emerald-700 via-teal-700 to-emerald-800 text-white border-t border-emerald-600/50"
     >
       <div className="max-w-5xl mx-auto px-3 sm:px-5 py-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-[11px] sm:text-xs">
-        <div className="flex flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-1">
+        <div className="flex flex-nowrap sm:flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-1 max-w-full overflow-x-auto whitespace-nowrap">
           <span className="font-semibold text-emerald-100">
             {prompts} İstem · {totalTokens.toLocaleString('tr-TR')} Token
           </span>
@@ -30,7 +32,7 @@ export default function EcoSummaryBar({ summary }) {
             {fmtSmart(co2)} g CO₂
           </span>
         </div>
-        <div className="text-[11px] text-emerald-100 font-medium truncate max-w-full">
+        <div className="text-[11px] text-emerald-100 font-medium max-w-full sm:truncate">
           {prompts > 0
             ? `Günlük karşılık: ${equivalents.waterPrimary} · ${equivalents.carText}`
             : 'İpucu: Kısa ve net istemler ile Hafif Model en düşük ayak izini üretir.'}
