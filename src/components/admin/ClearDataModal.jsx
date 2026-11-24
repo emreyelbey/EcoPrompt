@@ -10,6 +10,7 @@ import { AlertTriangle, Loader2 } from 'lucide-react';
 import { apiRequest } from '../../lib/api.js';
 import { isClearConfirmed } from '../../lib/clearConfirm.js';
 import Overlay from '../Overlay.jsx';
+import { usePresence } from '../../lib/motion.js';
 
 const COUNT_LABELS = [
   ['interactions', 'Etkileşim kaydı (öğrenci soruları ve yanıtlar)'],
@@ -44,7 +45,9 @@ export default function ClearDataModal({ open, token, onUnauthorized, onCleared,
     };
   }, [open, token, onUnauthorized]);
 
-  if (!open) return null;
+  // Kapanırken kısa çıkış animasyonu oynar (pencere o süre boyunca sayfada kalır).
+  const { mounted, closing } = usePresence(open);
+  if (!mounted) return null;
 
   const canConfirm = isClearConfirmed(typed) && counts !== null && !busy;
 
@@ -63,12 +66,12 @@ export default function ClearDataModal({ open, token, onUnauthorized, onCleared,
   };
 
   return (
-    <Overlay onBackdropClick={busy ? undefined : onCancel}>
+    <Overlay onBackdropClick={busy || closing ? undefined : onCancel} closing={closing}>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="temizle-baslik"
-        className="w-full max-w-md max-h-[min(90dvh,100%)] flex flex-col overflow-hidden rounded-[20px] bg-surface shadow-2xl"
+        className="motion-dialog w-full max-w-md max-h-[min(90dvh,100%)] flex flex-col overflow-hidden rounded-[20px] bg-surface shadow-2xl"
       >
         <div data-pencere-kaydirma className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 pt-6 pb-2">
           <h2 id="temizle-baslik" className="text-base font-semibold text-rose-700 flex items-center gap-2">

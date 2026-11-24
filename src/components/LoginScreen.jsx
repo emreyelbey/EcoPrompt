@@ -19,7 +19,8 @@ const FIELD_CLASS =
 // İki formda ortak birincil buton (tam yuvarlak, açık renk).
 const PRIMARY_BUTTON_CLASS =
   'w-full h-14 rounded-full bg-on-dark text-ink text-base font-semibold flex items-center justify-center gap-2 ' +
-  'hover:bg-white active:scale-[0.99] disabled:opacity-70 disabled:cursor-wait transition-all ' +
+  // Renk geçişi ve basınca küçülme ortak hareket sisteminden gelir (index.css → button).
+  'hover:bg-white disabled:opacity-70 disabled:cursor-wait ' +
   'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-ink';
 
 export default function LoginScreen({ onStudentLogin, onAdminLogin, initialCode = '', initialError = '' }) {

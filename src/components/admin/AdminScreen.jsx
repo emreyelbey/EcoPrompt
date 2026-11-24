@@ -17,7 +17,7 @@
 // (ayrı kodlar, OK/OD) gösterir; gerçek veriyle asla karışmaz. Uyarı bandı sabit başlık çubuğundadır (kaydırınca
 // kaybolmaz), her kartta "ÖRNEK VERİ" işareti çıkar, Excel/CSV, silme ve temizleme pasiftir.
 // Katılımcı Kodları sekmesi ve aşama anahtarı her zaman gerçek veriyle çalışır.
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LogOut, Loader2, AlertCircle, RefreshCw, AlertTriangle, FlaskConical, ChevronDown } from 'lucide-react';
 import ConfirmModal from '../ConfirmModal.jsx';
 import MethodologyContent from '../eko/MethodologyContent.jsx';
@@ -36,6 +36,7 @@ import { PHASES } from '../../lib/phases.js';
 import { PHASE_LABELS, realRecords } from '../../lib/adminSummary.js';
 import { generateSampleData, SAMPLE_CODE_GROUPS } from '../../lib/sampleData.js';
 import { useScreenTheme } from '../../lib/screenTheme.js';
+import { scrollToTopThenFocus } from '../../lib/tabScroll.js';
 
 // Sekmenin tam adı: sayılı sekmelerde "Öğrenci Kayıtları (12)". Kenar menüsü butonlarının erişilebilir adı ve
 // telefondaki seçim kutusunun seçenek metni aynı fonksiyondan gelir.
@@ -53,6 +54,18 @@ export default function AdminScreen({ token, onLogout }) {
   useScreenTheme('admin');
   const data = useAdminData(token, onLogout);
   const [tab, setTab] = useState('overview');
+  // Sekme değişince içerik başa kayar ve yeni sekmenin başlığına odak verilir (ekran okuyucu yeni başlığı okur).
+  // Kayan öğe sayfanın kendisi değil, panelin iç kaydırma kabıdır (scrollRef); başlık h1'dir (headingRef).
+  const scrollRef = useRef(null);
+  const headingRef = useRef(null);
+  // Önceki sekme hatırlanır: yalnızca sekme gerçekten değişince çalışır (açılışta ve React'in geliştirme
+  // modunda efekti iki kez çalıştırmasında kaydırma/odak yok).
+  const shownTab = useRef(tab);
+  useEffect(() => {
+    if (shownTab.current === tab) return undefined;
+    shownTab.current = tab;
+    return scrollToTopThenFocus(scrollRef.current, headingRef.current);
+  }, [tab]);
   const [phaseTarget, setPhaseTarget] = useState(null); // onay bekleyen yeni aşama
   const [savingPhase, setSavingPhase] = useState(false);
   const [clearOpen, setClearOpen] = useState(false);
@@ -223,13 +236,18 @@ export default function AdminScreen({ token, onLogout }) {
             birebir hizalıdır (kaydırma çubuğu da ikisini aynı oranda daraltır).
             Başlık çubuğu "sticky": içerik kayarken kapsayıcının tepesinde sabit kalır (önizleme bandı kaybolmaz).
             Negatif yan boşluk + aynı iç boşluk: başlığın kâğıt rengi zemini kapsayıcının kenar boşluklarını da örter. */}
-        <div className="flex-1 min-w-0 min-h-0 overflow-y-auto">
+        <div ref={scrollRef} data-testid="panel-kaydirma" className="flex-1 min-w-0 min-h-0 overflow-y-auto">
           <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-9">
             <header className="sticky top-0 z-20 -mx-4 sm:-mx-6 lg:-mx-9 px-4 sm:px-6 lg:px-9 bg-paper pt-4 lg:pt-7 pb-4 flex flex-col gap-4 border-b border-line lg:border-b-0">
               <div className="flex flex-wrap items-end justify-between gap-4">
                 <div className="flex flex-col gap-1.5 min-w-0">
                   <span className="font-mono text-[11px] tracking-[0.1em] text-text-3">{current.eyebrow}</span>
-                  <h1 className="text-[28px] leading-8 lg:text-[36px] lg:leading-10 font-semibold tracking-[-0.035em]">
+                  {/* tabIndex=-1: yalnızca programla odaklanır (sekme değişince); görünür odak halkası çıkmaz. */}
+                  <h1
+                    ref={headingRef}
+                    tabIndex={-1}
+                    className="text-[28px] leading-8 lg:text-[36px] lg:leading-10 font-semibold tracking-[-0.035em] outline-none"
+                  >
                     {current.title[0]} <span className="font-serif italic font-normal">{current.title[1]}</span>
                   </h1>
                 </div>
@@ -318,7 +336,8 @@ export default function AdminScreen({ token, onLogout }) {
                     <Loader2 className="w-6 h-6 animate-spin" aria-label="Yükleniyor" />
                   </div>
                 ) : (
-                  <>
+                  // key={tab}: sekme değişince içerik yeniden kurulur ve kısa belirme animasyonu oynar.
+                  <div key={tab} data-testid="sekme-icerik" className="animate-motion-in">
                     {tab === 'overview' && (
                       <OverviewTab
                         records={shown.records}
@@ -353,7 +372,7 @@ export default function AdminScreen({ token, onLogout }) {
                         <MethodologyContent />
                       </div>
                     )}
-                  </>
+                  </div>
                 )}
 
                 {!data.loading && (

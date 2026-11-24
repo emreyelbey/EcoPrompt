@@ -10,6 +10,9 @@
 //   - Odaklanan yazı kutusu, klavye açılıp alan daralınca da görünür kalacak şekilde pencere içinde kaydırılır
 //     (scrollIntoView kullanılmaz; yalnızca kayan kutunun scrollTop değeri değişir, proje rehberi Bölüm 8).
 // Pencerenin içindeki kayan bölüm data-pencere-kaydirma özniteliğini taşımalıdır.
+// Hareket (animasyonlar dalı): karartma belirir, pencere (.motion-dialog sınıfını taşımalı) hafif ölçek +
+// yukarı kayma ile gelir, telefonda alttan yükselir. closing=true iken kısa çıkış animasyonu oynar
+// (index.css → .overlay-closing); pencereyi o süre boyunca sayfada tutmak usePresence'ın işidir (motion.js).
 import { useEffect, useRef } from 'react';
 import { useOverlayTheme } from '../lib/screenTheme.js';
 
@@ -25,7 +28,7 @@ export function keepFocusedVisible(el) {
   else if (box.top < area.top + EDGE_GAP) scroller.scrollTop -= area.top + EDGE_GAP - box.top;
 }
 
-export default function Overlay({ onBackdropClick, children }) {
+export default function Overlay({ onBackdropClick, closing = false, children }) {
   const boxRef = useRef(null);
   useOverlayTheme();
 
@@ -48,7 +51,7 @@ export default function Overlay({ onBackdropClick, children }) {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50">
+    <div className={`fixed inset-0 z-50 ${closing ? 'overlay-closing' : ''}`} data-kapaniyor={closing ? 'true' : undefined}>
       {/* Karartma: ekranın her yönünde dışarı taşar (klavyenin arkası, aşırı kaydırma). */}
       <div aria-hidden="true" className="overlay-scrim fixed bg-ink/50" onClick={onBackdropClick} />
       {/* Pencere kutusu: görünen alana oturur. Boş kısmına dokunmak da karartmaya dokunmak sayılır. */}

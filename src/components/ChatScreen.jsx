@@ -98,6 +98,11 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
   const [sessionNote, setSessionNote] = useState(false); // Nötr "Yeni oturum başladı" notu
   const [reportOpen, setReportOpen] = useState(false); // Kişisel Rapor penceresi (yalnız EkoToken)
   const [methodologyOpen, setMethodologyOpen] = useState(false); // Metodoloji penceresi (yalnız EkoToken)
+  // Pencere bir kez açıldı mı? (kodu ilk açılışta yüklenir, sonra kapanış animasyonu için sayfada kalır)
+  const reportLoaded = useRef(false);
+  const methodologyLoaded = useRef(false);
+  if (reportOpen) reportLoaded.current = true;
+  if (methodologyOpen) methodologyLoaded.current = true;
   const [inputFocused, setInputFocused] = useState(false); // Yazma alanı odakta mı (mobilde klavye açık demek)
 
   // EkoToken özeti: yalnızca `eco` alanı olan mesajlardan hesaplanır (sade görünümde gösterilmez).
@@ -264,8 +269,11 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
       <header className={`shrink-0 bg-surface border-b border-line ${isEco ? 'max-xl:border-b-0' : ''}`}>
         <div className={HEADER_GRID_CLASS}>
           <div className="[grid-area:brand] min-w-0 flex items-center gap-3 xl:h-12">
-            {/* Logo: sade görünümde dönen yörünge (nötr), EkoToken'da dolan yeşil halka */}
-            <BrandMark variant={isEco ? 'ring' : 'orbit'} size={40} />
+            {/* Logo: sade görünümde dönen yörünge (nötr), EkoToken'da dolan yeşil halka.
+                data-gorunume-ozel: iki görünümde bilerek farklı olan öğe (kör deney animasyon testi bunları ayırır). */}
+            <span data-gorunume-ozel className="contents">
+              <BrandMark variant={isEco ? 'ring' : 'orbit'} size={40} />
+            </span>
             <div className="flex-1 min-w-0 flex flex-col gap-[3px]">
               {/* Not: sekme başlığı her görünümde "Eğitim Asistanı" kalır (kör deney). */}
               {isEco ? (
@@ -276,12 +284,12 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
               <span className="flex items-center gap-1.5 font-mono text-[11px] tracking-[0.06em] text-text-3 truncate">
                 {isEco ? (
                   <>
-                    {student.code} · <span className="uppercase">{ecoSummary.prompts} İstem</span>
+                    {student.code} · <span data-gorunume-ozel className="uppercase">{ecoSummary.prompts} İstem</span>
                   </>
                 ) : (
                   <>
                     {/* "Oturum açık" nabzı: nötr vurgu rengi */}
-                    <span className="w-1.5 h-1.5 rounded-full bg-accent-ink animate-pulse-dot shrink-0" aria-hidden="true" />
+                    <span data-gorunume-ozel className="w-1.5 h-1.5 rounded-full bg-accent-ink animate-pulse-dot shrink-0" aria-hidden="true" />
                     {student.code} · OTURUM AÇIK
                   </>
                 )}
@@ -290,14 +298,14 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
           </div>
           <div className="[grid-area:actions] justify-self-end flex items-center gap-1.5 xl:h-12">
             {isEco && (
-              <>
+              <span data-gorunume-ozel className="contents">
                 <IconButton label="Kişisel Rapor" onClick={() => setReportOpen(true)}>
                   <PieChartIcon className="w-[19px] h-[19px]" aria-hidden="true" />
                 </IconButton>
                 <IconButton label="Metodoloji" onClick={() => setMethodologyOpen(true)}>
                   <BookOpen className="w-[19px] h-[19px]" aria-hidden="true" />
                 </IconButton>
-              </>
+              </span>
             )}
             <IconButton label="Çıkış" onClick={onLogout}>
               <LogOut className="w-[19px] h-[19px]" aria-hidden="true" />
@@ -307,16 +315,19 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
           <div className="[grid-area:sel] min-w-0 flex flex-col gap-3">
             {/* Model seçici: tam yuvarlak segment, mobilde de sağdan taşmayan 3 eşit sütun (grid-cols-3).
                 Seçili modelin arkasında siyah bir hap kayar (yalnızca süs; "hareketi azalt"ta anında geçer).
+                Kayma transform ile yapılır (konum/left canlandırılmaz; hareket sistemi kuralı), süre --motion-slow.
                 Butonlar en az 40 px yüksek, aralarında 8 px boşluk: yanlış dokunma (= kayıtta yanlış ölçek
                 sınıfı) olasılığı azalır (Dilim 8d). */}
             <div className="relative grid grid-cols-3 gap-2 p-1 rounded-full bg-muted">
               <div
                 aria-hidden="true"
-                className="absolute top-1 bottom-1 rounded-full bg-ink transition-[left] duration-[350ms] ease-[cubic-bezier(0.2,0.8,0.2,1)]"
-                // Sütun genişliği = (kutu − 2×4 px iç boşluk − 2×8 px aralık) / 3; hap seçili sütunun soluna oturur.
+                data-testid="model-hap"
+                className="absolute top-1 bottom-1 left-1 rounded-full bg-ink transition-transform duration-(--motion-slow) ease-(--ease-motion)"
+                // Sütun genişliği = (kutu − 2×4 px iç boşluk − 2×8 px aralık) / 3. Hap ilk sütundan başlar ve
+                // seçili sütuna kayar: her adım bir sütun genişliği (hapın kendi genişliği = %100) + 8 px aralık.
                 style={{
                   width: 'calc((100% - 24px) / 3)',
-                  left: `calc(4px + ${selectedIndex} * ((100% - 24px) / 3 + 8px))`,
+                  transform: `translateX(calc(${selectedIndex} * (100% + 8px)))`,
                 }}
               />
               {MODEL_ORDER.map((id) => {
@@ -327,7 +338,7 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
                     type="button"
                     onClick={() => chooseModel(id)}
                     aria-pressed={active}
-                    className={`relative z-10 min-h-10 px-1.5 rounded-full text-center text-[13px] tracking-[-0.01em] truncate touch-manipulation transition-colors duration-[350ms] ${
+                    className={`relative z-10 min-h-10 px-1.5 rounded-full text-center text-[13px] tracking-[-0.01em] truncate touch-manipulation transition-colors duration-(--motion-slow) ${
                       active ? 'text-paper font-semibold' : 'text-text-2 font-medium hover:text-ink'
                     }`}
                   >
@@ -359,6 +370,7 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
           {isEco && (
             <div
               data-testid="eko-ozet-kapsayici"
+              data-gorunume-ozel
               className={`${ECO_CARD_PLACEMENT_CLASS}${inputFocused ? ' hidden sm:block' : ''}`}
             >
               <div className={`${COLUMN_CLASS} pb-3.5 xl:max-w-none 2xl:max-w-none xl:p-0 xl:h-full`}>
@@ -400,7 +412,9 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
 
             {historyState === 'ready' && messages.length === 0 && !pending && (
               <div className="py-12 sm:py-20 flex flex-col items-center text-center max-w-md mx-auto">
-                <BrandMark variant={isEco ? 'ring' : 'orbit'} size={52} />
+                <span data-gorunume-ozel className="contents">
+                  <BrandMark variant={isEco ? 'ring' : 'orbit'} size={52} />
+                </span>
                 <h2 className="mt-5 text-xl font-semibold tracking-[-0.02em]">Eğitim Asistanına Hoş Geldin</h2>
                 <p className="text-[15px] text-text-2 mt-2 leading-relaxed">
                   Ders konuların, ödevlerin veya merak ettiğin herhangi bir konuda sorularını aşağıdan yazabilirsin.
@@ -496,18 +510,19 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
         </form>
       </footer>
 
-      {/* EkoToken pencereleri: yalnızca açıldıklarında yüklenir */}
-      {isEco && (reportOpen || methodologyOpen) && (
+      {/* EkoToken pencereleri: ilk açılışta yüklenir (ayrı kod parçası). Sonra sayfada kalır ve open ile
+          açılıp kapanır; böylece kapanış animasyonu oynayabilir (Modal → usePresence). */}
+      {isEco && (reportLoaded.current || methodologyLoaded.current) && (
         <Suspense fallback={null}>
-          {reportOpen && (
+          {reportLoaded.current && (
             <PersonalReportModal
-              open
+              open={reportOpen}
               onClose={() => setReportOpen(false)}
               summary={ecoSummary}
               participantCode={student.code}
             />
           )}
-          {methodologyOpen && <MethodologyModal open onClose={() => setMethodologyOpen(false)} />}
+          {methodologyLoaded.current && <MethodologyModal open={methodologyOpen} onClose={() => setMethodologyOpen(false)} />}
         </Suspense>
       )}
     </div>

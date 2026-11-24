@@ -55,14 +55,22 @@
   /* Gölge: yalnızca yüzen yazma kapsülünde */
   --shadow-capsule: 0 6px 24px rgba(10, 10, 11, 0.06);
 
-  /* Hareketler (TASARIM.md Bölüm 4). Hepsi yalnızca süslemedir; içerik animasyonu beklemez. */
-  --animate-orbit: orbit 6s linear infinite;                         /* logo yörünge noktası */
-  --animate-pulse-dot: pulse-dot 2s ease-in-out infinite;            /* "oturum açık" nabzı */
-  --animate-rise: rise 0.5s ease-out both;                           /* mesaj belirmesi */
-  --animate-ring: ring 1.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;     /* EkoToken halkası dolması */
-  --animate-grow: grow 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;     /* yatay çubuk dolması */
-  --animate-up: up 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;         /* dikey sütun dolması */
-  --animate-typing: typing-dot 1.2s infinite;                         /* "yazıyor" üç nokta */
+  /* Tailwind'in transition-colors / transition-transform gibi sınıflarının varsayılan süresi ve eğrisi de
+     hareket sistemine bağlıdır (aşağıdaki :root bloğu). */
+  --default-transition-duration: var(--motion-fast);
+  --default-transition-timing-function: var(--ease-motion);
+
+  /* Hareketler (TASARIM.md Bölüm 4). Hepsi yalnızca süslemedir; içerik animasyonu beklemez.
+     Süre ve eğri değişkenleri aşağıdaki HAREKET SİSTEMİ bloğundadır (:root). */
+  --animate-orbit: orbit 6s linear infinite;                                     /* logo yörünge noktası */
+  --animate-pulse-dot: pulse-dot 2s ease-in-out infinite;                        /* "oturum açık" nabzı */
+  --animate-rise: rise var(--motion-normal) var(--ease-motion) both;             /* yeni mesaj balonu belirmesi */
+  --animate-motion-in: rise var(--motion-normal) var(--ease-motion) both;        /* sekme içeriği, açılan bölüm, kart */
+  --animate-fade-in: fade-in var(--motion-normal) var(--ease-motion) both;       /* pencere karartması */
+  --animate-ring: ring 1.4s var(--ease-motion) both;                             /* EkoToken halkası dolması */
+  --animate-grow: grow 0.9s var(--ease-motion) both;                             /* yatay çubuk dolması */
+  --animate-up: up 0.8s var(--ease-motion) both;                                 /* dikey sütun dolması */
+  --animate-typing: typing-dot 1.2s infinite;                                     /* "yazıyor" üç nokta */
 
   @keyframes orbit {
     to { transform: rotate(360deg); }
@@ -71,9 +79,14 @@
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.35; transform: scale(0.7); }
   }
+  /* Belirme: birkaç piksel aşağıdan yukarı kayarak görünür (yalnızca opacity + transform). */
   @keyframes rise {
-    from { opacity: 0; transform: translateY(8px); }
+    from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: none; }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
   /* Halka: stroke-dasharray 63 olan çember boştan (63) son değerine dolar; son değer öğenin kendi
      stroke-dashoffset özniteliğidir (animasyon kapalıyken de doğru görünür). */
@@ -92,6 +105,89 @@
     0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
     40% { opacity: 1; transform: translateY(-3px); }
   }
+}
+
+/* ---------------------------------------------------------------------------
+   HAREKET SİSTEMİ (animasyonlar dalı, 24.11.2026) — süreler ve eğri TEK YERDE.
+   Kurallar:
+   - Yalnızca transform, scale ve opacity canlandırılır (genişlik/yükseklik/konum yok): zayıf okul
+     bilgisayarlarında sayfa yeniden düzenlenmez, takılma olmaz.
+   - "Hareketi azalt" açıkken hepsi kapanır (aşağıdaki prefers-reduced-motion bloğu).
+   - KÖR DENEY: sade ve EkoToken sohbet ekranının ortak öğeleri aynı sınıfları kullanır
+     (tests/animasyon.test.jsx denetler).
+   JS tarafı (pencere kapanış süresi) değerleri buradan okur: src/lib/motion.js.
+   --------------------------------------------------------------------------- */
+:root {
+  --motion-fast: 150ms;    /* buton basma, renk geçişi, pencere kapanışı */
+  --motion-normal: 220ms;  /* belirme, sekme geçişi, pencere açılışı */
+  --motion-slow: 350ms;    /* model seçici hapının kayması (önceki süre korunur) */
+  --ease-motion: cubic-bezier(0.2, 0.8, 0.2, 1); /* ortak eğri: hızlı başlar, yumuşak durur */
+}
+
+/* Butonlar: hover/odak renk geçişleri yumuşak, basınca hafif küçülme.
+   Tailwind v4'te hover: yalnızca gerçek fare olan cihazlarda çalışır (@media (hover: hover)); dokunmatikte
+   hover rengi takılı kalmaz. Küçülme "scale" özelliğiyle yapılır: Tailwind'in translate/transform sınıflarını ezmez.
+   Bileşendeki transition-* sınıfları (utilities katmanı) bu varsayılanın üstüne yazar. */
+@layer base {
+  button {
+    transition-property: color, background-color, border-color, box-shadow, opacity, scale;
+    transition-duration: var(--motion-fast);
+    transition-timing-function: var(--ease-motion);
+  }
+  button:not(:disabled):active {
+    scale: 0.97;
+  }
+  /* Açılır bölümler ("Tablo olarak göster" vb.): açılınca içerik kısaca belirir. */
+  details[open] > :not(summary) {
+    animation: var(--animate-motion-in);
+  }
+}
+
+/* Pencereler (src/components/Overlay.jsx): karartma belirir, pencere hafif ölçek + yukarı kayma ile gelir;
+   telefonda (sm altı) alttan yükselir. Kapanışta kısa bir çıkış animasyonu oynar (.overlay-closing),
+   sonra pencere kaldırılır (src/lib/motion.js → usePresence). Konum/yükseklik canlandırılmaz:
+   klavye ve görünür alan düzeltmeleri (app-viewport) etkilenmez. */
+.overlay-scrim {
+  animation: fade-in var(--motion-normal) var(--ease-motion) both;
+}
+.motion-dialog {
+  animation: dialog-in var(--motion-normal) var(--ease-motion) both;
+}
+.overlay-closing {
+  pointer-events: none; /* kapanırken ikinci bir dokunuş işlem yapmasın */
+}
+.overlay-closing .overlay-scrim {
+  animation: fade-out var(--motion-fast) var(--ease-motion) both;
+}
+.overlay-closing .motion-dialog {
+  animation: dialog-out var(--motion-fast) var(--ease-motion) both;
+}
+@media (max-width: 639.98px) {
+  .motion-dialog {
+    animation-name: sheet-in;
+  }
+  .overlay-closing .motion-dialog {
+    animation-name: sheet-out;
+  }
+}
+@keyframes fade-out {
+  to { opacity: 0; }
+}
+@keyframes dialog-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes dialog-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(4px) scale(0.98); }
+}
+@keyframes sheet-in {
+  from { opacity: 0; transform: translateY(32px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes sheet-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(24px); }
 }
 
 html,
@@ -154,6 +250,10 @@ html[data-zemin='karartma'] body {
     animation: none !important;
     transition: none !important;
     scroll-behavior: auto !important;
+  }
+  /* Basınca küçülme de kapanır. */
+  button:active {
+    scale: none !important;
   }
 }
 

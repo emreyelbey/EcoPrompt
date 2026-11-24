@@ -81,13 +81,13 @@ export default function EcoImpactFooter({ eco, modelId }) {
           <b className="font-semibold text-ink">Günlük Karşılık</b> · {eq.waterPrimary}
         </span>
         <ChevronDown
-          className={`w-4 h-4 shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 shrink-0 transition-transform duration-(--motion-normal) ease-(--ease-motion) ${expanded ? 'rotate-180' : ''}`}
           aria-hidden="true"
         />
       </button>
 
       {expanded && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-2xl border border-line bg-surface text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-2xl border border-line bg-surface text-xs animate-motion-in">
           <EquivalentItem icon={Droplets} title={`Su (${fmtSmart(eco.waterAvg)} mL ort.)`} text={eq.waterPrimary} />
           <EquivalentItem
             icon={Zap}
