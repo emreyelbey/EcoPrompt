@@ -30,6 +30,15 @@
   --color-text-2b: #3F3F46;  /* biraz daha koyu ikincil metin */
   --color-text-3: #71717A;   /* etiketler (beyaz zeminde 4.5:1 kontrast) */
 
+  /* Koyu zemin (giriş ekranı, panel kenar menüsü). Metin renkleri ink zeminde en az 4.5:1 kontrast sağlar. */
+  --color-on-dark: #FAFAFA;    /* ana metin */
+  --color-on-dark-2: #A1A1AA;  /* ikincil metin, etiketler (≈ 7.9:1) */
+  --color-on-dark-3: #8A8A93;  /* alt bilgi (≈ 5.8:1) */
+  --color-on-dark-link: #D4D4D8; /* bağlantılar */
+  --color-dark-field: #141416; /* yazı kutusu zemini */
+  --color-dark-line: #2A2A2F;  /* yazı kutusu kenarı */
+  --color-dark-rule: #1F1F23;  /* ayırıcı çizgi */
+
   /* Nötr vurgu (logo yörünge noktası, "oturum açık" nabzı) */
   --color-accent: #A5B4FC;     /* koyu zeminde */
   --color-accent-ink: #4F46E5; /* açık zeminde */

@@ -1,10 +1,25 @@
 // Giriş ekranı: öğrenci kodu ile giriş ve altta sade "Yönetici Girişi" bağlantısı.
 // Kurallar (proje rehberi Bölüm 2): demo/önizleme butonu YOK, parola arayüzde hiçbir yerde yazmaz,
 // kod ve parola tarayıcıda değil sunucuda (/api/login, /api/admin/login) doğrulanır.
-// Görsel referans: reference/canvas-prototip.tsx → LoginScreen.
+// Görsel referans: reference/tasarim-yon2b/Yon2-Giris.dc.html (Yön 2b, koyu ekran).
+// Kör deney: ekran nötrdür (yeşil, yaprak, çevre çağrışımı yok); iki grup da aynı ekranı görür.
+// Mobil (Dilim 8d): yazı kutuları 16 px'ten büyük (iOS yakınlaştırmaz), dokunma hedefleri en az 44 px.
+// Klavye açılıp alan daralınca içerik kaydırılabilir (orta alan esner, form ekranın dışında kalmaz).
 import { useState } from 'react';
-import { GraduationCap, Shield, Lock, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import { apiRequest } from '../lib/api.js';
+import { BrandMark, Wordmark } from './ui/BrandMark.jsx';
+
+// İki formda ortak yazı kutusu görünümü (koyu zemin, 56 px yükseklik, odakta nötr vurgu çerçevesi).
+const FIELD_CLASS =
+  'w-full h-14 px-[18px] rounded-2xl border border-dark-line bg-dark-field text-on-dark placeholder:text-text-3 ' +
+  'focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30 disabled:opacity-60 transition-colors';
+
+// İki formda ortak birincil buton (tam yuvarlak, açık renk).
+const PRIMARY_BUTTON_CLASS =
+  'w-full h-14 rounded-full bg-on-dark text-ink text-base font-semibold flex items-center justify-center gap-2 ' +
+  'hover:bg-white active:scale-[0.99] disabled:opacity-70 disabled:cursor-wait transition-all ' +
+  'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-ink';
 
 export default function LoginScreen({ onStudentLogin, onAdminLogin, initialCode = '', initialError = '' }) {
   const [mode, setMode] = useState('student'); // 'student' | 'admin'
@@ -59,134 +74,147 @@ export default function LoginScreen({ onStudentLogin, onAdminLogin, initialCode 
     setPassInput('');
   };
 
+  const isAdmin = mode === 'admin';
+
   return (
-    <div className="app-viewport fixed inset-0 w-full h-full flex flex-col overflow-hidden bg-gradient-to-br from-slate-50 via-white to-indigo-50/60">
-      {/* Kart m-auto ile ortalanır (items-center/justify-center ile değil): klavye açılıp alan daralınca
-          kartın üstü kaydırılamayan bölgeye düşmez, sayfa yukarı-aşağı kaydırılabilir. */}
-      <main className="flex-1 min-h-0 overflow-y-auto flex p-4">
-        <div className="m-auto w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200/90 overflow-hidden">
-          {/* Üst başlık */}
-          <div className="px-6 pt-7 pb-5 bg-gradient-to-br from-slate-900 to-slate-800 text-white text-center">
-            <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center mx-auto mb-3">
-              {mode === 'admin' ? (
-                <Shield className="w-6 h-6 text-indigo-300" />
-              ) : (
-                <GraduationCap className="w-6 h-6 text-indigo-300" />
-              )}
+    <div className="app-viewport fixed inset-0 w-full h-full flex flex-col overflow-hidden bg-ink text-on-dark">
+      {/* Yalnızca bu alan kayar. İç sütun en az ekran yüksekliğindedir; klavye açılıp alan daralınca
+          ortadaki başlık alanı küçülür ve sayfa kaydırılabilir (form görünmez bölgeye düşmez). */}
+      <main className="flex-1 min-h-0 overflow-y-auto">
+        <div className="min-h-full w-full max-w-md mx-auto flex flex-col px-7 pt-7 pb-8">
+          {/* Üst satır: logo + ad, sağda proje etiketi */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <BrandMark variant="orbit" size={32} tone="dark" />
+              <Wordmark first="Eğitim " second="Asistanı" className="text-[15px]" />
             </div>
-            <h1 className="text-xl font-bold tracking-tight">
-              {mode === 'admin' ? 'Araştırmacı / Yönetici Girişi' : 'Eğitim Asistanı Girişi'}
-            </h1>
-            <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">TÜBİTAK 2204-A Lise Araştırma Projesi</p>
+            <span className="font-mono text-[11px] tracking-[0.08em] text-on-dark-2">2204-A</span>
           </div>
 
-          <div className="p-6">
-            {mode === 'student' ? (
-              <form onSubmit={handleStudentSubmit} className="space-y-4">
-                <div>
-                  <label htmlFor="participant-code" className="block text-sm font-semibold text-slate-700 mb-1.5">
-                    Katılımcı Kodu
-                  </label>
-                  <input
-                    id="participant-code"
-                    type="text"
-                    value={codeInput}
-                    onChange={(e) => {
-                      setCodeInput(e.target.value);
-                      if (errorMsg) setErrorMsg('');
-                    }}
-                    placeholder="Size verilen kodu yazın"
-                    autoComplete="off"
-                    autoCapitalize="characters"
-                    spellCheck={false}
-                    maxLength={10}
-                    disabled={busy}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-300 text-slate-900 font-semibold tracking-wider uppercase placeholder:normal-case placeholder:font-normal placeholder:tracking-normal focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-slate-50 transition-all"
-                  />
-                  <p className="text-xs text-slate-500 mt-1.5">
-                    Giriş için yalnızca öğretmeniniz tarafından verilen kişisel çalışma kodunuzu kullanın.
-                  </p>
-                </div>
-
-                <ErrorBox message={errorMsg} />
-
-                <button
-                  type="submit"
-                  disabled={busy}
-                  className="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] disabled:opacity-70 disabled:cursor-wait text-white font-semibold text-sm shadow-sm transition-all flex items-center justify-center gap-2"
-                >
-                  {busy ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Kontrol ediliyor…</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Oturumu Başlat</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-              </form>
+          {/* Başlık alanı: kalan boşluğu doldurur, içeriği dikeyde ortalar */}
+          <div className="flex-1 flex flex-col justify-center gap-[18px] py-10">
+            {isAdmin ? (
+              <h1 className="text-[44px] leading-[46px] font-semibold tracking-[-0.04em]">
+                Yönetici
+                <br />
+                <span className="font-serif italic font-normal tracking-[-0.01em] text-accent">Girişi.</span>
+              </h1>
             ) : (
-              <form onSubmit={handleAdminSubmit} className="space-y-4">
-                <div>
-                  <label htmlFor="admin-pass" className="block text-sm font-semibold text-slate-700 mb-1.5">
-                    Yönetici Parolası
-                  </label>
-                  <div className="relative">
-                    <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      id="admin-pass"
-                      type="password"
-                      value={passInput}
-                      onChange={(e) => {
-                        setPassInput(e.target.value);
-                        if (errorMsg) setErrorMsg('');
-                      }}
-                      placeholder="Parolanızı girin"
-                      autoComplete="off"
-                      disabled={busy}
-                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-600 focus:border-slate-600 disabled:bg-slate-50 transition-all"
-                    />
-                  </div>
-                </div>
-
-                <ErrorBox message={errorMsg} />
-
-                <button
-                  type="submit"
-                  disabled={busy}
-                  className="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-900 active:scale-[0.99] disabled:opacity-70 disabled:cursor-wait text-white font-semibold text-sm shadow-sm transition-all flex items-center justify-center gap-2"
-                >
-                  {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
-                  <span>{busy ? 'Kontrol ediliyor…' : 'Yönetici Paneline Gir'}</span>
-                </button>
-              </form>
+              <h1 className="text-[52px] leading-[52px] font-semibold tracking-[-0.04em]">
+                Sor.
+                <br />
+                Öğren.
+                <br />
+                <span className="font-serif italic font-normal tracking-[-0.01em] text-accent">Derinleş.</span>
+              </h1>
             )}
+            <p className="text-base leading-6 text-on-dark-2 max-w-[290px]">
+              {isAdmin
+                ? 'Araştırma ekibi ve danışman öğretmen içindir.'
+                : 'Ders ve araştırma için kişisel sohbet asistanın.'}
+            </p>
+          </div>
 
-            {/* Sade alt geçiş bağlantısı */}
-            <div className="mt-6 pt-4 border-t border-slate-100 text-center">
-              {mode === 'student' ? (
-                <button
-                  type="button"
-                  onClick={() => switchMode('admin')}
-                  disabled={busy}
-                  className="px-3 py-2 text-xs font-medium text-slate-400 hover:text-slate-700 transition-colors"
-                >
-                  Yönetici Girişi
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => switchMode('student')}
-                  disabled={busy}
-                  className="px-3 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 transition-colors"
-                >
-                  ← Öğrenci Girişine Dön
-                </button>
-              )}
-            </div>
+          {/* Form */}
+          {isAdmin ? (
+            <form onSubmit={handleAdminSubmit} className="flex flex-col gap-3">
+              <label
+                htmlFor="admin-pass"
+                className="text-xs font-medium tracking-[0.08em] uppercase text-on-dark-2"
+              >
+                Yönetici Parolası
+              </label>
+              <input
+                id="admin-pass"
+                type="password"
+                value={passInput}
+                onChange={(e) => {
+                  setPassInput(e.target.value);
+                  if (errorMsg) setErrorMsg('');
+                }}
+                placeholder="Parolanızı girin"
+                autoComplete="off"
+                disabled={busy}
+                className={`${FIELD_CLASS} text-lg`}
+              />
+              <ErrorBox message={errorMsg} />
+              <button type="submit" disabled={busy} className={PRIMARY_BUTTON_CLASS}>
+                {busy ? (
+                  <>
+                    <Loader2 className="w-[18px] h-[18px] animate-spin" aria-hidden="true" />
+                    <span>Kontrol ediliyor…</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Yönetici Paneline Gir</span>
+                    <ArrowRight className="w-[18px] h-[18px]" aria-hidden="true" />
+                  </>
+                )}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleStudentSubmit} className="flex flex-col gap-3">
+              <label
+                htmlFor="participant-code"
+                className="text-xs font-medium tracking-[0.08em] uppercase text-on-dark-2"
+              >
+                Katılımcı Kodu
+              </label>
+              <input
+                id="participant-code"
+                type="text"
+                value={codeInput}
+                onChange={(e) => {
+                  setCodeInput(e.target.value);
+                  if (errorMsg) setErrorMsg('');
+                }}
+                // Örnek olarak gerçek bir katılımcı kodu yazılmaz (ör. "K001"): hem grup harfini ima eder
+                // hem de birinin o kodla giriş yapmasını kolaylaştırır.
+                placeholder="Kodunu yaz"
+                autoComplete="off"
+                autoCapitalize="characters"
+                spellCheck={false}
+                maxLength={10}
+                disabled={busy}
+                // Kod mono yazıyla, aralıklı ve büyük harf; yer tutucu normal yazıyla.
+                className={`${FIELD_CLASS} font-mono text-xl tracking-[0.12em] uppercase placeholder:font-sans placeholder:normal-case placeholder:tracking-normal placeholder:text-base`}
+              />
+              <ErrorBox message={errorMsg} />
+              <button type="submit" disabled={busy} className={PRIMARY_BUTTON_CLASS}>
+                {busy ? (
+                  <>
+                    <Loader2 className="w-[18px] h-[18px] animate-spin" aria-hidden="true" />
+                    <span>Kontrol ediliyor…</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Giriş Yap</span>
+                    <ArrowRight className="w-[18px] h-[18px]" aria-hidden="true" />
+                  </>
+                )}
+              </button>
+              <p className="mt-1 text-[13px] leading-5 text-on-dark-2 text-center">
+                Kodunu öğretmeninden aldığın karttan gir.
+              </p>
+            </form>
+          )}
+
+          {/* Alt satır: proje adı + sade mod geçiş bağlantısı (demo/önizleme butonu YOK) */}
+          {/* 360 px'te iki öğe tek satıra sığsın diye dar ekranda proje adı kısaltılır. */}
+          <div className="mt-5 pt-2 border-t border-dark-rule flex items-center justify-between gap-x-3">
+            <span className="text-xs text-on-dark-3">
+              <span className="sm:hidden">TÜBİTAK 2204-A Projesi</span>
+              <span className="hidden sm:inline">TÜBİTAK 2204-A Lise Araştırma Projesi</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => switchMode(isAdmin ? 'student' : 'admin')}
+              disabled={busy}
+              // En az 44 px dokunma alanı; sağdaki boşluk negatif kenar boşluğuyla hizalanır.
+              className="shrink-0 min-h-11 pl-2 pr-3 -mr-3 text-[13px] font-medium text-on-dark-link hover:text-on-dark disabled:opacity-60 transition-colors focus:outline-none focus-visible:underline"
+            >
+              {isAdmin ? '← Öğrenci Girişine Dön' : 'Yönetici Girişi'}
+            </button>
           </div>
         </div>
       </main>
@@ -194,12 +222,15 @@ export default function LoginScreen({ onStudentLogin, onAdminLogin, initialCode 
   );
 }
 
-// Kırmızı hata kutusu. Mesaj yoksa hiçbir şey çizmez.
+// Kırmızı hata kutusu (koyu zemine uyarlanmış). Mesaj yoksa hiçbir şey çizmez.
 function ErrorBox({ message }) {
   if (!message) return null;
   return (
-    <div role="alert" className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2">
-      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+    <div
+      role="alert"
+      className="p-3 rounded-2xl bg-rose-950/60 border border-rose-900 text-[13px] leading-5 text-rose-200 flex items-start gap-2"
+    >
+      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
       <span>{message}</span>
     </div>
   );
