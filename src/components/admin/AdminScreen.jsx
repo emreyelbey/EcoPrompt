@@ -35,6 +35,7 @@ import { apiRequest } from '../../lib/api.js';
 import { PHASES } from '../../lib/phases.js';
 import { PHASE_LABELS, realRecords } from '../../lib/adminSummary.js';
 import { generateSampleData, SAMPLE_CODE_GROUPS } from '../../lib/sampleData.js';
+import { useScreenTheme } from '../../lib/screenTheme.js';
 
 // Sekmenin tam adı: sayılı sekmelerde "Öğrenci Kayıtları (12)". Kenar menüsü butonlarının erişilebilir adı ve
 // telefondaki seçim kutusunun seçenek metni aynı fonksiyondan gelir.
@@ -48,6 +49,8 @@ function clock(ms) {
 }
 
 export default function AdminScreen({ token, onLogout }) {
+  // Panel açıkken sayfa zemini ve tarayıcı çubuğu açık (paper); pencere açılınca karartma rengine geçer.
+  useScreenTheme('light');
   const data = useAdminData(token, onLogout);
   const [tab, setTab] = useState('overview');
   const [phaseTarget, setPhaseTarget] = useState(null); // onay bekleyen yeni aşama

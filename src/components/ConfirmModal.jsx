@@ -2,6 +2,9 @@
 // Kullanım: <ConfirmModal open title="..." message="..." confirmLabel="..." onConfirm={...} onCancel={...} />
 // Arka plana veya "Vazgeç"e tıklamak pencereyi kapatır.
 // danger: geri alınamaz işlemler (silme) için kırmızı onay butonu. busyLabel: işlem sürerken buton yazısı.
+// Ortak kabuk (Overlay) pencereyi görünen alana oturtur. Metin uzunsa kendi içinde kayar; butonlar alttaki
+// sabit bölümde her zaman görünür.
+import Overlay from './Overlay.jsx';
 
 export default function ConfirmModal({
   open,
@@ -17,22 +20,21 @@ export default function ConfirmModal({
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4"
-      onClick={busy ? undefined : onCancel}
-    >
+    <Overlay onBackdropClick={busy ? undefined : onCancel}>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="onay-baslik"
-        className="w-full max-w-sm rounded-[20px] bg-surface p-6 shadow-2xl"
-        onClick={(e) => e.stopPropagation()} // Pencerenin içine tıklamak onu kapatmasın.
+        className="w-full max-w-sm max-h-[min(90dvh,100%)] flex flex-col overflow-hidden rounded-[20px] bg-surface shadow-2xl"
       >
-        <h2 id="onay-baslik" className="text-base font-semibold text-ink">
-          {title}
-        </h2>
-        <p className="mt-2 text-sm text-text-2 leading-relaxed">{message}</p>
-        <div className="mt-5 flex justify-end gap-2">
+        <div data-pencere-kaydirma className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 pt-6 pb-2">
+          <h2 id="onay-baslik" className="text-base font-semibold text-ink">
+            {title}
+          </h2>
+          <p className="mt-2 text-sm text-text-2 leading-relaxed">{message}</p>
+        </div>
+        {/* Sabit alt bölüm: içerik kaysa da butonlar görünür kalır. */}
+        <div data-pencere-eylemler className="shrink-0 flex justify-end gap-2 px-6 pt-3 pb-6">
           <button
             type="button"
             onClick={onCancel}
@@ -53,6 +55,6 @@ export default function ConfirmModal({
           </button>
         </div>
       </div>
-    </div>
+    </Overlay>
   );
 }

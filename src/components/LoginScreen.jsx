@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import { apiRequest } from '../lib/api.js';
 import { BrandMark, Wordmark } from './ui/BrandMark.jsx';
-import { useDarkScreenTheme } from '../lib/screenTheme.js';
+import { useScreenTheme } from '../lib/screenTheme.js';
 
 // İki formda ortak yazı kutusu görünümü (koyu zemin, 56 px yükseklik, odakta nötr vurgu çerçevesi).
 const FIELD_CLASS =
@@ -25,7 +25,7 @@ const PRIMARY_BUTTON_CLASS =
 export default function LoginScreen({ onStudentLogin, onAdminLogin, initialCode = '', initialError = '' }) {
   const [mode, setMode] = useState('student'); // 'student' | 'admin'
   // Giriş ekranı açıkken sayfa zemini ve tarayıcı çubuğu koyu (klavye açılınca alttaki şerit de koyu kalır).
-  useDarkScreenTheme();
+  useScreenTheme('dark');
   const [codeInput, setCodeInput] = useState(initialCode);
   const [passInput, setPassInput] = useState('');
   const [errorMsg, setErrorMsg] = useState(initialError);

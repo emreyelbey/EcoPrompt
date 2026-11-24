@@ -29,6 +29,7 @@ import { apiRequest } from '../lib/api.js';
 import { MODEL_ORDER, MODEL_SCALES } from '../lib/footprint.js';
 import { chatResponseAction } from '../lib/phases.js';
 import { DEFAULT_MODEL, loadModelChoice, saveModelChoice } from '../lib/session.js';
+import { useScreenTheme } from '../lib/screenTheme.js';
 
 // Pencereler ihtiyaç anında yüklenir: grafik kütüphanesi ayrı bir parçaya düşer ve
 // sade ekrandaki öğrencinin tarayıcısı bu kodu hiç indirmez.
@@ -82,6 +83,8 @@ function formatTime(iso) {
 }
 
 export default function ChatScreen({ student, view = 'sade', onServerPhase, onLogout }) {
+  // Sohbet açıkken sayfa zemini ve tarayıcı çubuğu açık (paper); pencere açılınca karartma rengine geçer.
+  useScreenTheme('light');
   const isEco = view === 'ekotoken';
   const [messages, setMessages] = useState([]); // Sunucudan gelen, kaydı yazılmış mesajlar
   const [historyState, setHistoryState] = useState('loading'); // 'loading' | 'ready' | hata metni

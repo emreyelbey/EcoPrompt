@@ -112,13 +112,30 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Giriş ekranı açıkken (src/lib/screenTheme.js → <html data-zemin="koyu">) sayfa zemini de koyudur.
-   Böylece klavye açılınca veya aşırı kaydırmada koyu ekranın altında açık şerit görünmez.
-   Giriş ekranından çıkınca öznitelik silinir, açık zemin geri gelir. */
+/* Sayfa zemini o an açık olan ekrana/pencereye uyar (src/lib/screenTheme.js tek yerden yönetir).
+   Böylece klavye açılınca veya aşırı kaydırmada ekranın dışında kalan alanda açık şerit görünmez.
+   - Giriş ekranı: <html data-zemin="koyu"> → koyu zemin, color-scheme: dark.
+   - Pencere açık: <html data-zemin="karartma"> → pencere arkasındaki %50 ink katmanının açık zemin
+     üstündeki rengi (theme-color ile aynı: #828282). Pencerelerin içi açık olduğu için color-scheme açık kalır.
+   - Öznitelik yoksa (sohbet, panel): açık zemin. */
 html[data-zemin='koyu'],
 html[data-zemin='koyu'] body {
   background: var(--color-ink);
   color-scheme: dark;
+}
+
+html[data-zemin='karartma'],
+html[data-zemin='karartma'] body {
+  background: color-mix(in srgb, var(--color-ink) 50%, var(--color-paper));
+}
+
+/* Pencere karartması (src/components/Overlay.jsx): görünen alanın dışına da taşar; klavye açıkken
+   iOS sayfayı kaydırınca klavyenin arkasında kalan alan da kararır. */
+.overlay-scrim {
+  top: -100vh;
+  bottom: -100vh;
+  left: 0;
+  right: 0;
 }
 
 /* Çubuk ve sütunların hangi kenardan dolacağı (grow: soldan, up: alttan). */
