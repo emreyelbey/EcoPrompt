@@ -147,6 +147,52 @@ describe('Yönetici paneli', () => {
     expect(alert.textContent).toContain('bbbbbbbbbbbb: 1 kayıt (Ön Test 0, Son Test 1)');
   });
 
+  // Sunucunun şu anki özeti (currentConfigHash) ile kayıtlardaki özeti karşılaştıran yardımcı.
+  async function openStatsWith({ records, current }) {
+    apiRequest.mockImplementation(async (path) => {
+      if (path.startsWith('/api/admin/data')) {
+        return { interactions: records, hasMore: false, next: null, logins: [], phase: 'pretest', serverTime: 5000, currentConfigHash: current };
+      }
+      throw new Error(`beklenmeyen istek: ${path}`);
+    });
+    render(<AdminScreen token="t" onLogout={() => {}} />);
+    await screen.findByText('Aktif Katılımcılar');
+    fireEvent.click(screen.getByRole('button', { name: 'Ön Test – Son Test & İstatistik' }));
+    return screen.getByTestId('yapilandirma-ozeti');
+  }
+
+  it('sunucunun şu anki özeti kayıt olmasa da görünür (Ön Test öncesi not için)', async () => {
+    const box = await openStatsWith({ records: [], current: 'cccccccccccc' });
+    expect(box.getAttribute('role')).toBeNull();
+    expect(box.textContent).toContain('Sunucunun şu anki yapılandırma özeti: cccccccccccc');
+    expect(box.textContent).toContain('Kayıtlardaki yapılandırma özeti: henüz kayıt yok.');
+    expect(screen.getByTestId('sunucu-ozeti').textContent).toBe('cccccccccccc');
+  });
+
+  it('kayıtlardaki özet sunucununkiyle aynıysa yeşil onay', async () => {
+    const box = await openStatsWith({ records: [{ ...RECORDS[0], configHash: 'cccccccccccc' }], current: 'cccccccccccc' });
+    expect(box.getAttribute('role')).toBeNull();
+    expect(box.textContent).toContain('Kayıtlardaki yapılandırma özeti: bütün kayıtlarda tek değer cccccccccccc ✓');
+  });
+
+  it('kayıtlardaki özet sunucununkinden farklıysa kırmızı uyarı', async () => {
+    const box = await openStatsWith({ records: [{ ...RECORDS[0], configHash: 'aaaaaaaaaaaa' }], current: 'cccccccccccc' });
+    expect(box.getAttribute('role')).toBe('alert');
+    expect(box.textContent).toContain('Sunucunun şu anki yapılandırma özeti: cccccccccccc');
+    expect(box.textContent).toContain('Kayıtlardaki yapılandırma özeti: bütün kayıtlarda tek değer aaaaaaaaaaaa');
+    expect(box.textContent).not.toContain('✓');
+    expect(box.textContent).toContain('Sunucunun şu anki özeti kayıtlardakinden farklı');
+  });
+
+  it('önizleme modunda yapılandırma özeti satırı gizlenir', async () => {
+    await openStatsWith({ records: [], current: 'cccccccccccc' });
+    fireEvent.click(screen.getByRole('button', { name: 'Genel Bakış & Grafikler' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Örnek Veriyle Önizle' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ön Test – Son Test & İstatistik' }));
+    expect(screen.queryByTestId('yapilandirma-ozeti')).toBeNull();
+    expect(document.body.textContent).not.toContain('cccccccccccc');
+  });
+
   it('5 sekme, aşama anahtarı ve örnek kayıt uyarı bandı', async () => {
     mockServer();
     render(<AdminScreen token="t" onLogout={() => {}} />);

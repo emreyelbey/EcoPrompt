@@ -231,7 +231,13 @@ export default function AdminScreen({ token, onLogout }) {
                 />
               )}
               {tab === 'stats' && (
-                <StatsTab records={shown.records} logins={shown.logins} codeGroups={shown.codeGroups} onToast={setToast} />
+                <StatsTab
+                  records={shown.records}
+                  logins={shown.logins}
+                  codeGroups={shown.codeGroups}
+                  currentConfigHash={data.currentConfigHash}
+                  onToast={setToast}
+                />
               )}
               {tab === 'records' && (
                 <RecordsTab

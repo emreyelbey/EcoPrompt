@@ -3,9 +3,13 @@
 //   since        → yalnızca bu zamandan sonra gelen etkileşimler (yoksa hepsi, baştan)
 //   loginsSince  → yalnızca bu zamandan sonra değişen giriş kayıtları (yoksa hepsi)
 //   afterT+afterId → sayfalama: önceki sayfanın son kaydından devam (bu durumda giriş kayıtları ve aşama dönmez)
-// Yanıt: { interactions, hasMore, next, logins, phase, serverTime }
+// Yanıt: { interactions, hasMore, next, logins, phase, serverTime, currentConfigHash }
 // Listede uzun yanıt metni ve engineVersion yoktur (api/_lib/admin.js → ADMIN_LIST_FIELDS).
+// currentConfigHash: sunucunun ŞU ANKİ yapılandırma özeti (dondurma kuralı, Bölüm 2/6). Kayıt olmasa da
+// döner; yönetici özeti Ön Test'ten önce not edebilir ve Son Test'ten önce değişmediğini görebilir.
+// Ek Firestore okuması yoktur: değer sunucu açılışında bir kez hesaplanır. Özet tek yönlüdür, model adı içermez.
 import { getDb } from '../_lib/firebase.js';
+import { CONFIG_HASH } from '../_lib/configHash.js';
 import { getActivePhase } from '../_lib/phase.js';
 import { requireAdmin } from '../_lib/session.js';
 import { allowMethod, sendError } from '../_lib/http.js';
@@ -39,6 +43,7 @@ export default async function handler(req, res) {
         logins: null,
         phase: null,
         serverTime: Date.now(),
+        currentConfigHash: CONFIG_HASH,
       });
     }
 
@@ -58,6 +63,7 @@ export default async function handler(req, res) {
       logins,
       phase,
       serverTime: Date.now(),
+      currentConfigHash: CONFIG_HASH,
     });
   } catch (err) {
     console.error('Yönetici verisi hatası:', err.message);

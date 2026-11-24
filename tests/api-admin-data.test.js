@@ -152,6 +152,19 @@ describe('/api/admin/data', () => {
     expect(new Set(ids).size).toBe(PAGE_SIZE + 3);
   });
 
+  it('sunucunun şu anki yapılandırma özeti kayıt olmasa da döner (ek okuma yok)', async () => {
+    const { CONFIG_HASH, CONFIG_HASH_LENGTH } = await import('../api/_lib/configHash.js');
+    const res = await call(dataHandler); // boş veritabanı
+    expect(res.statusCode).toBe(200);
+    expect(res.body.interactions).toEqual([]);
+    expect(res.body.currentConfigHash).toBe(CONFIG_HASH);
+    expect(res.body.currentConfigHash).toMatch(new RegExp(`^[0-9a-f]{${CONFIG_HASH_LENGTH}}$`));
+
+    // Sayfalama devamında da aynı değer döner.
+    const page = await call(dataHandler, { query: { afterT: '0', afterId: 'x' } });
+    expect(page.body.currentConfigHash).toBe(CONFIG_HASH);
+  });
+
   it('POST reddedilir', async () => {
     const res = await call(dataHandler, { method: 'POST' });
     expect(res.statusCode).toBe(405);

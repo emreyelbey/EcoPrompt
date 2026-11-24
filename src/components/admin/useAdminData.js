@@ -26,6 +26,8 @@ export default function useAdminData(token, onUnauthorized) {
   const [records, setRecords] = useState(() => new Map());
   const [logins, setLogins] = useState(() => new Map());
   const [phase, setPhase] = useState(null);
+  // Sunucunun şu anki yapılandırma özeti (kayıt olmasa da gelir; dondurma kuralı kontrolü için).
+  const [currentConfigHash, setCurrentConfigHash] = useState(null);
   const [loading, setLoading] = useState(true); // ilk yükleme sürüyor
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -69,6 +71,7 @@ export default function useAdminData(token, onUnauthorized) {
         setRecords(recs);
         setLogins(logs);
         if (first.phase) setPhase(first.phase);
+        if (typeof first.currentConfigHash === 'string') setCurrentConfigHash(first.currentConfigHash);
         setLastUpdated(Date.now());
         setError('');
       } catch (err) {
@@ -116,6 +119,7 @@ export default function useAdminData(token, onUnauthorized) {
     logins: loginList,
     phase,
     setPhase,
+    currentConfigHash,
     loading,
     refreshing,
     error,

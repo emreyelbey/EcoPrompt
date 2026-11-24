@@ -33,7 +33,7 @@ function axisFormat(metric) {
   return fmtSmart;
 }
 
-export default function StatsTab({ records, logins, codeGroups, onToast }) {
+export default function StatsTab({ records, logins, codeGroups, currentConfigHash = null, onToast }) {
   const preview = usePreview();
   const [metric, setMetric] = useState(PRIMARY_METRIC);
   const [exporting, setExporting] = useState(false);
@@ -110,7 +110,7 @@ export default function StatsTab({ records, logins, codeGroups, onToast }) {
       </div>
 
       {/* Dondurma kuralı kontrolü: ölçüm koşulları deney boyunca aynı kaldı mı? (örnek veride yok) */}
-      {!preview && <ConfigHashCheck records={records} />}
+      {!preview && <ConfigHashCheck records={records} current={currentConfigHash} />}
 
       {/* 4 net değişim kartı */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -175,37 +175,98 @@ export default function StatsTab({ records, logins, codeGroups, onToast }) {
   );
 }
 
-// Yapılandırma özeti satırı: kayıtlarda tek bir configHash varsa yeşil onay, birden fazlaysa kırmızı uyarı.
-function ConfigHashCheck({ records }) {
+// Yapılandırma özeti kontrolü (dondurma kuralı). İki satır gösterir:
+//   1) "Sunucunun şu anki yapılandırma özeti": sunucu şu an hangi ayarlarla çalışıyor (kayıt olmasa da görünür).
+//   2) "Kayıtlardaki yapılandırma özeti": öğrenci kayıtları hangi ayarlarla üretildi.
+// Kırmızı uyarı: kayıtlarda birden fazla değer varsa VEYA kayıtlardaki değer sunucunun şu ankinden farklıysa.
+function ConfigHashCheck({ records, current }) {
   const { hashes, missing, ok } = useMemo(() => configHashSummary(records), [records]);
-  if (hashes.length === 0 && missing === 0) return null; // henüz kayıt yok
+  const noRecords = hashes.length === 0 && missing === 0;
+  if (noRecords && !current) return null; // gösterecek hiçbir bilgi yok
 
+  // Kayıtlardaki değerlerden en az biri sunucunun şu ankinden farklı mı?
+  const mismatch = Boolean(current) && hashes.some((h) => h.hash !== current);
+  const alarm = !ok || mismatch;
   const missingNote = missing > 0 ? ` ${missing} kayıt bu alan eklenmeden önce yazılmış (özetsiz).` : '';
-  if (ok) {
+
+  // 1. satır: sunucunun şu anki özeti
+  const currentLine = (
+    <p>
+      <strong>Sunucunun şu anki yapılandırma özeti:</strong>{' '}
+      {current ? <code data-testid="sunucu-ozeti" className="font-mono">{current}</code> : 'sunucu bildirmedi.'}
+    </p>
+  );
+
+  // 2. satır: kayıtlardaki özet
+  let recordsLine;
+  if (hashes.length === 0) {
+    recordsLine = (
+      <p>
+        <strong>Kayıtlardaki yapılandırma özeti:</strong> {noRecords ? 'henüz kayıt yok.' : 'özetli kayıt yok.'}
+        {missingNote}
+      </p>
+    );
+  } else if (hashes.length === 1) {
+    recordsLine = (
+      <p>
+        <strong>Kayıtlardaki yapılandırma özeti:</strong> bütün kayıtlarda tek değer{' '}
+        <code className="font-mono">{hashes[0].hash}</code>
+        {ok && !mismatch ? ' ✓' : ''}
+        {missingNote}
+      </p>
+    );
+  } else {
+    recordsLine = (
+      <div>
+        <p>
+          <strong>Kayıtlardaki yapılandırma özeti:</strong> kayıtlarda {hashes.length} farklı değer var.{missingNote}
+        </p>
+        <ul className="pl-5 list-disc">
+          {hashes.map((h) => (
+            <li key={h.hash}>
+              <code className="font-mono">{h.hash}</code>: {h.count} kayıt (Ön Test {h.pretest}, Son Test {h.posttest})
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
+  if (!alarm) {
     return (
       <div data-testid="yapilandirma-ozeti" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs text-emerald-900 flex items-start gap-2">
         <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
-        <span>
-          Yapılandırma özeti: {hashes.length === 1 ? <>bütün kayıtlarda tek değer <code className="font-mono">{hashes[0].hash}</code> ✓</> : 'özetli kayıt yok.'}
-          {' '}Ölçüm koşulları (sistem talimatı, model eşlemesi, katsayılar, bağlam sınırı) değişmemiş.{missingNote}
-        </span>
+        <div className="space-y-0.5">
+          {currentLine}
+          {recordsLine}
+          <p>
+            {noRecords
+              ? 'Kayıt yok. Sunucunun şu anki özetini Ön Test başlamadan önce tutanağa yazın.'
+              : 'Ölçüm koşulları (sistem talimatı, model eşlemesi, katsayılar, bağlam sınırı) değişmemiş.'}
+          </p>
+        </div>
       </div>
     );
   }
   return (
-    <div role="alert" data-testid="yapilandirma-ozeti" className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-2.5 text-xs text-rose-900 space-y-1">
-      <p className="flex items-start gap-2 font-semibold">
-        <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
-        Yapılandırma özeti: kayıtlarda {hashes.length} farklı değer var. Ölçüm koşulları deney sırasında değişmiş olabilir
-        (dondurma kuralı); enerji karşılaştırmaları etkilenebilir.{missingNote}
-      </p>
-      <ul className="pl-6 list-disc">
-        {hashes.map((h) => (
-          <li key={h.hash}>
-            <code className="font-mono">{h.hash}</code>: {h.count} kayıt (Ön Test {h.pretest}, Son Test {h.posttest})
-          </li>
-        ))}
-      </ul>
+    <div role="alert" data-testid="yapilandirma-ozeti" className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-2.5 text-xs text-rose-900 flex items-start gap-2">
+      <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
+      <div className="space-y-0.5">
+        {currentLine}
+        {recordsLine}
+        {!ok && (
+          <p className="font-semibold">
+            Kayıtlarda birden fazla özet var: ölçüm koşulları deney sırasında değişmiş olabilir (dondurma kuralı); enerji
+            karşılaştırmaları etkilenebilir.
+          </p>
+        )}
+        {mismatch && (
+          <p className="font-semibold">
+            Sunucunun şu anki özeti kayıtlardakinden farklı: ölçüm koşulları son kayıtlardan sonra değişmiş. Deney sürüyorsa
+            aşamayı değiştirmeyin; ekibe ve danışman öğretmene haber verin.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
