@@ -1,14 +1,16 @@
-// Sekme 2: Ön Test – Son Test & İstatistik (mini SPSS).
+// Sekme 2: İstatistik (mini SPSS). Görünüm Yön 2b.
 // - Ölçüt seçici: birincil ölçüt Toplam Enerji (Wh); diğerleri ikincil.
+// - Yapılandırma mührü (dondurma kuralı): siyah kart; sunucunun şu anki ve kayıtlardaki yapılandırma özeti.
 // - 4 net değişim kartı, Ön/Son gruplandırılmış sütun grafikleri, 4 hücre betimsel tablo.
-// - 4 kanonik t-testi: t, sd, p (çift yönlü), ortalamalar, n, Cohen's d ve Türkçe yorum.
+// - 4 kanonik t-testi: t, sd, p (çift yönlü), ortalamalar, n, Cohen's d, Türkçe yorum ve p çizelgesi
+//   (α = 0,05 çizgisi + bu testin p noktası). Anlamlı testin kartı koyu çerçevelidir.
 // - Excel İndir: excelExport.js yalnızca butona basılınca import() ile yüklenir (ayrı parça).
 // Bütün sayılar src/lib/statsReport.js'ten gelir; bu bileşen yalnızca gösterir.
 // Örnek kayıtlar hesaplara girmez (AdminScreen ayıklar, aggregateByParticipant da dışlar).
 // Örnek veri önizlemesinde (Dilim 8) AdminScreen örnek seti ve örnek kod listesini (codeGroups) verir;
-// o modda Excel butonu pasiftir ve her kartta "ÖRNEK VERİ" işareti görünür.
+// o modda Excel butonu pasiftir, yapılandırma mührü gizlenir ve her kartta "ÖRNEK VERİ" işareti görünür.
 import { useMemo, useState } from 'react';
-import { FileSpreadsheet, Loader2, Info, Star, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { FileSpreadsheet, Loader2, Info, Check, ShieldAlert } from 'lucide-react';
 import { COHENS_D_FORMULAS } from '../../lib/stats.js';
 import {
   METRIC_META,
@@ -24,6 +26,9 @@ import { fmtNum, fmtSmart, formatPValue } from '../../lib/format.js';
 import { configHashSummary } from '../../lib/adminSummary.js';
 import { ChartCard, PrePostChart } from './charts.jsx';
 import { PreviewMark, usePreview } from './PreviewContext.jsx';
+
+// α düzeyi (p çizelgesindeki eşik çizgisi). Karar kuralı statsReport.js'tedir; burası yalnızca çizimdir.
+const ALPHA = 0.05;
 
 // Ölçüt değerini grafik ekseni için kısa yazar.
 function axisFormat(metric) {
@@ -62,13 +67,13 @@ export default function StatsTab({ records, logins, codeGroups, currentConfigHas
   return (
     <div className="space-y-4">
       {/* Kontrol çubuğu: ölçüt seçici + Excel */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-3 flex flex-wrap items-center justify-between gap-3">
-        <label className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-600">
+      <div className="bg-surface rounded-[20px] border border-line p-4 flex flex-wrap items-center justify-between gap-3">
+        <label className="flex flex-wrap items-center gap-2.5 text-xs font-medium text-text-2">
           İstatistik ölçütü:
           <select
             value={metric}
             onChange={(e) => setMetric(e.target.value)}
-            className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-base sm:text-sm font-medium text-slate-800"
+            className="h-10 rounded-full border border-line-2 bg-surface px-3.5 text-base sm:text-sm font-medium text-ink"
           >
             {METRIC_ORDER.map((id) => (
               <option key={id} value={id}>
@@ -77,12 +82,9 @@ export default function StatsTab({ records, logins, codeGroups, currentConfigHas
             ))}
           </select>
           {meta.primary ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] text-indigo-700 ring-1 ring-indigo-200">
-              <Star className="w-3 h-3" aria-hidden="true" />
-              Birincil ölçüt (ana hipotez)
-            </span>
+            <span className="rounded-full bg-ink px-2.5 py-1 text-[11px] font-semibold text-paper">Birincil ölçüt (ana hipotez)</span>
           ) : (
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">İkincil ölçüt</span>
+            <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] text-text-2">İkincil ölçüt</span>
           )}
         </label>
         <button
@@ -90,7 +92,7 @@ export default function StatsTab({ records, logins, codeGroups, currentConfigHas
           onClick={exportExcel}
           disabled={exporting || preview}
           title={preview ? 'Örnek veri önizlemesinde Excel indirilemez' : undefined}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold disabled:opacity-60"
+          className="inline-flex items-center gap-2 h-11 px-[18px] rounded-full bg-ink hover:bg-ink-2 text-paper text-[13px] font-semibold disabled:opacity-50"
         >
           {exporting ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <FileSpreadsheet className="w-4 h-4" aria-hidden="true" />}
           Excel İndir (.xlsx)
@@ -98,9 +100,9 @@ export default function StatsTab({ records, logins, codeGroups, currentConfigHas
       </div>
 
       {/* Bilgi notları */}
-      <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-2.5 text-xs text-sky-900 space-y-1">
+      <div className="rounded-[14px] border border-line bg-surface px-4 py-3 text-xs text-text-2b space-y-1">
         <p className="flex items-start gap-2">
-          <Info className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
+          <Info className="w-4 h-4 mt-0.5 shrink-0 text-text-3" aria-hidden="true" />
           <span>
             Değerler öğrenci başınadır. Sıfır istem politikası (<strong>{report.policy}</strong>): {POLICY_NOTES[report.policy]} α = 0,05;
             bütün p değerleri <strong>çift yönlüdür</strong>.
@@ -113,7 +115,7 @@ export default function StatsTab({ records, logins, codeGroups, currentConfigHas
       {!preview && <ConfigHashCheck records={records} current={currentConfigHash} />}
 
       {/* 4 net değişim kartı */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         {report.changeCards.map((card) => (
           <ChangeCard key={card.metric} card={card} />
         ))}
@@ -131,21 +133,21 @@ export default function StatsTab({ records, logins, codeGroups, currentConfigHas
       <ChartCard title={`Betimsel İstatistikler — ${meta.label} (${meta.unit})`} subtitle="n: katılımcı sayısı · x̄: ortalama · SS: standart sapma (n − 1)">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm text-left">
-            <thead className="text-xs text-slate-500">
+            <thead className="text-xs text-text-3">
               <tr>
-                <th className="py-1.5 pr-4 font-semibold">Hücre</th>
-                <th className="py-1.5 pr-4 font-semibold">n</th>
-                <th className="py-1.5 pr-4 font-semibold">x̄</th>
-                <th className="py-1.5 pr-4 font-semibold">SS</th>
+                <th className="py-1.5 pr-4 font-medium">Hücre</th>
+                <th className="py-1.5 pr-4 font-medium">n</th>
+                <th className="py-1.5 pr-4 font-medium">x̄</th>
+                <th className="py-1.5 pr-4 font-medium">SS</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-line">
               {report.descriptives.map((c) => (
                 <tr key={c.label}>
-                  <td className="py-1.5 pr-4 font-semibold text-slate-800">{c.label}</td>
-                  <td className="py-1.5 pr-4 tabular-nums">{c.n}</td>
-                  <td className="py-1.5 pr-4 tabular-nums">{c.n > 0 ? formatMetricValue(c.mean, metric) : '—'}</td>
-                  <td className="py-1.5 pr-4 tabular-nums">{c.n > 1 ? fmtSmart(c.sd) : '—'}</td>
+                  <td className="py-2 pr-4 font-medium text-ink">{c.label}</td>
+                  <td className="py-2 pr-4 font-mono">{c.n}</td>
+                  <td className="py-2 pr-4 font-mono">{c.n > 0 ? formatMetricValue(c.mean, metric) : '—'}</td>
+                  <td className="py-2 pr-4 font-mono">{c.n > 1 ? fmtSmart(c.sd) : '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -154,15 +156,15 @@ export default function StatsTab({ records, logins, codeGroups, currentConfigHas
       </ChartCard>
 
       {/* 4 kanonik test */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
         {report.tests.map((test) => (
           <TestCard key={test.id} test={test} metric={metric} />
         ))}
       </div>
 
       {/* Etki büyüklüğü açıklaması */}
-      <section className="bg-white rounded-2xl border border-slate-200 p-4 text-xs text-slate-600 space-y-1.5">
-        <h3 className="text-sm font-bold text-slate-900">Etki büyüklüğü nasıl hesaplandı?</h3>
+      <section className="bg-surface rounded-[20px] border border-line p-5 text-xs text-text-2 space-y-1.5">
+        <h3 className="text-base font-semibold tracking-[-0.02em] text-ink">Etki büyüklüğü nasıl hesaplandı?</h3>
         <p>
           p değeri farkın tesadüf olup olmadığını söyler; Cohen's d ise farkın <em>ne kadar büyük</em> olduğunu (standart sapma
           cinsinden) gösterir.
@@ -175,10 +177,11 @@ export default function StatsTab({ records, logins, codeGroups, currentConfigHas
   );
 }
 
-// Yapılandırma özeti kontrolü (dondurma kuralı). İki satır gösterir:
+// YAPILANDIRMA MÜHRÜ (dondurma kuralı). Siyah kart; iki satır gösterir:
 //   1) "Sunucunun şu anki yapılandırma özeti": sunucu şu an hangi ayarlarla çalışıyor (kayıt olmasa da görünür).
 //   2) "Kayıtlardaki yapılandırma özeti": öğrenci kayıtları hangi ayarlarla üretildi.
-// Kırmızı uyarı: kayıtlarda birden fazla değer varsa VEYA kayıtlardaki değer sunucunun şu ankinden farklıysa.
+// Uyumluysa nötr onay işareti (yeşil kullanılmaz: yeşil yalnızca EkoToken'a aittir).
+// Kırmızı durum (role="alert"): kayıtlarda birden fazla değer varsa VEYA kayıtlardaki değer sunucunun şu ankinden farklıysa.
 function ConfigHashCheck({ records, current }) {
   const { hashes, missing, ok } = useMemo(() => configHashSummary(records), [records]);
   const noRecords = hashes.length === 0 && missing === 0;
@@ -192,8 +195,14 @@ function ConfigHashCheck({ records, current }) {
   // 1. satır: sunucunun şu anki özeti
   const currentLine = (
     <p>
-      <strong>Sunucunun şu anki yapılandırma özeti:</strong>{' '}
-      {current ? <code data-testid="sunucu-ozeti" className="font-mono">{current}</code> : 'sunucu bildirmedi.'}
+      <strong className="font-semibold text-on-dark">Sunucunun şu anki yapılandırma özeti:</strong>{' '}
+      {current ? (
+        <code data-testid="sunucu-ozeti" className="font-mono text-on-dark">
+          {current}
+        </code>
+      ) : (
+        'sunucu bildirmedi.'
+      )}
     </p>
   );
 
@@ -202,15 +211,16 @@ function ConfigHashCheck({ records, current }) {
   if (hashes.length === 0) {
     recordsLine = (
       <p>
-        <strong>Kayıtlardaki yapılandırma özeti:</strong> {noRecords ? 'henüz kayıt yok.' : 'özetli kayıt yok.'}
+        <strong className="font-semibold text-on-dark">Kayıtlardaki yapılandırma özeti:</strong>{' '}
+        {noRecords ? 'henüz kayıt yok.' : 'özetli kayıt yok.'}
         {missingNote}
       </p>
     );
   } else if (hashes.length === 1) {
     recordsLine = (
       <p>
-        <strong>Kayıtlardaki yapılandırma özeti:</strong> bütün kayıtlarda tek değer{' '}
-        <code className="font-mono">{hashes[0].hash}</code>
+        <strong className="font-semibold text-on-dark">Kayıtlardaki yapılandırma özeti:</strong> bütün kayıtlarda tek değer{' '}
+        <code className="font-mono text-on-dark">{hashes[0].hash}</code>
         {ok && !mismatch ? ' ✓' : ''}
         {missingNote}
       </p>
@@ -219,12 +229,13 @@ function ConfigHashCheck({ records, current }) {
     recordsLine = (
       <div>
         <p>
-          <strong>Kayıtlardaki yapılandırma özeti:</strong> kayıtlarda {hashes.length} farklı değer var.{missingNote}
+          <strong className="font-semibold text-on-dark">Kayıtlardaki yapılandırma özeti:</strong> kayıtlarda {hashes.length} farklı
+          değer var.{missingNote}
         </p>
         <ul className="pl-5 list-disc">
           {hashes.map((h) => (
             <li key={h.hash}>
-              <code className="font-mono">{h.hash}</code>: {h.count} kayıt (Ön Test {h.pretest}, Son Test {h.posttest})
+              <code className="font-mono text-on-dark">{h.hash}</code>: {h.count} kayıt (Ön Test {h.pretest}, Son Test {h.posttest})
             </li>
           ))}
         </ul>
@@ -232,36 +243,44 @@ function ConfigHashCheck({ records, current }) {
     );
   }
 
-  if (!alarm) {
-    return (
-      <div data-testid="yapilandirma-ozeti" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs text-emerald-900 flex items-start gap-2">
-        <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
-        <div className="space-y-0.5">
-          {currentLine}
-          {recordsLine}
-          <p>
+  return (
+    <div
+      role={alarm ? 'alert' : undefined}
+      data-testid="yapilandirma-ozeti"
+      className={`rounded-[20px] bg-ink text-on-dark-2 px-5 py-4 flex items-start gap-4 ${alarm ? 'ring-2 ring-rose-500' : ''}`}
+    >
+      {/* Durum simgesi: uyumluysa nötr vurgu renginde onay, değilse kırmızı kalkan */}
+      <div
+        className={`shrink-0 w-11 h-11 rounded-full border-[1.5px] flex items-center justify-center ${
+          alarm ? 'border-rose-400 text-rose-400' : 'border-accent text-accent'
+        }`}
+        aria-hidden="true"
+      >
+        {alarm ? <ShieldAlert className="w-5 h-5" /> : <Check className="w-5 h-5" strokeWidth={2.4} />}
+      </div>
+      <div className="min-w-0 flex-1 space-y-1.5">
+        <span className="block font-mono text-[10px] tracking-[0.12em] text-on-dark-2">
+          YAPILANDIRMA MÜHRÜ{alarm ? ' · UYARI' : ''}
+        </span>
+        {!alarm && (
+          <p className="text-[15px] text-on-dark">
             {noRecords
               ? 'Kayıt yok. Sunucunun şu anki özetini Ön Test başlamadan önce tutanağa yazın.'
               : 'Ölçüm koşulları (sistem talimatı, model eşlemesi, katsayılar, bağlam sınırı) değişmemiş.'}
           </p>
+        )}
+        <div className="space-y-0.5 text-xs leading-relaxed break-words">
+          {currentLine}
+          {recordsLine}
         </div>
-      </div>
-    );
-  }
-  return (
-    <div role="alert" data-testid="yapilandirma-ozeti" className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-2.5 text-xs text-rose-900 flex items-start gap-2">
-      <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
-      <div className="space-y-0.5">
-        {currentLine}
-        {recordsLine}
         {!ok && (
-          <p className="font-semibold">
+          <p className="text-[13px] font-semibold text-rose-300">
             Kayıtlarda birden fazla özet var: ölçüm koşulları deney sırasında değişmiş olabilir (dondurma kuralı); enerji
             karşılaştırmaları etkilenebilir.
           </p>
         )}
         {mismatch && (
-          <p className="font-semibold">
+          <p className="text-[13px] font-semibold text-rose-300">
             Sunucunun şu anki özeti kayıtlardakinden farklı: ölçüm koşulları son kayıtlardan sonra değişmiş. Deney sürüyorsa
             aşamayı değiştirmeyin; ekibe ve danışman öğretmene haber verin.
           </p>
@@ -272,29 +291,26 @@ function ConfigHashCheck({ records, current }) {
 }
 
 // Net değişim kartı: Kontrol ve Deney için Ön Test → Son Test yüzde değişim.
+// Renk kullanılmaz (yön işaretle okunur: + artış, − azalış).
 function ChangeCard({ card }) {
   return (
-    <div className="relative bg-white rounded-2xl border border-slate-200 p-4">
+    <div className="relative bg-surface rounded-[20px] border border-line p-5 flex flex-col gap-3">
       <PreviewMark />
-      <div className="text-xs font-semibold text-slate-500">
+      <div className="text-[13px] text-text-2">
         {card.label} ({card.unit}) — net değişim
       </div>
-      <div className="mt-2 space-y-1.5">
-        {['Kontrol', 'Deney'].map((group) => {
-          const g = card[group];
-          const pct = g.pct;
-          const color = pct === null ? 'text-slate-400' : pct < 0 ? 'text-emerald-700' : pct > 0 ? 'text-rose-700' : 'text-slate-700';
-          return (
-            <div key={group} className="flex items-baseline justify-between gap-2 text-sm">
-              <span className="text-slate-600">{group}</span>
-              <span className={`font-bold tabular-nums ${color}`}>
-                {pct === null ? '—' : `${pct > 0 ? '+' : ''}%${fmtNum(pct, 1)}`}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-      <p className="mt-1.5 text-[11px] text-slate-400">Öğrenci başına ortalamanın Ön Test → Son Test değişimi</p>
+      {['Kontrol', 'Deney'].map((group) => {
+        const pct = card[group].pct;
+        return (
+          <div key={group} className="flex items-baseline justify-between gap-2">
+            <span className="text-xs text-text-3">{group}</span>
+            <span className={`font-mono text-lg ${pct === null ? 'text-text-3' : 'text-ink'}`}>
+              {pct === null ? '—' : `${pct > 0 ? '+' : pct < 0 ? '−' : ''}%${fmtNum(Math.abs(pct), 1)}`}
+            </span>
+          </div>
+        );
+      })}
+      <p className="text-[11px] text-text-3">Öğrenci başına ortalamanın Ön Test → Son Test değişimi</p>
     </div>
   );
 }
@@ -303,59 +319,88 @@ function ChangeCard({ card }) {
 function TestCard({ test, metric }) {
   const r = test.result;
   const verdict = testVerdict(test);
-  const badge =
-    verdict === 'Anlamlı'
-      ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
-      : verdict === 'Anlamlı değil'
-        ? 'bg-slate-100 text-slate-700 ring-slate-200'
-        : 'bg-amber-50 text-amber-800 ring-amber-200';
+  const significant = verdict === 'Anlamlı';
+  const badge = significant
+    ? 'bg-ink text-paper'
+    : verdict === 'Anlamlı değil'
+      ? 'bg-muted text-text-2'
+      : 'bg-amber-50 text-amber-800 ring-1 ring-amber-200';
 
   return (
-    <section className="relative bg-white rounded-2xl border border-slate-200 p-4 space-y-2.5">
+    <section
+      className={`relative bg-surface rounded-[20px] border p-5 flex flex-col gap-4 ${significant ? 'border-ink' : 'border-line'}`}
+    >
       <PreviewMark />
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h3 className="text-sm font-bold text-slate-900">{test.title}</h3>
-          <p className="text-xs text-slate-500">
-            {test.method} · {test.expected}
-          </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-col gap-1 min-w-0">
+          <span className="font-mono text-[10px] tracking-[0.12em] uppercase text-text-3">{test.method}</span>
+          <h3 className="text-base font-semibold tracking-[-0.02em] text-ink">{test.title}</h3>
+          <p className="text-xs text-text-3">{test.expected}</p>
         </div>
-        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ${badge}`}>{verdict}</span>
+        <span className={`shrink-0 rounded-full px-2.5 py-1.5 text-xs font-semibold ${badge}`}>{verdict}</span>
       </div>
 
       {/* Ortalamalar ve n */}
       <div className="grid grid-cols-2 gap-2 text-xs">
         {test.compared.map((name, i) => (
-          <div key={name} className="rounded-lg bg-slate-50 px-2.5 py-1.5">
-            <div className="text-slate-500">{name}</div>
-            <div className="font-semibold text-slate-800 tabular-nums">x̄ = {formatMetricValue(test.means[i], metric)}</div>
+          <div key={name} className="rounded-xl bg-paper border border-line px-3 py-2">
+            <div className="text-text-3">{name}</div>
+            {/* "x̄" düz yazı tipinde: mono yazı tipinde üst çizgi (birleşik karakter) harften kayıyor. */}
+            <div className="text-ink mt-0.5">
+              x̄ = <span className="font-mono">{formatMetricValue(test.means[i], metric)}</span>
+            </div>
           </div>
         ))}
       </div>
-      <p className="text-xs text-slate-600">
+      <p className="text-xs text-text-2">
         {test.kind === 'paired'
           ? `Ön Test'te ${test.counts.nPre}, Son Test'te ${test.counts.nPost}, eşleşen ${test.counts.nPaired} kişi (test yalnızca eşleşenlerle yapılır).`
           : `n: Kontrol ${test.counts.n1}, Deney ${test.counts.n2} kişi.`}
       </p>
 
       {/* İstatistikler */}
-      <dl className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+      <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Stat label="t" value={r.valid ? fmtNum(r.t, 3) : '—'} />
         <Stat label="sd" value={r.valid ? fmtNum(r.df, test.kind === 'paired' ? 0 : 2) : '—'} />
         <Stat label="p (çift yönlü)" value={r.valid ? formatPValue(r.p) : '—'} />
-        <Stat label="Cohen's d" value={test.d === null ? '—' : `${fmtNum(test.d, 2)} (${test.dLabel})`} />
+        <Stat label="Cohen's d" value={test.d === null ? '—' : fmtNum(test.d, 2)} note={test.d === null ? null : `(${test.dLabel})`} />
       </dl>
 
-      <p className={`text-sm leading-relaxed ${r.valid ? 'text-slate-700' : 'text-amber-800'}`}>{test.interpretation}</p>
+      {/* p çizelgesi: yalnızca test hesaplanabildiyse */}
+      {r.valid && <PChart p={r.p} />}
+
+      <p className={`text-sm leading-relaxed ${r.valid ? 'text-text-2b' : 'text-amber-800'}`}>{test.interpretation}</p>
     </section>
   );
 }
 
-function Stat({ label, value }) {
+// p çizelgesi: 0–1 arası yatay çizgi; dikey çizgi α = 0,05 eşiği, nokta bu testin p değeri.
+// Nokta çizginin solundaysa (p < α) fark anlamlıdır. Süslemedir; p değeri yukarıda sayı olarak yazılıdır.
+function PChart({ p }) {
+  const position = Math.min(98, Math.max(0, p * 100));
   return (
-    <div className="rounded-lg border border-slate-100 px-2.5 py-1.5">
-      <dt className="text-slate-500">{label}</dt>
-      <dd className="font-semibold text-slate-900 tabular-nums">{value}</dd>
+    <div className="flex flex-col gap-2" aria-hidden="true">
+      <div className="relative h-1.5 rounded-full bg-muted">
+        <div className="absolute -top-[3px] -bottom-[3px] w-px bg-ink" style={{ left: `${ALPHA * 100}%` }} />
+        <div
+          className="absolute -top-1 w-3.5 h-3.5 -ml-[7px] rounded-full bg-ink border-[3px] border-surface shadow-[0_0_0_1px_var(--color-ink)]"
+          style={{ left: `${position}%` }}
+        />
+      </div>
+      <span className="text-[11px] text-text-3">Çizgi α = 0,05 eşiği; nokta bu testin p değeri.</span>
+    </div>
+  );
+}
+
+// İstatistik değeri: küçük etiket, büyük mono değer, isteğe bağlı küçük not (ör. Cohen's d etiketi "(orta)").
+function Stat({ label, value, note = null }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <dt className="text-[11px] text-text-3">{label}</dt>
+      <dd className="font-mono text-lg leading-6 text-ink">
+        {value}
+        {note && <span className="block font-sans text-xs leading-4 text-text-2">{note}</span>}
+      </dd>
     </div>
   );
 }

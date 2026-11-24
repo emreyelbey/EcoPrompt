@@ -5,12 +5,12 @@ import { FlaskConical } from 'lucide-react';
 
 export default function ExperimentDesignSection() {
   return (
-    <section className="p-4 rounded-xl bg-indigo-50 border border-indigo-200 text-sm text-indigo-950">
-      <h3 className="font-bold flex items-center gap-2">
+    <section className="p-4 rounded-2xl bg-paper border border-line text-sm text-ink">
+      <h3 className="font-semibold flex items-center gap-2">
         <FlaskConical className="w-4 h-4" aria-hidden="true" />
         Araştırma Deseni: Ön Test – Son Test Kontrol Gruplu Kör Deney
       </h3>
-      <p className="mt-1.5 text-xs leading-relaxed text-indigo-900">
+      <p className="mt-1.5 text-xs leading-relaxed text-text-2b">
         Bu bölüm yalnızca yönetici panelinde görünür. Öğrencilerin Metodoloji penceresinde deney tasarımı anlatılmaz;
         böylece Kontrol grubu deneyin amacını tahmin edemez.
       </p>
@@ -39,7 +39,7 @@ export default function ExperimentDesignSection() {
           Kontrol–Deney (Welch). Ölçütler: istem sayısı, su, enerji, CO₂ ve Hafif Model oranı.
         </li>
       </ol>
-      <p className="mt-3 text-[11px] text-indigo-800">
+      <p className="mt-3 text-[11px] text-text-3">
         Örnek veriler istatistiklere, grafiklere ve Excel'e varsayılan olarak girmez.
       </p>
     </section>

@@ -22,13 +22,13 @@ Teknik bilgi gerektirmez. Maddeleri sırayla işaretleyin. Kâğıda basıp kale
 > Son Test arasındaki fark eğitimden mi yoksa ayar değişikliğinden mi geldi, bilinemez (karıştırıcı değişken).
 >
 > **Nasıl kanıtlanır?** Sistem bu ayarların 12 karakterlik bir parmak izini ("yapılandırma özeti")
-> her kayda yazar. Yönetici panelinde **Ön Test – Son Test & İstatistik** sekmesinin üstündeki kutuda iki satır görünür:
+> her kayda yazar. Yönetici panelinde **İstatistik** sekmesindeki siyah **Yapılandırma Mührü** kartında iki satır görünür:
 > - **"Sunucunun şu anki yapılandırma özeti"**: sistemin şu an hangi ayarlarla çalıştığı. Hiç kayıt yokken de görünür.
 > - **"Kayıtlardaki yapılandırma özeti"**: öğrencilerin soruları hangi ayarlarla yanıtlandı.
 >
 > - [ ] **(B13-13) Ön Test'ten önce** (Verileri Temizle'den sonra, öğrenciler girmeden) "Sunucunun şu anki yapılandırma özeti"ni aşağıdaki tutanağa yazın. **[Öğretmen]**
 > - [ ] **Son Test başlamadan önce** (aşama hâlâ Ön Test'teyken) sunucunun şu anki özeti tutanaktakiyle aynı mı bakın (Bölüm 5, Adım 1). **[Öğretmen]**
-> - [ ] **Son Test bitince** kutunun **yeşil** olduğunu kontrol edin: "Kayıtlardaki yapılandırma özeti: bütün kayıtlarda tek değer `……` ✓". Değer tutanaktakiyle aynı olmalı. **[Öğretmen]**
+> - [ ] **Son Test bitince** Yapılandırma Mührü kartında **onay işareti (✓)** olduğunu ve kartın kırmızı çerçeveli olmadığını kontrol edin: "Kayıtlardaki yapılandırma özeti: bütün kayıtlarda tek değer `……` ✓". Değer tutanaktakiyle aynı olmalı. **[Öğretmen]**
 > - Kutu **kırmızıysa** (kayıtlarda birden fazla değer var ya da sunucunun şu anki özeti kayıtlardakinden farklı) ölçüm koşulları değişmiştir. Ekip ile danışman öğretmene haber verin; durum raporda açıklanmalıdır.
 > - Zorunlu bir hata düzeltmesi gerekirse önce danışman öğretmene sorulur ve raporda belirtilir.
 
@@ -88,13 +88,13 @@ iki aşamada da aynı kalmak zorundadır.
 ### 2c. Deneme kullanımı (UAT) ve temizlik
 
 - [ ] Danışman öğretmen ve bir öğrenci sistemi denedi (bir K ve bir D koduyla, iki aşamada da). Sorun görülmedi. **[Öğretmen + Ekip]**
-- [ ] **(B13-11) Önizleme modu KAPALI.** Yönetici paneli → Genel Bakış & Grafikler → buton **"Örnek Veriyle Önizle"** yazıyor olmalı ("Önizlemeden Çık" yazıyorsa basın). Turuncu "ÖRNEK VERİ ÖNİZLEMESİ" bandı görünmemeli. **[Öğretmen]**
-- [ ] **(B13-5) Verileri Temizle.** Genel Bakış & Grafikler → **Verileri Temizle**. Açılan pencerede silinecek sayılar görünür. Kutuya büyük harflerle **SİL** yazın (Türkçe klavye yoksa **SIL** de kabul edilir; küçük harf kabul edilmez) ve onaylayın. Bu işlem deneme kayıtlarını, giriş kayıtlarını ve hız sınırı kayıtlarını siler. Aktif aşama ayarı değişmez. **[Öğretmen]**
-- [ ] Temizlikten sonra panelde **0 kayıt** görünüyor (sekme adı "Öğrenci Kayıtları (0)"). **[Öğretmen]**
-- [ ] **Katılımcı Kodları (60)** sekmesinde 60 kodun **hepsinde "Giriş yok"** yazıyor. **[Öğretmen]**
+- [ ] **(B13-11) Önizleme modu KAPALI.** Yönetici paneli → **Genel Bakış** sekmesi → buton **"Örnek Veriyle Önizle"** yazıyor olmalı ("Önizlemeden Çık" yazıyorsa basın). Turuncu "ÖRNEK VERİ ÖNİZLEMESİ" bandı görünmemeli. **[Öğretmen]**
+- [ ] **(B13-5) Verileri Temizle.** **Genel Bakış** sekmesi → **Verileri Temizle**. Açılan pencerede silinecek sayılar görünür. Kutuya büyük harflerle **SİL** yazın (Türkçe klavye yoksa **SIL** de kabul edilir; küçük harf kabul edilmez) ve onaylayın. Bu işlem deneme kayıtlarını, giriş kayıtlarını ve hız sınırı kayıtlarını siler. Aktif aşama ayarı değişmez. **[Öğretmen]**
+- [ ] Temizlikten sonra panelde **0 kayıt** görünüyor (menüde **Öğrenci Kayıtları** sekmesinin yanındaki sayı **0**; geniş ekranda menü solda, dar ekranda üstte). **[Öğretmen]**
+- [ ] **Katılımcı Kodları** sekmesinde (menüde yanında **60** yazar) 60 kodun **hepsinde "Giriş yok"** yazıyor. **[Öğretmen]**
 - [ ] Temizlikten sonra **hiç kimse** (öğretmen ve ekip dahil) öğrenci koduyla deneme girişi yapmıyor. Her deneme girişi katılım verisi olarak kaydedilir. **[Öğretmen + Ekip]**
 - [ ] Temizlik tarihi tutanağa yazıldı. **[Öğretmen]**
-- [ ] **Ön Test – Son Test & İstatistik** sekmesindeki "Sunucunun şu anki yapılandırma özeti" tutanağa yazıldı (en üstteki kutu, B13-13). "Kayıtlardaki yapılandırma özeti" satırında "henüz kayıt yok" yazıyor. **[Öğretmen]**
+- [ ] **İstatistik** sekmesindeki "Sunucunun şu anki yapılandırma özeti" tutanağa yazıldı (siyah Yapılandırma Mührü kartı, B13-13). "Kayıtlardaki yapılandırma özeti" satırında "henüz kayıt yok" yazıyor. **[Öğretmen]**
 
 ---
 
@@ -107,7 +107,7 @@ iki aşamada da aynı kalmak zorundadır.
 
 ### Oturum sırasında
 - [ ] Her öğrenci **yalnızca kendi kartındaki kodla** giriş yapıyor. Öğretmen gözetimi sürekli. Kodlar sırayla verildiği için başkasının kodu tahmin edilebilir; bu yüzden gözetim önemlidir. **[Öğretmen]**
-- [ ] İlk birkaç öğrenci soru gönderdikten sonra İstatistik sekmesindeki kutu yeşil: "Kayıtlardaki yapılandırma özeti" tutanaktaki değerle aynı. **[Öğretmen]**
+- [ ] İlk birkaç öğrenci soru gönderdikten sonra İstatistik sekmesindeki Yapılandırma Mührü kartında onay işareti (✓) var ve kart kırmızı çerçeveli değil: "Kayıtlardaki yapılandırma özeti" tutanaktaki değerle aynı. **[Öğretmen]**
 - [ ] Öğrencilere amaç anlatılmıyor. Ekranda aşama adı yazmaz; öğrenciler yalnızca bir "eğitim asistanı" kullanıyor. **[Öğretmen]**
 - [ ] Ön Test'te iki grup (K ve D) **aynı sade ekranı** görüyor. Deney grubundan birinin ekranında enerji/su/karbon rozeti görünürse aşama yanlıştır: hemen panelden aşamayı kontrol edin. **[Öğretmen]**
 
@@ -136,8 +136,8 @@ iki aşamada da aynı kalmak zorundadır.
 **Adım 1, aşama hâlâ Ön Test'teyken:**
 - [ ] AI Studio bakiyesi bugün kontrol edildi. **[Ekip]**
 - [ ] Yönetici panelinde aşamanın **hâlâ Ön Test** olduğu görüldü. **[Öğretmen]**
-- [ ] **Sunucunun şu anki özeti tutanaktakiyle aynı mı?** İstatistik sekmesindeki "Sunucunun şu anki yapılandırma özeti" tutanaktaki Ön Test değeriyle karşılaştırıldı ve kutu yeşil. **[Öğretmen]**
-  - **Farklıysa (kutu kırmızıysa) aşama DEĞİŞTİRİLMEZ.** Ekibe ve danışman öğretmene haber verilir. Ölçüm koşulları Ön Test'ten sonra değişmiştir; Son Test verisi toplanmadan önce durum çözülmelidir.
+- [ ] **Sunucunun şu anki özeti tutanaktakiyle aynı mı?** İstatistik sekmesindeki "Sunucunun şu anki yapılandırma özeti" tutanaktaki Ön Test değeriyle karşılaştırıldı ve Yapılandırma Mührü kartında onay işareti (✓) var. **[Öğretmen]**
+  - **Farklıysa (mühür kartı kırmızı çerçeveli ve "UYARI" yazıyorsa) aşama DEĞİŞTİRİLMEZ.** Ekibe ve danışman öğretmene haber verilir. Ölçüm koşulları Ön Test'ten sonra değişmiştir; Son Test verisi toplanmadan önce durum çözülmelidir.
 - [ ] **Her öğrenci bilgisayarında** site açıldı ve **giriş ekranının** geldiği doğrulandı. Sohbet ekranı gelirse sağ üstteki **Çıkış**'a basıldı ve giriş ekranının geldiği görüldü. **[Öğretmen]**
   - **Neden önce bu?** Çıkış yapılmamış bir bilgisayarda kayıtlı kod hâlâ duruyor olabilir. Bu kontrol aşama Ön Test'teyken yapılırsa olsa olsa fazladan bir **Ön Test** girişi oluşur; Son Test verisi etkilenmez. Aşama değiştirildikten sonra yapılırsa o kod için sahte bir **Son Test** girişi kaydedilir.
   - Çıkış'a basmak gereken bilgisayar olduysa kodu tutanağa not edin.
@@ -161,7 +161,7 @@ iki aşamada da aynı kalmak zorundadır.
 ## 6. Veri dışa aktarma (Son Test bittikten sonra)
 
 - [ ] Önizleme modu kapalı. (Önizlemede Excel ve CSV butonları zaten pasiftir.) **[Öğretmen]**
-- [ ] **Ön Test – Son Test & İstatistik** sekmesinden **Excel İndir (.xlsx)** ile dosya indirildi. Dosyada 5 sayfa var: `Tum_Kayitlar`, `Ogrenci_Ozetleri`, `Grup_Karsilastirma`, `SPSS_Veri_Seti`, `Degisken_Sozlugu`. **[Öğretmen]**
+- [ ] **İstatistik** sekmesinden **Excel İndir (.xlsx)** ile dosya indirildi. Dosyada 5 sayfa var: `Tum_Kayitlar`, `Ogrenci_Ozetleri`, `Grup_Karsilastirma`, `SPSS_Veri_Seti`, `Degisken_Sozlugu`. **[Öğretmen]**
 - [ ] İsteğe bağlı: **Öğrenci Kayıtları** sekmesinden CSV de indirildi. **[Öğretmen]**
 - [ ] Ekip çapraz kontrolü yaptı: `python dogrulama/tcheck.py <dosya>.xlsx` komutu **"UYUMLU"** dedi. **[Ekip]**
 - [ ] **Yedek alındı:** Excel dosyası en az iki ayrı yerde saklanıyor (ör. okul bilgisayarı + harici bellek). **[Öğretmen]**
@@ -191,7 +191,7 @@ iki aşamada da aynı kalmak zorundadır.
 | **Öğrenci sekmeyi yanlışlıkla kapattı** | Adresi yeniden açsın. Aynı bilgisayarda kod hatırlanır (tarayıcı kapansa da), mesajları geri gelir. Bu yüzden oturum sonunda **Çıkış** şarttır. |
 | **Sitede doğrudan başka birinin sohbeti açılıyor** | Önceki kullanıcı Çıkış yapmamıştır; site açıldığı anda o kod adına giriş kaydedilmiştir. **Çıkış**'a basın, yeni öğrenci kendi koduyla girsin. Hangi kodun açıldığını tutanağa yazın. |
 | **Yönetici paneli "Yönetici oturumu geçersiz veya süresi dolmuş" diyor** | Giriş ekranının altındaki **Yönetici Girişi**'nden parolayla yeniden girin. Veriler etkilenmez. |
-| **İstatistik sekmesinde yapılandırma özeti kutusu kırmızı** | Ölçüm koşulları değişmiştir (dondurma kuralı). Son Test henüz başlamadıysa aşamayı değiştirmeyin. Ekibe ve danışmana haber verin; raporda açıklanır. |
+| **İstatistik sekmesinde Yapılandırma Mührü kartı kırmızı çerçeveli ("UYARI")** | Ölçüm koşulları değişmiştir (dondurma kuralı). Son Test henüz başlamadıysa aşamayı değiştirmeyin. Ekibe ve danışmana haber verin; raporda açıklanır. |
 
 ---
 

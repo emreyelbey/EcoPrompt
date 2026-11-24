@@ -51,7 +51,7 @@ export default function RecordPreviewModal({ id, localRecord = null, token, onUn
       subtitle={subtitle}
     >
       {!record && !error && (
-        <div className="py-10 flex justify-center text-slate-400">
+        <div className="py-10 flex justify-center text-text-3">
           <Loader2 className="w-5 h-5 animate-spin" aria-label="Yükleniyor" />
         </div>
       )}
@@ -62,9 +62,9 @@ export default function RecordPreviewModal({ id, localRecord = null, token, onUn
       )}
       {record && (
         <div className="space-y-4">
-          <div className="p-3.5 rounded-xl bg-slate-100 border border-slate-200">
-            <div className="text-[11px] font-bold uppercase text-slate-500 mb-1">Öğrenci İstemi</div>
-            <p className="text-sm text-slate-900 whitespace-pre-wrap">{record.prompt}</p>
+          <div className="p-3.5 rounded-xl bg-muted border border-line">
+            <div className="text-[11px] font-semibold uppercase text-text-3 mb-1">Öğrenci İstemi</div>
+            <p className="text-sm text-ink whitespace-pre-wrap">{record.prompt}</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
             <Stat label={`Token (${record.tokenSource ?? '—'})`} value={`${record.inputTokens ?? 0} girdi / ${record.outputTokens ?? 0} çıktı`} />
@@ -72,8 +72,8 @@ export default function RecordPreviewModal({ id, localRecord = null, token, onUn
             <Stat label="Su (ort.)" value={`${fmtSmart(record.waterAvg)} mL`} />
             <Stat label="CO₂ (ort.)" value={`${fmtSmart(record.co2Avg)} g`} />
           </div>
-          <div className="p-4 rounded-xl bg-white border border-slate-200">
-            <div className="text-[11px] font-bold uppercase text-slate-500 mb-2">Asistan Yanıtı</div>
+          <div className="p-4 rounded-2xl bg-surface border border-line">
+            <div className="text-[11px] font-semibold uppercase text-text-3 mb-2">Asistan Yanıtı</div>
             <RichMessage content={record.response} showCopyButton />
           </div>
         </div>
@@ -84,9 +84,9 @@ export default function RecordPreviewModal({ id, localRecord = null, token, onUn
 
 function Stat({ label, value }) {
   return (
-    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-      <div className="text-slate-500">{label}</div>
-      <div className="font-bold text-slate-900 mt-0.5">{value}</div>
+    <div className="p-2.5 rounded-xl bg-paper border border-line">
+      <div className="text-text-3">{label}</div>
+      <div className="font-semibold text-ink mt-0.5">{value}</div>
     </div>
   );
 }

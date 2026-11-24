@@ -22,7 +22,7 @@ function shortDate(ms) {
 }
 
 // Mobilde yazı 16 px (text-base): iOS Safari daha küçük yazılı kutuya dokununca sayfayı yakınlaştırır.
-const SELECT_CLASS = 'px-3 py-2 rounded-xl border border-slate-300 text-base sm:text-xs font-semibold text-slate-700 bg-white';
+const SELECT_CLASS = 'h-10 px-3.5 rounded-full border border-line-2 text-base sm:text-xs font-semibold text-text-2b bg-surface';
 
 export default function RecordsTab({ records, token, onUnauthorized, onDeleted, onToast }) {
   const preview = usePreview();
@@ -61,18 +61,18 @@ export default function RecordsTab({ records, token, onUnauthorized, onDeleted, 
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+    <div className="bg-surface rounded-[20px] border border-line overflow-hidden">
       {/* Filtreler: tek satırda, grafiklerin/tablonun üstünde */}
-      <div className="p-3 border-b border-slate-200 flex flex-wrap items-center gap-2">
+      <div className="p-3 border-b border-line flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
+          <Search className="w-4 h-4 text-text-3 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
           <input
             type="search"
             value={filters.query}
             onChange={set('query')}
             placeholder="Kod veya istem içinde ara…"
             aria-label="Kod veya istem içinde ara"
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 text-base sm:text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full h-10 pl-9 pr-3.5 rounded-full border border-line-2 text-base sm:text-xs focus:outline-none focus:ring-2 focus:ring-accent-ink/40"
           />
         </div>
         <select value={filters.group} onChange={set('group')} aria-label="Grup" className={SELECT_CLASS}>
@@ -98,7 +98,7 @@ export default function RecordsTab({ records, token, onUnauthorized, onDeleted, 
           onClick={exportCsv}
           disabled={list.length === 0 || preview}
           title={preview ? 'Örnek veri önizlemesinde CSV indirilemez' : undefined}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-ink hover:bg-ink-2 text-white text-xs font-semibold disabled:opacity-50"
         >
           <FileDown className="w-4 h-4" aria-hidden="true" />
           CSV İndir ({list.length})
@@ -107,7 +107,7 @@ export default function RecordsTab({ records, token, onUnauthorized, onDeleted, 
 
       <div className="overflow-x-auto">
         <table className="min-w-full text-xs text-left">
-          <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+          <thead className="bg-paper text-text-2 font-semibold border-b border-line">
             <tr>
               <th className="px-3 py-2.5">Tarih</th>
               <th className="px-3 py-2.5">Kod / Grup</th>
@@ -118,26 +118,26 @@ export default function RecordsTab({ records, token, onUnauthorized, onDeleted, 
               <th className="px-3 py-2.5 text-right">İşlem</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200">
+          <tbody className="divide-y divide-line">
             {list.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-3 py-12 text-center text-slate-500">
+                <td colSpan={7} className="px-3 py-12 text-center text-text-3">
                   Seçili filtrelere uygun kayıt bulunamadı.
                 </td>
               </tr>
             ) : (
               list.map((r) => (
-                <tr key={r.id} onClick={() => setPreviewId(r.id)} className="hover:bg-indigo-50/40 cursor-pointer">
-                  <td className="px-3 py-2.5 whitespace-nowrap text-slate-500">{shortDate(r.createdAt)}</td>
+                <tr key={r.id} onClick={() => setPreviewId(r.id)} className="hover:bg-paper cursor-pointer">
+                  <td className="px-3 py-2.5 whitespace-nowrap text-text-3">{shortDate(r.createdAt)}</td>
                   <td className="px-3 py-2.5 whitespace-nowrap">
-                    <span className="font-bold text-slate-900">{r.code}</span>
-                    <span className="ml-1.5 text-slate-500">{r.group}</span>
+                    <span className="font-semibold text-ink">{r.code}</span>
+                    <span className="ml-1.5 text-text-3">{r.group}</span>
                     {r.isSample && <span className="ml-1.5 px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-semibold">Örnek</span>}
                   </td>
                   <td className="px-3 py-2.5 whitespace-nowrap">{PHASE_LABELS[r.phase] ?? r.phase}</td>
                   <td className="px-3 py-2.5 whitespace-nowrap">{MODEL_SCALES[r.modelId]?.name ?? r.modelId}</td>
-                  <td className="px-3 py-2.5 max-w-xs truncate text-slate-800">{r.prompt}</td>
-                  <td className="px-3 py-2.5 whitespace-nowrap tabular-nums text-slate-600">
+                  <td className="px-3 py-2.5 max-w-xs truncate text-ink">{r.prompt}</td>
+                  <td className="px-3 py-2.5 whitespace-nowrap tabular-nums text-text-2">
                     {fmtSmart(r.energyAvg)} Wh · {fmtSmart(r.waterAvg)} mL · {fmtSmart(r.co2Avg)} g
                   </td>
                   <td className="px-3 py-2.5 whitespace-nowrap text-right" onClick={(e) => e.stopPropagation()}>
@@ -146,7 +146,7 @@ export default function RecordsTab({ records, token, onUnauthorized, onDeleted, 
                       onClick={() => setPreviewId(r.id)}
                       title="Önizle"
                       aria-label={`${r.code} kaydını önizle`}
-                      className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 hover:text-slate-900"
+                      className="p-1.5 rounded-lg text-text-3 hover:bg-line-2 hover:text-ink"
                     >
                       <Eye className="w-4 h-4" />
                     </button>

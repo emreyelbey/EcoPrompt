@@ -1,4 +1,4 @@
-// Sekme 1: Genel Bakış & Grafikler.
+// Sekme 1: Genel Bakış (görünüm Yön 2b).
 // Aşama filtresi, 5 KPI kartı, Kontrol vs Deney istem karşılaştırması, istem başına ortalama
 // enerji/su/CO₂ ve model tercih dağılımı. Örnek kayıtlar hesaplara girmez (AdminScreen ayıklar).
 // Verileri Temizle butonu da buradadır (onay penceresi AdminScreen'de).
@@ -31,16 +31,16 @@ export default function OverviewTab({ records, logins, codeGroups, onClearClick,
   return (
     <div className="space-y-4">
       {/* Kontrol çubuğu: aşama filtresi + Verileri Temizle */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-3 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl" role="group" aria-label="Aşama filtresi">
+      <div className="bg-surface rounded-[20px] border border-line p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center p-1 rounded-full bg-muted" role="group" aria-label="Aşama filtresi">
           {PHASE_FILTERS.map((f) => (
             <button
               key={f.id}
               type="button"
               aria-pressed={phase === f.id}
               onClick={() => setPhase(f.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                phase === f.id ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              className={`h-10 px-4 rounded-full text-[13px] transition-colors ${
+                phase === f.id ? 'bg-ink text-paper font-semibold' : 'text-text-2 font-medium hover:text-ink'
               }`}
             >
               {f.label}
@@ -53,10 +53,10 @@ export default function OverviewTab({ records, logins, codeGroups, onClearClick,
             type="button"
             onClick={onTogglePreview}
             aria-pressed={preview}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold ${
+            className={`inline-flex items-center gap-2 h-11 px-4 rounded-full border text-[13px] font-semibold ${
               preview
                 ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-500'
-                : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200'
+                : 'bg-warn-bg hover:bg-amber-100 text-warn-ink border-amber-300'
             }`}
           >
             <FlaskConical className="w-4 h-4" aria-hidden="true" />
@@ -67,7 +67,7 @@ export default function OverviewTab({ records, logins, codeGroups, onClearClick,
             onClick={onClearClick}
             disabled={preview}
             title={preview ? 'Örnek veri önizlemesinde veri temizlenemez' : undefined}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold disabled:opacity-50"
+            className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-surface hover:bg-rose-50 text-rose-700 border border-rose-300 text-[13px] font-semibold disabled:opacity-50"
           >
             <Trash2 className="w-4 h-4" aria-hidden="true" />
             Verileri Temizle
@@ -76,7 +76,7 @@ export default function OverviewTab({ records, logins, codeGroups, onClearClick,
       </div>
 
       {/* 5 KPI kartı */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
         <Kpi icon={Users} label="Aktif Katılımcılar" value={fmtInt(s.activeParticipants)} unit={`/ ${s.totalCodes}`} note={`Giriş yapan: ${s.loggedInParticipants}`} />
         <Kpi icon={MessageSquare} label="Toplam İstem" value={fmtInt(s.totalPrompts)} />
         <Kpi icon={Zap} label="Toplam Enerji" value={fmtSmart(s.totalEnergy)} unit="Wh" />
@@ -134,16 +134,16 @@ export default function OverviewTab({ records, logins, codeGroups, onClearClick,
 
 function Kpi({ icon: Icon, label, value, unit, note, className = '' }) {
   return (
-    <div className={`relative bg-white rounded-2xl border border-slate-200 p-4 ${className}`}>
+    <div className={`relative bg-surface rounded-[20px] border border-line p-5 ${className}`}>
       <PreviewMark />
-      <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
+      <div className="flex items-center justify-between text-xs text-text-3">
         <span>{label}</span>
-        <Icon className="w-4 h-4 text-slate-400" aria-hidden="true" />
+        <Icon className="w-4 h-4 text-text-3" aria-hidden="true" />
       </div>
-      <div className="mt-1.5 text-2xl font-bold text-slate-900 tabular-nums">
-        {value} {unit && <span className="text-sm font-semibold text-slate-500">{unit}</span>}
+      <div className="mt-2 font-mono text-[26px] leading-8 text-ink">
+        {value} {unit && <span className="text-sm text-text-3">{unit}</span>}
       </div>
-      {note && <div className="text-[11px] text-slate-500 mt-0.5">{note}</div>}
+      {note && <div className="text-[11px] text-text-3 mt-1">{note}</div>}
     </div>
   );
 }

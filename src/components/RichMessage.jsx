@@ -23,7 +23,7 @@ const components = {
 
 // textClassName: metnin boyutu ve rengi. Sohbet ekranı daha büyük okuma metni verir (Yön 2b);
 // yönetici panelindeki kayıt önizlemesi varsayılanı kullanır.
-const DEFAULT_TEXT_CLASS = 'text-sm text-slate-800 leading-relaxed';
+const DEFAULT_TEXT_CLASS = 'text-sm text-ink-2 leading-relaxed';
 
 // Kopyala butonunun erişilebilir adı (ikon butonu olduğu için ad buradan gelir).
 const COPY_LABELS = { idle: 'Kopyala', done: 'Kopyalandı', failed: 'Kopyalanamadı' };

@@ -133,14 +133,14 @@ describe('Yönetici paneli', () => {
     withHash(['aaaaaaaaaaaa', 'aaaaaaaaaaaa']);
     render(<AdminScreen token="t" onLogout={() => {}} />);
     await screen.findByText('Aktif Katılımcılar');
-    fireEvent.click(screen.getByRole('button', { name: 'Ön Test – Son Test & İstatistik' }));
+    fireEvent.click(screen.getByRole('button', { name: 'İstatistik' }));
     expect(screen.getByTestId('yapilandirma-ozeti').textContent).toContain('tek değer');
     cleanup();
 
     withHash(['aaaaaaaaaaaa', 'bbbbbbbbbbbb']);
     render(<AdminScreen token="t" onLogout={() => {}} />);
     await screen.findByText('Aktif Katılımcılar');
-    fireEvent.click(screen.getByRole('button', { name: 'Ön Test – Son Test & İstatistik' }));
+    fireEvent.click(screen.getByRole('button', { name: 'İstatistik' }));
     const alert = screen.getByTestId('yapilandirma-ozeti');
     expect(alert.getAttribute('role')).toBe('alert');
     expect(alert.textContent).toContain('2 farklı değer');
@@ -157,7 +157,7 @@ describe('Yönetici paneli', () => {
     });
     render(<AdminScreen token="t" onLogout={() => {}} />);
     await screen.findByText('Aktif Katılımcılar');
-    fireEvent.click(screen.getByRole('button', { name: 'Ön Test – Son Test & İstatistik' }));
+    fireEvent.click(screen.getByRole('button', { name: 'İstatistik' }));
     return screen.getByTestId('yapilandirma-ozeti');
   }
 
@@ -186,9 +186,9 @@ describe('Yönetici paneli', () => {
 
   it('önizleme modunda yapılandırma özeti satırı gizlenir', async () => {
     await openStatsWith({ records: [], current: 'cccccccccccc' });
-    fireEvent.click(screen.getByRole('button', { name: 'Genel Bakış & Grafikler' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Genel Bakış' }));
     fireEvent.click(screen.getByRole('button', { name: 'Örnek Veriyle Önizle' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Ön Test – Son Test & İstatistik' }));
+    fireEvent.click(screen.getByRole('button', { name: 'İstatistik' }));
     expect(screen.queryByTestId('yapilandirma-ozeti')).toBeNull();
     expect(document.body.textContent).not.toContain('cccccccccccc');
   });
@@ -197,7 +197,7 @@ describe('Yönetici paneli', () => {
     mockServer();
     render(<AdminScreen token="t" onLogout={() => {}} />);
     await screen.findByText('Aktif Katılımcılar');
-    for (const label of ['Genel Bakış & Grafikler', 'Ön Test – Son Test & İstatistik', 'Öğrenci Kayıtları (1)', 'Katılımcı Kodları (60)', 'Metodoloji & Kaynakça']) {
+    for (const label of ['Genel Bakış', 'İstatistik', 'Öğrenci Kayıtları (1)', 'Katılımcı Kodları (60)', 'Metodoloji']) {
       expect(screen.getByRole('button', { name: label })).toBeTruthy();
     }
     expect(screen.getByRole('group', { name: 'Aktif aşama' })).toBeTruthy();
@@ -240,7 +240,7 @@ describe('Yönetici paneli', () => {
     expect(screen.getByRole('button', { name: 'Verileri Temizle' }).disabled).toBe(true);
 
     // İstatistik: test kartlarında etiket, Excel pasif.
-    fireEvent.click(screen.getByRole('button', { name: 'Ön Test – Son Test & İstatistik' }));
+    fireEvent.click(screen.getByRole('button', { name: 'İstatistik' }));
     expect(screen.getAllByTestId('ornek-etiket').length).toBeGreaterThanOrEqual(10);
     expect(screen.getByRole('button', { name: /Excel İndir/ }).disabled).toBe(true);
 
@@ -301,7 +301,7 @@ describe('Yönetici paneli', () => {
     mockServer();
     render(<AdminScreen token="t" onLogout={() => {}} />);
     await screen.findByText('Aktif Katılımcılar');
-    fireEvent.click(screen.getByRole('button', { name: 'Ön Test – Son Test & İstatistik' }));
+    fireEvent.click(screen.getByRole('button', { name: 'İstatistik' }));
     for (const title of [
       '1. Başlangıç Denkliği (Ön Test: Kontrol – Deney)',
       '2. Kontrol Grubu Değişimi (Ön Test → Son Test)',
@@ -335,7 +335,7 @@ describe('Yönetici paneli', () => {
 
     render(<AdminScreen token="t" onLogout={() => {}} />);
     await screen.findByText('Aktif Katılımcılar');
-    fireEvent.click(screen.getByRole('button', { name: 'Ön Test – Son Test & İstatistik' }));
+    fireEvent.click(screen.getByRole('button', { name: 'İstatistik' }));
 
     expect(screen.getByRole('combobox').value).toBe('energy');
     expect(screen.getByText('Birincil ölçüt (ana hipotez)')).toBeTruthy();
@@ -360,7 +360,7 @@ describe('Yönetici paneli', () => {
     mockServer();
     render(<AdminScreen token="t" onLogout={() => {}} />);
     await screen.findByText('Aktif Katılımcılar');
-    fireEvent.click(screen.getByRole('button', { name: 'Metodoloji & Kaynakça' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Metodoloji' }));
     expect(document.body.textContent).toContain('Ön Test – Son Test Kontrol Gruplu Kör Deney');
     expect(document.body.textContent).toContain('Akademik Kaynakça');
   });

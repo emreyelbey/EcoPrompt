@@ -60,26 +60,26 @@ export default function ClearDataModal({ open, token, onUnauthorized, onCleared,
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4" onClick={busy ? undefined : onCancel}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4" onClick={busy ? undefined : onCancel}>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="temizle-baslik"
-        className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl"
+        className="w-full max-w-md rounded-[20px] bg-surface p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 id="temizle-baslik" className="text-base font-bold text-rose-700 flex items-center gap-2">
+        <h2 id="temizle-baslik" className="text-base font-semibold text-rose-700 flex items-center gap-2">
           <AlertTriangle className="w-5 h-5" aria-hidden="true" />
           Tüm deney verileri silinecek
         </h2>
-        <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+        <p className="mt-2 text-sm text-text-2 leading-relaxed">
           Bu işlem <strong>geri alınamaz</strong>. Ön Test ve Son Test'teki bütün kayıtlar kalıcı olarak silinir. Aktif aşama
           ayarı değişmez.
         </p>
 
-        <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+        <div className="mt-3 rounded-xl border border-line bg-paper px-3 py-2.5">
           {counts === null && !error && (
-            <div className="flex items-center gap-2 text-sm text-slate-500">
+            <div className="flex items-center gap-2 text-sm text-text-3">
               <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
               Silinecek kayıtlar sayılıyor…
             </div>
@@ -88,8 +88,8 @@ export default function ClearDataModal({ open, token, onUnauthorized, onCleared,
             <ul className="space-y-1 text-sm" aria-label="Silinecek kayıt sayıları">
               {COUNT_LABELS.map(([key, label]) => (
                 <li key={key} className="flex items-center justify-between gap-3">
-                  <span className="text-slate-600">{label}</span>
-                  <strong className="text-slate-900 tabular-nums">{counts[key].toLocaleString('tr-TR')}</strong>
+                  <span className="text-text-2">{label}</span>
+                  <strong className="text-ink tabular-nums">{counts[key].toLocaleString('tr-TR')}</strong>
                 </li>
               ))}
             </ul>
@@ -100,9 +100,9 @@ export default function ClearDataModal({ open, token, onUnauthorized, onCleared,
           Silmeden önce Excel/CSV yedeği almanız önerilir.
         </p>
 
-        <label htmlFor="temizle-onay" className="mt-4 block text-sm text-slate-700">
+        <label htmlFor="temizle-onay" className="mt-4 block text-sm text-text-2b">
           Onaylamak için kutuya büyük harfle <strong className="font-mono">SİL</strong> yazın{' '}
-          <span className="text-slate-500">(SIL de kabul edilir)</span>:
+          <span className="text-text-3">(SIL de kabul edilir)</span>:
         </label>
         <input
           id="temizle-onay"
@@ -112,7 +112,7 @@ export default function ClearDataModal({ open, token, onUnauthorized, onCleared,
           autoComplete="off"
           spellCheck={false}
           disabled={busy}
-          className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2 text-base sm:text-sm font-mono focus:outline-none focus:ring-2 focus:ring-rose-500"
+          className="mt-1.5 w-full rounded-xl border border-line-2 px-3 py-2 text-base sm:text-sm font-mono focus:outline-none focus:ring-2 focus:ring-rose-500"
         />
 
         {error && (
@@ -126,7 +126,7 @@ export default function ClearDataModal({ open, token, onUnauthorized, onCleared,
             type="button"
             onClick={onCancel}
             disabled={busy}
-            className="px-3 py-2 rounded-xl text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 disabled:opacity-50"
+            className="h-10 px-4 rounded-full text-sm font-semibold text-text-2 bg-muted hover:bg-line-2 disabled:opacity-50"
           >
             Vazgeç
           </button>
@@ -134,7 +134,7 @@ export default function ClearDataModal({ open, token, onUnauthorized, onCleared,
             type="button"
             onClick={confirm}
             disabled={!canConfirm}
-            className="px-3 py-2 rounded-xl text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 disabled:bg-rose-300 disabled:cursor-not-allowed"
+            className="h-10 px-4 rounded-full text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 disabled:bg-rose-300 disabled:cursor-not-allowed"
           >
             {busy ? 'Siliniyor…' : 'Kalıcı Olarak Sil'}
           </button>

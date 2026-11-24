@@ -12,6 +12,8 @@ import {
   modelLegend,
 } from '../src/lib/modelColors.js';
 import { BRAND_PATTERNS } from './helpers/brand-patterns.js';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 
 // Onaltılık rengin göreli parlaklığı (0 = siyah, 1 = beyaz).
 function luminance(hex) {
@@ -91,5 +93,25 @@ describe('Model sınıfı görünümü (renk + biçim)', () => {
 
   it('bilinmeyen sınıf nötr gri dolu döner', () => {
     expect(modelStyle('yok')).toEqual({ fill: '#A1A1AA', stroke: null, hollow: false });
+  });
+});
+
+// Tek kaynak kuralı: model sınıfı görünümünü kullanan dosyalar modelColors.js'i içe aktarır; başka hiçbir dosya
+// kendi model renk paletini tanımlamaz (eskiden admin/charts.jsx ve PersonalReportModal.jsx'te ayrı paletler vardı).
+
+describe('Model görünümü tek kaynaktan', () => {
+  const files = (dir) => readdirSync(dir).flatMap((n) => (statSync(join(dir, n)).isDirectory() ? files(join(dir, n)) : [join(dir, n)]));
+
+  it('grafik bileşenleri modelColors.js kullanır', () => {
+    for (const f of ['src/components/admin/charts.jsx', 'src/components/eko/EcoSummaryBar.jsx', 'src/components/eko/PersonalReportModal.jsx']) {
+      expect(readFileSync(f, 'utf8'), f).toMatch(/from '\.\.\/\.\.\/lib\/modelColors\.js'/);
+    }
+  });
+
+  it('modelColors.js dışında model renk paleti tanımlanmaz', () => {
+    const offenders = files('src')
+      .filter((f) => !f.endsWith('modelColors.js'))
+      .filter((f) => /MODEL_COLORS\s*=|light:\s*'#[0-9a-fA-F]{6}',\s*standard:/.test(readFileSync(f, 'utf8')));
+    expect(offenders).toEqual([]);
   });
 });
