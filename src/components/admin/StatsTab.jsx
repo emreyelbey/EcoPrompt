@@ -67,13 +67,14 @@ export default function StatsTab({ records, logins, codeGroups, currentConfigHas
   return (
     <div className="space-y-4">
       {/* Kontrol çubuğu: ölçüt seçici + Excel */}
-      <div className="bg-surface rounded-[20px] border border-line p-4 flex flex-wrap items-center justify-between gap-3">
-        <label className="flex flex-wrap items-center gap-2.5 text-xs font-medium text-text-2">
+      {/* Telefonda (sm altı) seçim kutusu ve Excel butonu tam genişlikte, alt alta, 44 px. */}
+      <div className="bg-surface rounded-[20px] border border-line p-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3">
+        <label className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2.5 text-xs font-medium text-text-2">
           İstatistik ölçütü:
           <select
             value={metric}
             onChange={(e) => setMetric(e.target.value)}
-            className="h-10 rounded-full border border-line-2 bg-surface px-3.5 text-base sm:text-sm font-medium text-ink"
+            className="w-full sm:w-auto h-11 sm:h-10 rounded-full border border-line-2 bg-surface px-3.5 text-base sm:text-sm font-medium text-ink"
           >
             {METRIC_ORDER.map((id) => (
               <option key={id} value={id}>
@@ -92,7 +93,7 @@ export default function StatsTab({ records, logins, codeGroups, currentConfigHas
           onClick={exportExcel}
           disabled={exporting || preview}
           title={preview ? 'Örnek veri önizlemesinde Excel indirilemez' : undefined}
-          className="inline-flex items-center gap-2 h-11 px-[18px] rounded-full bg-ink hover:bg-ink-2 text-paper text-[13px] font-semibold disabled:opacity-50"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-11 px-[18px] rounded-full bg-ink hover:bg-ink-2 text-paper text-[13px] font-semibold disabled:opacity-50"
         >
           {exporting ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <FileSpreadsheet className="w-4 h-4" aria-hidden="true" />}
           Excel İndir (.xlsx)

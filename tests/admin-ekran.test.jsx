@@ -206,6 +206,20 @@ describe('Yönetici paneli', () => {
     expect(apiRequest.mock.calls[0][0]).toBe('/api/admin/data');
   });
 
+  // Telefonda (sm altı) sekmeler kenar menüsü yerine yerel bir seçim kutusundadır (jsdom CSS çizmez; ikisi de DOM'da).
+  // Seçenekler sekme adını ve sayısını içerir; seçim kutusu sekmeyi değiştirir.
+  it('telefon sekme seçicisi: etiketli, sayılı seçenekler, seçince sekme değişir', async () => {
+    mockServer();
+    render(<AdminScreen token="t" onLogout={() => {}} />);
+    await screen.findByText('Aktif Katılımcılar');
+    const select = screen.getByRole('combobox', { name: 'Panel sekmesi' });
+    const options = [...select.querySelectorAll('option')].map((o) => o.textContent);
+    expect(options).toEqual(['Genel Bakış', 'İstatistik', 'Öğrenci Kayıtları (1)', 'Katılımcı Kodları (60)', 'Metodoloji']);
+    fireEvent.change(select, { target: { value: 'codes' } });
+    expect(screen.getByText('D001').closest('tr')).not.toBeNull();
+    expect(select.value).toBe('codes');
+  });
+
   it('kayıt satırına tıklayınca tam yanıt ayrı istekle gelir', async () => {
     mockServer();
     render(<AdminScreen token="t" onLogout={() => {}} />);
@@ -337,14 +351,14 @@ describe('Yönetici paneli', () => {
     await screen.findByText('Aktif Katılımcılar');
     fireEvent.click(screen.getByRole('button', { name: 'İstatistik' }));
 
-    expect(screen.getByRole('combobox').value).toBe('energy');
+    expect(screen.getByRole('combobox', { name: /İstatistik ölçütü/ }).value).toBe('energy');
     expect(screen.getByText('Birincil ölçüt (ana hipotez)')).toBeTruthy();
     expect(document.body.textContent).toContain("Ön Test'te 6, Son Test'te 5, eşleşen 5 kişi");
     expect(document.body.textContent).toContain("Ön Test'te 5, Son Test'te 5, eşleşen 5 kişi");
     expect(screen.getAllByText('Anlamlı')).toHaveLength(2); // Deney değişimi ve Son Test farkı
 
     // Ölçüt değişince ikincil ölçüt etiketi görünür.
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'prompts' } });
+    fireEvent.change(screen.getByRole('combobox', { name: /İstatistik ölçütü/ }), { target: { value: 'prompts' } });
     expect(screen.getByText('İkincil ölçüt')).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Excel İndir (.xlsx)' }));

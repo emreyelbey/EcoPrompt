@@ -30,16 +30,17 @@ export default function OverviewTab({ records, logins, codeGroups, onClearClick,
 
   return (
     <div className="space-y-4">
-      {/* Kontrol çubuğu: aşama filtresi + Verileri Temizle */}
-      <div className="bg-surface rounded-[20px] border border-line p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center p-1 rounded-full bg-muted" role="group" aria-label="Aşama filtresi">
+      {/* Kontrol çubuğu: aşama filtresi + Örnek Veriyle Önizle + Verileri Temizle.
+          Telefonda (sm altı) hepsi tam genişlikte, alt alta: filtre üç eşit sütun, butonlar eşit yükseklikte (44 px). */}
+      <div className="bg-surface rounded-[20px] border border-line p-3 sm:p-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3">
+        <div className="grid grid-cols-3 sm:flex sm:items-center p-1 rounded-full bg-muted" role="group" aria-label="Aşama filtresi">
           {PHASE_FILTERS.map((f) => (
             <button
               key={f.id}
               type="button"
               aria-pressed={phase === f.id}
               onClick={() => setPhase(f.id)}
-              className={`h-10 px-4 rounded-full text-[13px] transition-colors ${
+              className={`h-10 px-2 sm:px-4 rounded-full text-[13px] transition-colors ${
                 phase === f.id ? 'bg-ink text-paper font-semibold' : 'text-text-2 font-medium hover:text-ink'
               }`}
             >
@@ -47,13 +48,14 @@ export default function OverviewTab({ records, logins, codeGroups, onClearClick,
             </button>
           ))}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Telefonda iki buton arasında biraz daha geniş boşluk: geri alınamaz "Verileri Temizle"ye yanlışlıkla dokunulmasın. */}
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3.5 sm:gap-2">
           {/* Örnek veri yalnızca tarayıcıda üretilir; veritabanına hiçbir şey yazılmaz. */}
           <button
             type="button"
             onClick={onTogglePreview}
             aria-pressed={preview}
-            className={`inline-flex items-center gap-2 h-11 px-4 rounded-full border text-[13px] font-semibold ${
+            className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 min-h-11 px-4 rounded-full border text-[13px] font-semibold ${
               preview
                 ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-500'
                 : 'bg-warn-bg hover:bg-amber-100 text-warn-ink border-amber-300'
@@ -67,7 +69,7 @@ export default function OverviewTab({ records, logins, codeGroups, onClearClick,
             onClick={onClearClick}
             disabled={preview}
             title={preview ? 'Örnek veri önizlemesinde veri temizlenemez' : undefined}
-            className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-surface hover:bg-rose-50 text-rose-700 border border-rose-300 text-[13px] font-semibold disabled:opacity-50"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 min-h-11 px-4 rounded-full bg-surface hover:bg-rose-50 text-rose-700 border border-rose-300 text-[13px] font-semibold disabled:opacity-50"
           >
             <Trash2 className="w-4 h-4" aria-hidden="true" />
             Verileri Temizle

@@ -22,7 +22,8 @@ function shortDate(ms) {
 }
 
 // Mobilde yazı 16 px (text-base): iOS Safari daha küçük yazılı kutuya dokununca sayfayı yakınlaştırır.
-const SELECT_CLASS = 'h-10 px-3.5 rounded-full border border-line-2 text-base sm:text-xs font-semibold text-text-2b bg-surface';
+// Telefonda (sm altı) filtreler ve CSV butonu tam genişlikte, alt alta, en az 44 px yüksekliğindedir.
+const SELECT_CLASS = 'w-full sm:w-auto h-11 sm:h-10 px-3.5 rounded-full border border-line-2 text-base sm:text-xs font-semibold text-text-2b bg-surface';
 
 export default function RecordsTab({ records, token, onUnauthorized, onDeleted, onToast }) {
   const preview = usePreview();
@@ -63,8 +64,8 @@ export default function RecordsTab({ records, token, onUnauthorized, onDeleted, 
   return (
     <div className="bg-surface rounded-[20px] border border-line overflow-hidden">
       {/* Filtreler: tek satırda, grafiklerin/tablonun üstünde */}
-      <div className="p-3 border-b border-line flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="p-3 border-b border-line flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2.5 sm:gap-2">
+        <div className="relative w-full sm:w-auto sm:flex-1 sm:min-w-[200px]">
           <Search className="w-4 h-4 text-text-3 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
           <input
             type="search"
@@ -72,7 +73,7 @@ export default function RecordsTab({ records, token, onUnauthorized, onDeleted, 
             onChange={set('query')}
             placeholder="Kod veya istem içinde ara…"
             aria-label="Kod veya istem içinde ara"
-            className="w-full h-10 pl-9 pr-3.5 rounded-full border border-line-2 text-base sm:text-xs focus:outline-none focus:ring-2 focus:ring-accent-ink/40"
+            className="w-full h-11 sm:h-10 pl-9 pr-3.5 rounded-full border border-line-2 text-base sm:text-xs focus:outline-none focus:ring-2 focus:ring-accent-ink/40"
           />
         </div>
         <select value={filters.group} onChange={set('group')} aria-label="Grup" className={SELECT_CLASS}>
@@ -98,7 +99,7 @@ export default function RecordsTab({ records, token, onUnauthorized, onDeleted, 
           onClick={exportCsv}
           disabled={list.length === 0 || preview}
           title={preview ? 'Örnek veri önizlemesinde CSV indirilemez' : undefined}
-          className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-ink hover:bg-ink-2 text-white text-xs font-semibold disabled:opacity-50"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 h-11 sm:h-10 px-4 rounded-full bg-ink hover:bg-ink-2 text-white text-[13px] sm:text-xs font-semibold disabled:opacity-50"
         >
           <FileDown className="w-4 h-4" aria-hidden="true" />
           CSV İndir ({list.length})

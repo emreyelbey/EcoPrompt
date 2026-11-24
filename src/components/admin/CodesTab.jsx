@@ -48,7 +48,7 @@ export default function CodesTab({ records, logins, onToast }) {
 
   return (
     <div className="bg-surface rounded-[20px] border border-line overflow-hidden">
-      <div className="p-4 border-b border-line flex flex-wrap items-center justify-between gap-3">
+      <div className="p-4 border-b border-line flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-ink">Tanımlı 60 Katılımcı Kodu (30 Kontrol + 30 Deney)</h3>
           <p className="text-xs text-text-3">
@@ -56,11 +56,12 @@ export default function CodesTab({ records, logins, onToast }) {
             sayılmaz.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        {/* Telefonda (sm altı) iki buton tam genişlikte, alt alta, 44 px. */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-2">
           <button
             type="button"
             onClick={copyAll}
-            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-muted hover:bg-line-2 text-ink text-xs font-semibold"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 h-11 sm:h-10 px-4 rounded-full bg-muted hover:bg-line-2 text-ink text-[13px] sm:text-xs font-semibold"
           >
             {copied === 'ALL' ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />}
             Tümünü Kopyala
@@ -68,7 +69,7 @@ export default function CodesTab({ records, logins, onToast }) {
           <button
             type="button"
             onClick={exportCsv}
-            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-ink hover:bg-ink-2 text-white text-xs font-semibold"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 h-11 sm:h-10 px-4 rounded-full bg-ink hover:bg-ink-2 text-white text-[13px] sm:text-xs font-semibold"
           >
             <FileDown className="w-3.5 h-3.5" aria-hidden="true" />
             Kodları CSV İndir
