@@ -75,6 +75,21 @@ describe('Sade görünüm (Kontrol grubu veya Ön Test)', () => {
     expect(screen.queryByTestId('eko-rozetler')).toBeNull();
     expect(document.body.textContent).not.toContain('Wh');
   });
+
+  // Yön 2b tasarımı: yeşil (eco) yalnızca EkoToken ekranına aittir. Sade ekranın işaretlemesinde
+  // (sınıflar, satır içi stiller, SVG renkleri) hiçbir yeşil/eco rengi bulunmaz; logo nötr yörüngedir.
+  it('sade görünümde yeşil (eco) renk sınıfı veya halka logo yoktur', async () => {
+    await renderScreen({
+      view: 'sade',
+      student: { code: 'D001', group: 'Deney', phase: 'pretest' },
+      messages: [ecoMessage('a', 'standard', 100, 50)],
+      phase: 'pretest',
+    });
+    const html = document.body.innerHTML;
+    expect(html).not.toMatch(/-eco\b|-eco-|--color-eco|emerald|teal|green/);
+    expect(html).not.toContain('animate-ring'); // EkoToken'ın dolan halka logosu
+    expect(html).toContain('animate-orbit'); // sade ekranın nötr yörünge logosu
+  });
 });
 
 describe('EkoToken görünümü (Deney grubu + Son Test)', () => {
@@ -248,10 +263,14 @@ describe('Mobil: yazarken ikincil satırlar gizlenir', () => {
       });
       const textarea = screen.getByLabelText('İstem');
       const helperRow = screen.getByText('0/4000').parentElement;
+      // Yön 2b: model açıklaması sayaçtan ayrıldı, üst çubukta model seçicinin altında durur.
+      const description = screen.getByText('Dengeli açıklama ve örneklerle anlatım');
       expect(helperRow.className).not.toContain('hidden');
+      expect(description.className).not.toContain('hidden');
 
       fireEvent.focus(textarea);
       expect(helperRow.className).toContain('hidden sm:flex');
+      expect(description.className).toContain('hidden sm:block');
 
       fireEvent.change(textarea, { target: { value: 'a'.repeat(3700) } });
       expect(helperRow.className).not.toContain('hidden');

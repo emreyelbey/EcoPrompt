@@ -10,26 +10,18 @@
 // Mobil (Dilim 8d): dokunma hedefleri en az 40 px. Yazma alanı odaktayken (klavye açık) mobilde ikincil
 // satırlar (EkoToken özet şeridi, model açıklaması) gizlenir; böylece klavye açıkken Deney grubunun
 // ekranı Kontrol grubununkinden daha sıkışık olmaz (iki grupta üst ve alt çubuk aynı yükseklikte kalır).
+// Görünüm (Yön 2b, reference/tasarim-yon2b/Yon2b-Sohbet.dc.html): beyaz üst çubuk, kayan siyah hap ile model
+// seçici, siyah kullanıcı balonu, kart olmayan asistan yanıtı, altta yüzen yazma kapsülü. Masaüstünde sohbet
+// sütunu en fazla 760 px genişlikte ortalanır (okunabilir satır uzunluğu). Sade görünümde yeşil, yaprak,
+// "eko" veya ölçüm izi YOKTUR; yeşil (eco) ve halka logo yalnızca EkoToken görünümündedir.
 // Aşama (Ön Test / Son Test) bu ekranda HİÇ YAZMAZ (kör deney). Aşama değişince yalnızca nötr bir
 // "Yeni oturum başladı" notu çıkar ve yeni aşamanın mesajları yüklenir.
 // Sunucu doğru kaynaktır: /api/messages yanıtındaki aşama onServerPhase ile üst bileşene bildirilir;
 // /api/chat yanıtındaki aşama ekrandakinden farklıysa geçmiş yeniden yüklenir.
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  GraduationCap,
-  LogOut,
-  Send,
-  RefreshCw,
-  AlertCircle,
-  X,
-  Sparkles,
-  Loader2,
-  Info,
-  Leaf,
-  PieChart as PieChartIcon,
-  BookOpen,
-} from 'lucide-react';
+import { LogOut, ArrowUp, RefreshCw, AlertCircle, X, Loader2, Info, PieChart as PieChartIcon, BookOpen } from 'lucide-react';
 import RichMessage from './RichMessage.jsx';
+import { BrandMark, Wordmark } from './ui/BrandMark.jsx';
 import EcoSummaryBar from './eko/EcoSummaryBar.jsx';
 import EcoImpactFooter from './eko/EcoImpactFooter.jsx';
 import { summarizeSession } from '../lib/ecoSummary.js';
@@ -53,6 +45,10 @@ const MODEL_LABELS = {
   standard: { short: 'Standart', desc: 'Dengeli açıklama ve örneklerle anlatım' },
   reasoning: { short: 'Akıl Yürütme', desc: 'Adım adım, derinlemesine çözüm' },
 };
+
+// Üst çubuk, mesaj listesi ve yazma alanı aynı sütunda hizalanır: telefonda tam genişlik (16 px kenar
+// boşluğu), masaüstünde en fazla 760 px ve ortada. Böylece masaüstünde satırlar okunabilir uzunlukta kalır.
+const COLUMN_CLASS = 'w-full max-w-[760px] mx-auto px-4 sm:px-6';
 
 // Mesaj saatini "14:05" biçiminde yazar.
 function formatTime(iso) {
@@ -154,9 +150,12 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
   useEffect(() => () => clearTimeout(blurTimerRef.current), []); // Ekran kapanınca zamanlayıcıyı temizle.
 
   // Yeni mesaj, bekleme göstergesi veya hata kartı gelince listenin en altına kaydır.
+  // "Hareketi azalt" açıksa yumuşak kaydırma yerine anında kaydırılır (CSS kuralı JS'teki 'smooth'u durduramaz).
   useEffect(() => {
     const container = containerRef.current;
-    if (container) container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    if (!container) return;
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    container.scrollTo({ top: container.scrollHeight, behavior: reduceMotion ? 'auto' : 'smooth' });
   }, [messages.length, pending, error, historyState]);
 
   // İstemi sunucuya gönderir. Başarısız olursa istem kaybolmaz: "Tekrar Dene" aynı istemi yollar.
@@ -223,77 +222,69 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
   const nearLimit = input.length > MAX_PROMPT_LENGTH - 400;
   const canSend = input.trim().length > 0 && !isSending && !cooldown && historyState === 'ready';
 
+  // Seçili modelin model seçicideki sırası (kayan siyah hapın konumu için).
+  const selectedIndex = Math.max(0, MODEL_ORDER.indexOf(selectedModel));
+
   return (
-    <div className="app-viewport fixed inset-0 w-full h-full flex flex-col overflow-hidden bg-slate-50 text-slate-800">
+    <div className="app-viewport fixed inset-0 w-full h-full flex flex-col overflow-hidden bg-paper text-ink">
       {/* SABİT ÜST ÇUBUK */}
-      <header className="shrink-0 border-b border-slate-200 bg-white">
-        <div className="max-w-5xl mx-auto px-3 sm:px-5 py-2.5 flex flex-col gap-2">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div
-                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-white ${
-                  isEco ? 'bg-emerald-600' : 'bg-indigo-600'
-                }`}
-              >
-                {isEco ? <Leaf className="w-5 h-5" /> : <GraduationCap className="w-5 h-5" />}
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  {/* Not: sekme başlığı her görünümde "Eğitim Asistanı" kalır (kör deney). */}
-                  <h1 className="text-sm sm:text-base font-bold text-slate-900 truncate">
-                    {isEco ? 'EkoToken' : 'Eğitim Asistanı'}
-                  </h1>
-                  <span
-                    className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${
-                      isEco ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'
-                    }`}
-                  >
-                    {student.code}
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500 truncate hidden sm:block">
-                  {isEco ? 'Yapay zeka çevresel ayak izi farkındalık asistanı' : 'Ders ve araştırma destek sohbet arayüzü'}
-                </p>
-              </div>
+      <header className="shrink-0 border-b border-line bg-surface">
+        <div className={`${COLUMN_CLASS} pt-4 pb-3.5 flex flex-col gap-3`}>
+          <div className="flex items-center gap-3">
+            {/* Logo: sade görünümde dönen yörünge (nötr), EkoToken'da dolan yeşil halka */}
+            <BrandMark variant={isEco ? 'ring' : 'orbit'} size={40} />
+            <div className="flex-1 min-w-0 flex flex-col gap-[3px]">
+              {/* Not: sekme başlığı her görünümde "Eğitim Asistanı" kalır (kör deney). */}
+              {isEco ? (
+                <Wordmark as="h1" first="Eko" second="Token" className="text-lg leading-5 truncate" />
+              ) : (
+                <Wordmark as="h1" first="Eğitim " second="Asistanı" className="text-lg leading-5 truncate" />
+              )}
+              <span className="flex items-center gap-1.5 font-mono text-[11px] tracking-[0.06em] text-text-3 truncate">
+                {isEco ? (
+                  <>
+                    {student.code} · <span className="uppercase">{ecoSummary.prompts} İstem</span>
+                  </>
+                ) : (
+                  <>
+                    {/* "Oturum açık" nabzı: nötr vurgu rengi */}
+                    <span className="w-1.5 h-1.5 rounded-full bg-accent-ink animate-pulse-dot shrink-0" aria-hidden="true" />
+                    {student.code} · OTURUM AÇIK
+                  </>
+                )}
+              </span>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
               {isEco && (
                 <>
-                  <button
-                    type="button"
-                    onClick={() => setReportOpen(true)}
-                    aria-label="Kişisel Rapor"
-                    className="inline-flex items-center justify-center gap-1.5 min-h-10 min-w-10 sm:min-h-0 sm:min-w-0 px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors"
-                  >
-                    <PieChartIcon className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Kişisel Rapor</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMethodologyOpen(true)}
-                    aria-label="Metodoloji"
-                    className="inline-flex items-center justify-center gap-1 min-h-10 min-w-10 sm:min-h-0 sm:min-w-0 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors"
-                  >
-                    <BookOpen className="w-3.5 h-3.5" />
-                    <span className="hidden md:inline">Metodoloji</span>
-                  </button>
+                  <IconButton label="Kişisel Rapor" onClick={() => setReportOpen(true)}>
+                    <PieChartIcon className="w-[19px] h-[19px]" aria-hidden="true" />
+                  </IconButton>
+                  <IconButton label="Metodoloji" onClick={() => setMethodologyOpen(true)}>
+                    <BookOpen className="w-[19px] h-[19px]" aria-hidden="true" />
+                  </IconButton>
                 </>
               )}
-            <button
-              type="button"
-              onClick={onLogout}
-              aria-label="Çıkış" // Mobilde yazı gizli; ekran okuyucu yine de butonun adını söyler.
-              className="shrink-0 inline-flex items-center justify-center gap-1 min-h-10 min-w-10 sm:min-h-0 sm:min-w-0 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-600 text-xs font-semibold transition-colors"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Çıkış</span>
-            </button>
+              <IconButton label="Çıkış" onClick={onLogout}>
+                <LogOut className="w-[19px] h-[19px]" aria-hidden="true" />
+              </IconButton>
             </div>
           </div>
 
-          {/* Model seçici: mobilde de sağdan taşmayan 3 eşit sütun. Mobilde her buton en az 40 px yüksek ve
-              aralarında 8 px boşluk var: yanlış dokunma (= kayıtta yanlış ölçek sınıfı) olasılığı azalır. */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-1.5 p-1 rounded-xl bg-slate-100 border border-slate-200/80">
+          {/* Model seçici: tam yuvarlak segment, mobilde de sağdan taşmayan 3 eşit sütun (grid-cols-3).
+              Seçili modelin arkasında siyah bir hap kayar (yalnızca süs; "hareketi azalt"ta anında geçer).
+              Butonlar en az 40 px yüksek, aralarında 8 px boşluk: yanlış dokunma (= kayıtta yanlış ölçek
+              sınıfı) olasılığı azalır (Dilim 8d). */}
+          <div className="relative grid grid-cols-3 gap-2 p-1 rounded-full bg-muted">
+            <div
+              aria-hidden="true"
+              className="absolute top-1 bottom-1 rounded-full bg-ink transition-[left] duration-[350ms] ease-[cubic-bezier(0.2,0.8,0.2,1)]"
+              // Sütun genişliği = (kutu − 2×4 px iç boşluk − 2×8 px aralık) / 3; hap seçili sütunun soluna oturur.
+              style={{
+                width: 'calc((100% - 24px) / 3)',
+                left: `calc(4px + ${selectedIndex} * ((100% - 24px) / 3 + 8px))`,
+              }}
+            />
             {MODEL_ORDER.map((id) => {
               const active = selectedModel === id;
               return (
@@ -302,12 +293,8 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
                   type="button"
                   onClick={() => chooseModel(id)}
                   aria-pressed={active}
-                  className={`min-h-10 sm:min-h-0 py-1.5 px-1.5 sm:px-3 rounded-lg text-center touch-manipulation transition-all text-xs font-semibold truncate ${
-                    !active
-                      ? 'text-slate-600 hover:text-slate-900'
-                      : isEco
-                        ? 'bg-white text-emerald-800 shadow-xs ring-1 ring-emerald-300'
-                        : 'bg-white text-indigo-700 shadow-xs ring-1 ring-indigo-200'
+                  className={`relative z-10 min-h-10 px-1.5 rounded-full text-center text-[13px] tracking-[-0.01em] truncate touch-manipulation transition-colors duration-[350ms] ${
+                    active ? 'text-paper font-semibold' : 'text-text-2 font-medium hover:text-ink'
                   }`}
                 >
                   <span className="sm:hidden">{MODEL_LABELS[id].short}</span>
@@ -316,6 +303,11 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
               );
             })}
           </div>
+
+          {/* Seçili modelin kısa açıklaması (bugünkü nötr metinler). Mobilde yazarken (klavye açık) gizlenir. */}
+          <p className={`text-xs text-text-3 text-center truncate ${inputFocused ? 'hidden sm:block' : ''}`}>
+            {MODEL_LABELS[selectedModel].desc}
+          </p>
         </div>
 
         {/* EkoToken canlı özet şeridi (yalnızca Deney + Son Test). Mobilde yazarken (klavye açık) gizlenir,
@@ -328,27 +320,27 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
       </header>
 
       {/* KAYAN MESAJ LİSTESİ */}
-      <main ref={containerRef} className="flex-1 min-h-0 overflow-y-auto px-3 sm:px-5 py-5">
-        <div className="max-w-4xl mx-auto space-y-5">
+      <main ref={containerRef} className="flex-1 min-h-0 overflow-y-auto">
+        <div className={`${COLUMN_CLASS} py-5 sm:py-8 flex flex-col gap-5 sm:gap-6`}>
           {sessionNote && (
-            <div role="status" className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+            <div role="status" className="rounded-2xl border border-line bg-surface px-4 py-3 text-sm text-text-2">
               <div className="flex items-start gap-2">
-                <Info className="w-4 h-4 mt-0.5 shrink-0 text-indigo-600" />
+                <Info className="w-4 h-4 mt-0.5 shrink-0 text-accent-ink" aria-hidden="true" />
                 <p className="flex-1">Yeni oturum başladı. Önceki mesajlar bu ekranda gösterilmiyor.</p>
                 <button
                   type="button"
                   onClick={() => setSessionNote(false)}
                   aria-label="Kapat"
-                  className="shrink-0 p-2 -m-2 text-slate-400 hover:text-slate-700"
+                  className="shrink-0 p-2 -m-2 text-text-3 hover:text-ink"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-4 h-4" aria-hidden="true" />
                 </button>
               </div>
             </div>
           )}
 
           {historyState === 'loading' && (
-            <div className="py-12 flex justify-center text-slate-400">
+            <div className="py-12 flex justify-center text-text-3">
               <Loader2 className="w-6 h-6 animate-spin" aria-label="Yükleniyor" />
             </div>
           )}
@@ -358,47 +350,48 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
           )}
 
           {historyState === 'ready' && messages.length === 0 && !pending && (
-            <div className="py-12 sm:py-16 text-center max-w-lg mx-auto">
-              <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center bg-indigo-100 text-indigo-700">
-                <Sparkles className="w-7 h-7" />
-              </div>
-              <h2 className="text-lg font-bold text-slate-900">Eğitim Asistanına Hoş Geldin</h2>
-              <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+            <div className="py-12 sm:py-20 flex flex-col items-center text-center max-w-md mx-auto">
+              <BrandMark variant={isEco ? 'ring' : 'orbit'} size={52} />
+              <h2 className="mt-5 text-xl font-semibold tracking-[-0.02em]">Eğitim Asistanına Hoş Geldin</h2>
+              <p className="text-[15px] text-text-2 mt-2 leading-relaxed">
                 Ders konuların, ödevlerin veya merak ettiğin herhangi bir konuda sorularını aşağıdan yazabilirsin.
               </p>
             </div>
           )}
 
           {messages.map((item) => (
-            <div key={item.id} className="space-y-3">
+            <div key={item.id} className="flex flex-col gap-4">
               <UserBubble text={item.prompt} />
-              <div className="flex justify-start">
-                <div className="w-full sm:max-w-[92%] rounded-2xl rounded-tl-sm px-4 sm:px-5 py-4 bg-white border border-slate-200">
-                  <div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-slate-100">
-                    <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                      <GraduationCap className="w-3.5 h-3.5 text-indigo-600" />
-                      Eğitim Asistanı
-                      <span className="font-normal text-slate-400">· {MODEL_SCALES[item.modelId]?.name}</span>
-                    </span>
-                    <span className="text-[11px] text-slate-400">{formatTime(item.createdAt)}</span>
-                  </div>
-                  <RichMessage content={item.response} showCopyButton />
-                  {/* Rozetler yalnızca EkoToken görünümünde ve sunucu eco alanını gönderdiyse */}
-                  {isEco && item.eco && <EcoImpactFooter eco={item.eco} />}
-                </div>
-              </div>
+              <article className="flex flex-col gap-3 animate-rise">
+                <AssistantLabel modelId={item.modelId} time={formatTime(item.createdAt)} />
+                <RichMessage
+                  content={item.response}
+                  showCopyButton
+                  textClassName="text-base leading-[1.625] text-ink-2"
+                />
+                {/* Rozetler yalnızca EkoToken görünümünde ve sunucu eco alanını gönderdiyse */}
+                {isEco && item.eco && <EcoImpactFooter eco={item.eco} />}
+              </article>
             </div>
           ))}
 
           {/* Gönderilen, yanıtı beklenen istem */}
           {pending && <UserBubble text={pending.prompt} />}
 
+          {/* Asistan yazıyor: üç nokta dalgası. Ekran okuyucu için açık metin gizli olarak okunur. */}
           {isSending && (
-            <div className="flex justify-start">
-              <div className="rounded-2xl rounded-tl-sm px-4 py-3.5 bg-white border border-slate-200 flex items-center gap-3 text-sm text-slate-600">
-                <RefreshCw className="w-4 h-4 animate-spin text-indigo-600" />
-                <span>Yanıt hazırlanıyor ({MODEL_SCALES[pending.modelId].name})…</span>
-              </div>
+            <div role="status" className="flex items-center gap-2.5 animate-rise">
+              <span className="text-[13px] font-semibold">Asistan</span>
+              <span className="flex gap-1 px-3.5 py-2.5 rounded-full border border-line bg-surface" aria-hidden="true">
+                {[0, 0.15, 0.3].map((delay) => (
+                  <span
+                    key={delay}
+                    className="w-1.5 h-1.5 rounded-full bg-ink animate-typing"
+                    style={{ animationDelay: `${delay}s` }}
+                  />
+                ))}
+              </span>
+              <span className="sr-only">Yanıt hazırlanıyor ({MODEL_SCALES[pending.modelId].name})…</span>
             </div>
           )}
 
@@ -413,41 +406,40 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
         </div>
       </main>
 
-      {/* SABİT ALT ÇUBUK: istem yazma alanı */}
-      <footer className="shrink-0 border-t border-slate-200 bg-white px-3 sm:px-5 py-3">
-        <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
-          <div className="flex items-end gap-2">
+      {/* SABİT ALT ALAN: yüzen yazma kapsülü */}
+      <footer className="shrink-0 pt-2 pb-3 sm:pb-5">
+        <form onSubmit={handleSubmit} className={COLUMN_CLASS}>
+          <div className="flex items-end gap-2 p-1.5 pl-[18px] rounded-[26px] border border-line-2 bg-surface shadow-capsule focus-within:border-text-3 transition-colors">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value.slice(0, MAX_PROMPT_LENGTH))}
               onKeyDown={handleKeyDown}
               onFocus={handleInputFocus}
               onBlur={handleInputBlur}
-              rows={2}
-              placeholder="Sorunu buraya yaz…"
+              rows={1}
+              placeholder="Bir şey sor..."
               aria-label="İstem"
-              // Mobilde yazı 16 px (text-base): iOS Safari 16 px'ten küçük yazı alanına dokununca sayfayı yakınlaştırır.
+              // Yazı her ekranda 16 px (text-base): iOS Safari 16 px'ten küçük yazı alanına dokununca sayfayı yakınlaştırır.
               // Mobilde tek satır yükseklik (h-11, kutu içinde kayar): klavye açıkken mesaj alanına yer kalsın.
-              className="flex-1 min-w-0 h-11 sm:h-auto resize-none rounded-xl border border-slate-300 px-3 py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
+              // Masaüstünde iki satır yükseklik.
+              className="flex-1 min-w-0 h-11 sm:h-[66px] resize-none border-0 bg-transparent py-[11px] text-base leading-[22px] text-ink placeholder:text-[#8A8A93] focus:outline-none"
             />
             <button
               type="submit"
               disabled={!canSend}
-              aria-label="Gönder" // Mobilde yalnızca ikon görünür; erişilebilir ad buradan gelir.
-              className="shrink-0 inline-flex items-center justify-center gap-1.5 h-11 min-w-11 sm:h-10 sm:min-w-0 px-3 sm:px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white text-sm font-semibold transition-colors"
+              aria-label="Gönder" // Yalnızca ikon görünür; erişilebilir ad buradan gelir.
+              className="shrink-0 w-11 h-11 rounded-full bg-ink hover:bg-ink-2 disabled:bg-line-2 text-paper disabled:text-text-3 flex items-center justify-center transition-colors"
             >
-              <Send className="w-4 h-4" />
-              <span className="hidden sm:inline">Gönder</span>
+              <ArrowUp className="w-[18px] h-[18px]" strokeWidth={2.2} aria-hidden="true" />
             </button>
           </div>
-          {/* Model açıklaması ve sayaç. Mobilde yazarken (klavye açık) gizlenir; sınıra yaklaşınca görünür. */}
+          {/* Karakter sayacı. Mobilde yazarken (klavye açık) gizlenir; sınıra yaklaşınca yine görünür. */}
           <div
-            className={`mt-1.5 items-center justify-between gap-2 text-[11px] text-slate-400 px-0.5 ${
+            className={`mt-1.5 px-3 items-center justify-end font-mono text-[11px] text-text-3 ${
               inputFocused && !nearLimit ? 'hidden sm:flex' : 'flex'
             }`}
           >
-            <span className="truncate">{MODEL_LABELS[selectedModel].desc}</span>
-            <span className="shrink-0">
+            <span>
               {input.length}/{MAX_PROMPT_LENGTH}
             </span>
           </div>
@@ -472,13 +464,41 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
   );
 }
 
-// Öğrencinin kendi mesaj balonu.
+// Üst çubuktaki yuvarlak ikon butonu (44 px dokunma alanı). Yazı görünmez; ad aria-label'dan okunur.
+function IconButton({ label, onClick, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className="w-11 h-11 rounded-full bg-muted hover:bg-line-2 text-ink flex items-center justify-center transition-colors"
+    >
+      {children}
+    </button>
+  );
+}
+
+// Öğrencinin kendi mesaj balonu: siyah, sağda, sağ alt köşesi küçük.
 function UserBubble({ text }) {
   return (
-    <div className="flex justify-end">
-      <div className="max-w-[88%] sm:max-w-[78%] rounded-2xl rounded-tr-sm px-4 py-3 text-sm leading-relaxed bg-indigo-600 text-white">
-        <p className="whitespace-pre-wrap break-words">{text}</p>
-      </div>
+    <div className="self-end max-w-[85%] sm:max-w-[78%] rounded-[20px_20px_6px_20px] px-4 py-3 bg-ink text-paper text-[15px] leading-[22px] animate-rise">
+      <p className="whitespace-pre-wrap break-words">{text}</p>
+    </div>
+  );
+}
+
+// Asistan yanıtının başlık satırı: "Asistan" + ince çizgi + mono model adı ve saat (ör. "STANDART · 10:42").
+function AssistantLabel({ modelId, time }) {
+  const short = MODEL_LABELS[modelId]?.short ?? '';
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-[13px] font-semibold">Asistan</span>
+      <span className="h-px flex-1 bg-line" aria-hidden="true" />
+      <span className="font-mono text-[11px] text-text-3">
+        {short.toLocaleUpperCase('tr-TR')}
+        {time && ` · ${time}`}
+      </span>
     </div>
   );
 }
@@ -488,11 +508,11 @@ function ErrorCard({ message, onRetry, retryDisabled = false, onDismiss }) {
   return (
     <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
       <div className="flex items-start gap-2">
-        <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+        <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
         <p className="flex-1">{message}</p>
         {onDismiss && (
           <button type="button" onClick={onDismiss} aria-label="Kapat" className="shrink-0 p-2 -m-2 text-rose-400 hover:text-rose-700">
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4" aria-hidden="true" />
           </button>
         )}
       </div>
@@ -502,9 +522,9 @@ function ErrorCard({ message, onRetry, retryDisabled = false, onDismiss }) {
             type="button"
             onClick={onRetry}
             disabled={retryDisabled}
-            className="inline-flex items-center gap-1.5 min-h-10 sm:min-h-0 px-4 sm:px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:bg-rose-300 text-white text-xs font-semibold transition-colors"
+            className="inline-flex items-center gap-1.5 min-h-10 px-4 rounded-full bg-rose-700 hover:bg-rose-800 disabled:bg-rose-300 text-white text-[13px] font-semibold transition-colors"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
             Tekrar Dene
           </button>
         </div>

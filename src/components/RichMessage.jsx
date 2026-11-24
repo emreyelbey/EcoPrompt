@@ -21,7 +21,14 @@ const components = {
   a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" />,
 };
 
-export default function RichMessage({ content, showCopyButton = false }) {
+// textClassName: metnin boyutu ve rengi. Sohbet ekranı daha büyük okuma metni verir (Yön 2b);
+// yönetici panelindeki kayıt önizlemesi varsayılanı kullanır.
+const DEFAULT_TEXT_CLASS = 'text-sm text-slate-800 leading-relaxed';
+
+// Kopyala butonunun erişilebilir adı (ikon butonu olduğu için ad buradan gelir).
+const COPY_LABELS = { idle: 'Kopyala', done: 'Kopyalandı', failed: 'Kopyalanamadı' };
+
+export default function RichMessage({ content, showCopyButton = false, textClassName = DEFAULT_TEXT_CLASS }) {
   const [copyState, setCopyState] = useState('idle'); // 'idle' | 'done' | 'failed'
 
   const handleCopy = async () => {
@@ -36,7 +43,7 @@ export default function RichMessage({ content, showCopyButton = false }) {
 
   return (
     <div>
-      <div className="rich-message text-sm text-slate-800 leading-relaxed break-words">
+      <div className={`rich-message break-words ${textClassName}`}>
         <ReactMarkdown
           remarkPlugins={[remarkGfm, remarkMath, remarkBreaks]}
           rehypePlugins={[[rehypeKatex, { throwOnError: false }]]}
@@ -47,15 +54,25 @@ export default function RichMessage({ content, showCopyButton = false }) {
       </div>
 
       {showCopyButton && (
-        <div className="mt-2 flex justify-end">
+        // Yön 2b: yanıtın altında solda yuvarlak ikon butonu (40 px dokunma alanı, Dilim 8d).
+        <div className="mt-3 flex items-center gap-2">
           <button
             type="button"
             onClick={handleCopy}
-            className="inline-flex items-center gap-1 min-h-9 sm:min-h-0 px-2.5 sm:px-2 py-1 rounded-lg text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+            aria-label={COPY_LABELS[copyState]}
+            title={COPY_LABELS[copyState]}
+            className="w-10 h-10 rounded-full border border-line-2 bg-surface text-text-2b hover:text-ink hover:border-text-3 flex items-center justify-center transition-colors"
           >
-            {copyState === 'done' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>{copyState === 'done' ? 'Kopyalandı' : copyState === 'failed' ? 'Kopyalanamadı' : 'Kopyala'}</span>
+            {copyState === 'done' ? (
+              <Check className="w-[15px] h-[15px]" aria-hidden="true" />
+            ) : (
+              <Copy className="w-[15px] h-[15px]" aria-hidden="true" />
+            )}
           </button>
+          {/* Sonuç ekran okuyucuya da okunur; görünür kısa not yalnızca kopyalandıktan sonra çıkar. */}
+          <span role="status" className="text-xs text-text-3">
+            {copyState === 'idle' ? '' : COPY_LABELS[copyState]}
+          </span>
         </div>
       )}
     </div>
