@@ -5,6 +5,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, within, act } from '@testing-library/react';
 import { calculateFootprint } from '../src/lib/footprint.js';
+import { fmtSmart } from '../src/lib/format.js';
 
 const apiRequest = vi.fn();
 vi.mock('../src/lib/api.js', () => ({ apiRequest: (...args) => apiRequest(...args) }));
@@ -109,6 +110,30 @@ describe('EkoToken görünümü (Deney grubu + Son Test)', () => {
     expect(bar.textContent).toContain('Günlük karşılık');
     expect(screen.getAllByTestId('eko-rozetler')).toHaveLength(2);
     expect(screen.getAllByTestId('eko-rozetler')[0].textContent).toContain('100 girdi');
+  });
+
+  // Yön 2b, xl ve üstü: oturum özeti "birikim sütunu" olarak da çizilir (xl altında siyah kart).
+  // Müdahale bilgisi azalmamalı: iki biçimde de istem, token, enerji, su, CO₂ ve günlük karşılık bulunur.
+  it('birikim sütunu: her istem etiketli bir dilim, en yenisi yeşil; iki biçimde de bütün bilgiler var', async () => {
+    const a = ecoMessage('a', 'light', 100, 50);
+    const b = ecoMessage('b', 'standard', 200, 100);
+    await renderScreen({ view: 'ekotoken', student, messages: [a, b], phase: 'posttest' });
+
+    const slices = screen.getAllByRole('listitem');
+    expect(slices).toHaveLength(2);
+    const label = `1. istem · ${fmtSmart(a.eco.energyAvg)} Wh`;
+    expect(slices[0].getAttribute('aria-label')).toBe(label);
+    expect(slices[0].getAttribute('title')).toBe(label);
+    expect(slices[0].getAttribute('tabindex')).toBe('0'); // klavyeyle odaklanabilir
+    expect(slices[1].className).toContain('bg-eco'); // en yeni istem
+    expect(slices[0].className).not.toContain('bg-eco');
+
+    const [card, column] = screen.getByTestId('eko-ozet').children;
+    for (const part of [card, column]) {
+      for (const text of ['2 İstem', '450 Token', 'Wh', 'mL su', 'g CO₂', 'Günlük karşılık']) {
+        expect(part.textContent).toContain(text);
+      }
+    }
   });
 
   it('Tasarruf İpucu yalnızca Standart / Akıl Yürütme yanıtlarında çıkar', async () => {

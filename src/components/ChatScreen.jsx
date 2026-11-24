@@ -62,13 +62,15 @@ const HEADER_GRID_CLASS = [
   'xl:grid-cols-[minmax(0,1fr)_712px_minmax(0,1fr)] 2xl:grid-cols-[minmax(0,1fr)_752px_minmax(0,1fr)]',
 ].join(' ');
 
-// EkoToken "Bu oturum" kartının yeri.
-// - xl altı: beyaz şerit, üst çubuğun devamı (alt kenar çizgisi burada).
-// - xl ve üstü: mutlak konum. Sol kenar = ekran ortası + yarım sütun (380 px; 2xl'de 400 px) + 20 px aralık.
+// EkoToken oturum özetinin yeri.
+// - xl altı: beyaz şerit, üst çubuğun devamı (alt kenar çizgisi burada), içinde siyah kart.
+// - xl ve üstü: "birikim sütunu" alanı. Üst çubuğun hemen altından yazma alanının üstüne kadar uzanır
+//   (top-0 bottom-0), solunda ince dikey çizgi vardır, kutusu yoktur. Mesaj listesinin dışında olduğu için
+//   mesajlar kayarken yerinde kalır. Sol kenar = ekran ortası + yarım sütun (380 px; 2xl'de 400 px) + 20 px aralık.
 //   Genişlik en fazla 280 px; ekran dar kalırsa sağda 20 px boşluk kalacak kadar daralır (1280 px'te 220 px).
 const ECO_CARD_PLACEMENT_CLASS = [
   'shrink-0 bg-surface border-b border-line',
-  'xl:absolute xl:z-10 xl:top-8 xl:bg-transparent xl:border-0',
+  'xl:absolute xl:z-10 xl:top-0 xl:bottom-0 xl:bg-transparent xl:border-b-0 xl:border-l',
   'xl:left-[calc(50%+400px)] xl:w-[min(280px,calc(50%-420px))]',
   '2xl:left-[calc(50%+420px)] 2xl:w-[min(280px,calc(50%-440px))]',
 ].join(' ');
@@ -344,11 +346,11 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
         {/* Üst çubuğun altındaki alan: EkoToken kartı (varsa) + kayan mesaj listesi. "relative": xl'de kart bu
             alanın içinde, mesaj listesinin üstünde sabit durur (liste kayar, kart kaymaz). */}
         <div className="relative flex-1 min-h-0 flex flex-col">
-          {/* EkoToken "Bu oturum" kartı (yalnızca Deney + Son Test). Tek bir kopya vardır:
-              - xl altı: üst çubuğun devamı gibi, kaymayan beyaz şeritte, okuma sütunu genişliğinde.
-              - xl ve üstü: okuma sütununun sağındaki boşlukta, üst çubuğun hemen altında sabit yan panel
-                (~280 px; 1280 px ekranda boşluk daralınca 220 px'e iner). Mutlak konumlu olduğu için okuma sütununu
-                itmez: sütunun yeri ve genişliği iki grupta birebir aynıdır.
+          {/* EkoToken oturum özeti (yalnızca Deney + Son Test). Tek bir kopya vardır:
+              - xl altı: üst çubuğun devamı gibi, kaymayan beyaz şeritte siyah kart, okuma sütunu genişliğinde.
+              - xl ve üstü: okuma sütununun sağındaki boşlukta "birikim sütunu"; üst çubuğun hemen altından
+                yazma alanına kadar uzanır (~280 px; 1280 px ekranda boşluk daralınca 220 px'e iner). Mutlak konumlu
+                olduğu için okuma sütununu itmez: sütunun yeri ve genişliği iki grupta birebir aynıdır.
               Mobilde yazarken (klavye açık) gizlenir, yazma bitince geri gelir: klavye açıkken iki grubun mesaj
               alanı eşit kalır (Dilim 8d). */}
           {isEco && (
@@ -356,7 +358,7 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
               data-testid="eko-ozet-kapsayici"
               className={`${ECO_CARD_PLACEMENT_CLASS}${inputFocused ? ' hidden sm:block' : ''}`}
             >
-              <div className={`${COLUMN_CLASS} pb-3.5 xl:max-w-none 2xl:max-w-none xl:p-0`}>
+              <div className={`${COLUMN_CLASS} pb-3.5 xl:max-w-none 2xl:max-w-none xl:p-0 xl:h-full`}>
                 <EcoSummaryBar summary={ecoSummary} />
               </div>
             </div>

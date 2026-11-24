@@ -1,7 +1,7 @@
 // ecoVisual testleri: EkoToken çubuk ve sütun ölçekleri (Yön 2b tasarımı, adım 4).
 // Onaylanan ölçek: aralık çubuğunun tamamı = aynı tokenla Akıl Yürütme sınıfının maks değeri.
 import { describe, it, expect } from 'vitest';
-import { rangeScale, rangeBands, savingsBars, promptColumns } from '../src/lib/ecoVisual.js';
+import { rangeScale, rangeBands, savingsBars, promptColumns, stackSlices } from '../src/lib/ecoVisual.js';
 import { calculateFootprint } from '../src/lib/footprint.js';
 
 // Sunucunun göndereceği eco alanı.
@@ -66,5 +66,22 @@ describe('promptColumns', () => {
     expect(cols[2].height).toBe(0);
     expect(promptColumns([])).toEqual([]);
     expect(promptColumns(undefined)).toEqual([]);
+  });
+});
+
+describe('stackSlices (birikim sütunu)', () => {
+  it('paylar oturum toplamına göredir ve toplamları 1 eder; sıra korunur', () => {
+    const s = stackSlices([1, 3, 4]);
+    expect(s.map((x) => x.index)).toEqual([0, 1, 2]);
+    expect(s.map((x) => x.share)).toEqual([0.125, 0.375, 0.5]);
+    expect(s.reduce((t, x) => t + x.share, 0)).toBeCloseTo(1, 12);
+  });
+  it('toplam 0 veya geçersiz girdi: paylar 0, NaN yok', () => {
+    expect(stackSlices([0, 0])).toEqual([
+      { index: 0, value: 0, share: 0 },
+      { index: 1, value: 0, share: 0 },
+    ]);
+    expect(stackSlices(undefined)).toEqual([]);
+    expect(stackSlices([NaN, 2])[0]).toEqual({ index: 0, value: 0, share: 0 });
   });
 });

@@ -61,6 +61,18 @@ export function savingsBars(savingsPct) {
 }
 
 /**
+ * Birikim sütunu (xl ve üstü, EkoToken yan alanı): her istem bir dilim; sütunun tamamı oturum toplamıdır.
+ * share = o istemin enerjisi / oturum toplam enerjisi (0–1). Toplam 0 ise bütün paylar 0.
+ * Sıra eskiden yeniye korunur (çizimde eskisi altta, en yenisi üstte).
+ * @returns {{ index: number, value: number, share: number }[]}  index: istemin oturumdaki sırası (0'dan)
+ */
+export function stackSlices(energyPerPrompt) {
+  const values = (Array.isArray(energyPerPrompt) ? energyPerPrompt : []).map((v) => clamp(v, 0, Infinity));
+  const total = values.reduce((sum, v) => sum + v, 0);
+  return values.map((value, index) => ({ index, value, share: total > 0 ? value / total : 0 }));
+}
+
+/**
  * Oturum kartındaki küçük sütun grafiği: son `limit` istemin enerjisi ve her sütunun yüksekliği (yüzde).
  * Sütun yüksekliği o istemin enerjisi / gösterilen en büyük enerji. Çok küçük değerler de görünsün diye
  * sütun en az %8 yüksekliktedir (değer 0 ise 0).
