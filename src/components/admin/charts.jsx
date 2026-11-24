@@ -11,6 +11,7 @@ import { MODEL_ORDER, MODEL_SCALES } from '../../lib/footprint.js';
 import { fmtNum, fmtSmart } from '../../lib/format.js';
 import { insetSliceRect, modelStyle, modelSwatchStyle } from '../../lib/modelColors.js';
 import { PreviewMark } from './PreviewContext.jsx';
+import { useIsPhone } from './useIsPhone.js';
 
 // Kontrol: gri, Deney: nötr çivit (model renkleri olan yeşil/siyah kullanılmaz).
 export const GROUP_COLORS = { Kontrol: '#8A8A93', Deney: '#4F46E5' };
@@ -174,36 +175,60 @@ export function PrePostChart({ title, data, format = fmtSmart }) {
 }
 
 // Grafiklerin altındaki "Tablo olarak göster" bölümü.
+// Telefonda (sm altı) çok sütunlu tablo sığmaz ve başlıklar kırılır: her satır küçük bir kart olur
+// (ilk hücre başlık, diğer hücreler "sütun adı: değer" çiftleri). Masaüstünde tablo aynıdır.
 export function DataTable({ headers, rows }) {
+  const isPhone = useIsPhone();
   return (
     <details className="mt-4 rounded-2xl border border-line">
       <summary className="cursor-pointer min-h-10 flex items-center px-3.5 text-xs font-semibold text-text-2b">
         Tablo olarak göster
       </summary>
-      <div className="overflow-x-auto px-3.5 pb-3">
-        <table className="min-w-full text-xs text-left">
-          <thead className="text-text-3">
-            <tr>
-              {headers.map((h) => (
-                <th key={h} className="py-1.5 pr-4 font-medium">
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line text-ink">
-            {rows.map((row) => (
-              <tr key={row[0]}>
-                {row.map((cell, i) => (
-                  <td key={i} className={`py-1.5 pr-4 ${i === 0 ? 'font-semibold' : 'font-mono'}`}>
-                    {cell}
-                  </td>
+      {isPhone ? (
+        <ul data-testid="tablo-kartlari" className="px-3.5 pb-3 space-y-2">
+          {rows.map((row) => (
+            <li key={row[0]} className="rounded-xl bg-paper px-3 py-2.5">
+              <p className="text-xs font-semibold text-ink">{row[0]}</p>
+              <dl className="mt-1 space-y-0.5 text-xs">
+                {row.slice(1).map((cell, i) => (
+                  <div key={headers[i + 1]} className="flex items-baseline justify-between gap-3">
+                    <dt className="text-text-3">
+                      <span className="sr-only">{row[0]} </span>
+                      {headers[i + 1]}
+                    </dt>
+                    <dd className="font-mono text-ink text-right">{cell}</dd>
+                  </div>
+                ))}
+              </dl>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="overflow-x-auto px-3.5 pb-3">
+          <table className="min-w-full text-xs text-left">
+            <thead className="text-text-3">
+              <tr>
+                {headers.map((h) => (
+                  <th key={h} className="py-1.5 pr-4 font-medium">
+                    {h}
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-line text-ink">
+              {rows.map((row) => (
+                <tr key={row[0]}>
+                  {row.map((cell, i) => (
+                    <td key={i} className={`py-1.5 pr-4 ${i === 0 ? 'font-semibold' : 'font-mono'}`}>
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </details>
   );
 }

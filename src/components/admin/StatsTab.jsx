@@ -136,10 +136,10 @@ export default function StatsTab({ records, logins, codeGroups, currentConfigHas
           <table className="min-w-full text-sm text-left">
             <thead className="text-xs text-text-3">
               <tr>
-                <th className="py-1.5 pr-4 font-medium">Hücre</th>
-                <th className="py-1.5 pr-4 font-medium">n</th>
-                <th className="py-1.5 pr-4 font-medium">x̄</th>
-                <th className="py-1.5 pr-4 font-medium">SS</th>
+                <th className="py-1.5 pr-4 font-medium whitespace-nowrap">Hücre</th>
+                <th className="py-1.5 pr-4 font-medium whitespace-nowrap">n</th>
+                <th className="py-1.5 pr-4 font-medium whitespace-nowrap">x̄</th>
+                <th className="py-1.5 pr-4 font-medium whitespace-nowrap">SS</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
