@@ -1,11 +1,118 @@
-/* Genel stiller: Tailwind'i yükler ve sayfanın kendisinin kaymasını kapatır. */
+/* Genel stiller: Tailwind'i, yazı tiplerini ve tasarım belirteçlerini yükler; sayfanın kendisinin kaymasını kapatır. */
 /* source(...): Tailwind yalnızca src/ klasöründeki sınıfları tarar (reference/ prototipini değil). */
 @import "tailwindcss" source("../src");
+/* Yazı tipleri npm paketlerinden (CDN yok). Ayrıntı: src/fonts.css */
+@import "./fonts.css";
+
+/* ---------------------------------------------------------------------------
+   TASARIM BELİRTEÇLERİ (Yön 2b, reference/tasarim-yon2b/TASARIM.md Bölüm 2)
+   Tailwind v4 @theme: her değişken bir sınıf üretir. Örnek: --color-ink → bg-ink, text-ink, border-ink;
+   --font-mono → font-mono; --shadow-capsule → shadow-capsule; --animate-orbit → animate-orbit.
+   Renk adları anlamı anlatır (ink = mürekkep siyahı, paper = kâğıt beyazı).
+   KÖR DENEY: eco renkleri (yeşil) YALNIZCA EkoToken ekranında kullanılır. Sade ekranda, girişte ve
+   panelde nötr accent (lavanta/çivit) kullanılır.
+   --------------------------------------------------------------------------- */
+@theme {
+  /* Yazı tipleri. --font-sans sayfanın varsayılan yazı tipidir. */
+  --font-sans: 'Inter Tight', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Instrument Serif', ui-serif, Georgia, serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Nötr renkler */
+  --color-ink: #0A0A0B;      /* ana metin, birincil buton, seçili model, kullanıcı balonu */
+  --color-ink-2: #18181B;    /* koyu zeminde ikinci katman (logo karesi, koyu kutular) */
+  --color-paper: #FAFAF9;    /* sayfa zemini */
+  --color-surface: #FFFFFF;  /* kartlar, üst çubuk, yazma kapsülü */
+  --color-line: #ECECEA;     /* ince çizgiler */
+  --color-line-2: #E4E4E7;   /* kenarlıklar */
+  --color-muted: #F4F4F5;    /* segment ve ikon buton zemini */
+  --color-text-2: #52525B;   /* ikincil metin */
+  --color-text-2b: #3F3F46;  /* biraz daha koyu ikincil metin */
+  --color-text-3: #71717A;   /* etiketler (beyaz zeminde 4.5:1 kontrast) */
+
+  /* Nötr vurgu (logo yörünge noktası, "oturum açık" nabzı) */
+  --color-accent: #A5B4FC;     /* koyu zeminde */
+  --color-accent-ink: #4F46E5; /* açık zeminde */
+
+  /* EkoToken yeşili — YALNIZCA EkoToken ekranı */
+  --color-eco: #34D399;      /* koyu zeminde */
+  --color-eco-2: #10B981;    /* açık zeminde çubuklar */
+  --color-eco-ink: #047857;  /* açık zeminde metin */
+
+  /* Uyarı (örnek veri önizleme bandı) */
+  --color-warn-bg: #FEF3C7;
+  --color-warn-ink: #78350F;
+
+  /* Gölge: yalnızca yüzen yazma kapsülünde */
+  --shadow-capsule: 0 6px 24px rgba(10, 10, 11, 0.06);
+
+  /* Hareketler (TASARIM.md Bölüm 4). Hepsi yalnızca süslemedir; içerik animasyonu beklemez. */
+  --animate-orbit: orbit 6s linear infinite;                         /* logo yörünge noktası */
+  --animate-pulse-dot: pulse-dot 2s ease-in-out infinite;            /* "oturum açık" nabzı */
+  --animate-rise: rise 0.5s ease-out both;                           /* mesaj belirmesi */
+  --animate-ring: ring 1.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;     /* EkoToken halkası dolması */
+  --animate-grow: grow 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;     /* yatay çubuk dolması */
+  --animate-up: up 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;         /* dikey sütun dolması */
+  --animate-typing: typing-dot 1.2s infinite;                         /* "yazıyor" üç nokta */
+
+  @keyframes orbit {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.35; transform: scale(0.7); }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+  /* Halka: stroke-dasharray 63 olan çember boştan (63) son değerine dolar; son değer öğenin kendi
+     stroke-dashoffset özniteliğidir (animasyon kapalıyken de doğru görünür). */
+  @keyframes ring {
+    from { stroke-dashoffset: 63; }
+  }
+  @keyframes grow {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+  @keyframes up {
+    from { transform: scaleY(0); }
+    to { transform: scaleY(1); }
+  }
+  @keyframes typing-dot {
+    0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+    40% { opacity: 1; transform: translateY(-3px); }
+  }
+}
 
 html,
 body {
   height: 100%;
   overflow: hidden; /* Yalnızca <main> kayar (proje rehberi, Bölüm 8). */
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Çubuk ve sütunların hangi kenardan dolacağı (grow: soldan, up: alttan). */
+.origin-grow { transform-origin: left; }
+.origin-up { transform-origin: bottom; }
+
+/* HAREKETİ AZALT: işletim sisteminde "hareketi azalt" açık olan cihazlarda BÜTÜN animasyon ve geçişler
+   kapanır (yörünge, nabız, mesaj belirmesi, çubuk dolması, model hapının kayması, yükleniyor dönmesi).
+   Animasyonların başlangıç kareleri yalnızca keyframe içinde tanımlı olduğu için kapalıyken her öğe
+   doğrudan son halinde görünür: hiçbir içerik gizli kalmaz veya gecikmez. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Ana görünümleri (giriş, sohbet) ekranın gerçekten görünen kısmına oturtur (Dilim 8d).
@@ -18,28 +125,29 @@ body {
 }
 
 /* Asistan yanıtlarındaki Markdown öğeleri (RichMessage). Tailwind tüm varsayılan
-   biçimleri sıfırladığı için başlık, liste, tablo, alıntı ve kod görünümü burada verilir. */
+   biçimleri sıfırladığı için başlık, liste, tablo, alıntı ve kod görünümü burada verilir.
+   Renkler tasarım belirteçlerinden gelir. */
 .rich-message > * + * { margin-top: 0.75em; }
-.rich-message h1 { font-size: 1.375rem; font-weight: 700; }
-.rich-message h2 { font-size: 1.25rem; font-weight: 700; }
-.rich-message h3 { font-size: 1.125rem; font-weight: 700; }
+.rich-message h1 { font-size: 1.375rem; font-weight: 700; letter-spacing: -0.02em; }
+.rich-message h2 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; }
+.rich-message h3 { font-size: 1.125rem; font-weight: 700; letter-spacing: -0.01em; }
 .rich-message h4 { font-size: 1rem; font-weight: 700; }
 .rich-message h5 { font-size: 0.9375rem; font-weight: 600; }
-.rich-message h6 { font-size: 0.875rem; font-weight: 600; color: #475569; }
+.rich-message h6 { font-size: 0.875rem; font-weight: 600; color: var(--color-text-2); }
 .rich-message ul { list-style: disc; padding-left: 1.5em; }
 .rich-message ol { list-style: decimal; padding-left: 1.5em; }
 .rich-message li > ul,
 .rich-message li > ol { margin-top: 0.25em; }
 .rich-message ul ul { list-style: circle; }
 .rich-message li + li { margin-top: 0.25em; }
-.rich-message a { color: #4f46e5; text-decoration: underline; }
-.rich-message hr { border-color: #e2e8f0; }
-.rich-message blockquote { border-left: 3px solid #cbd5e1; padding-left: 0.75em; color: #475569; }
-.rich-message code { background: #f1f5f9; border-radius: 0.25rem; padding: 0.1em 0.3em; font-size: 0.875em; }
-.rich-message pre { background: #0f172a; color: #e2e8f0; border-radius: 0.5rem; padding: 0.75em 1em; overflow-x: auto; }
+.rich-message a { color: var(--color-accent-ink); text-decoration: underline; }
+.rich-message hr { border-color: var(--color-line); }
+.rich-message blockquote { border-left: 3px solid var(--color-line-2); padding-left: 0.75em; color: var(--color-text-2); }
+.rich-message code { background: var(--color-muted); border-radius: 0.375rem; padding: 0.1em 0.3em; font-size: 0.875em; }
+.rich-message pre { background: var(--color-ink); color: var(--color-line-2); border-radius: 0.875rem; padding: 0.75em 1em; overflow-x: auto; }
 .rich-message pre code { background: transparent; padding: 0; color: inherit; }
 .rich-message table { display: block; overflow-x: auto; border-collapse: collapse; max-width: 100%; }
 .rich-message th,
-.rich-message td { border: 1px solid #e2e8f0; padding: 0.375em 0.625em; text-align: left; }
-.rich-message th { background: #f8fafc; font-weight: 600; }
+.rich-message td { border: 1px solid var(--color-line); padding: 0.375em 0.625em; text-align: left; }
+.rich-message th { background: var(--color-paper); font-weight: 600; }
 .rich-message .katex-display { overflow-x: auto; overflow-y: hidden; padding: 0.25em 0; }

@@ -37,7 +37,7 @@ const AdminScreen = lazy(() => import('./components/admin/AdminScreen.jsx'));
 // Yükleniyor ekranı (ilk açılış ve sohbet/panel parçası inerken).
 function FullScreenLoader() {
   return (
-    <div className="app-viewport fixed inset-0 w-full h-full flex items-center justify-center overflow-hidden bg-slate-50 text-slate-500">
+    <div className="app-viewport fixed inset-0 w-full h-full flex items-center justify-center overflow-hidden bg-paper text-text-3">
       <Loader2 className="w-6 h-6 animate-spin" aria-label="Yükleniyor" />
     </div>
   );
