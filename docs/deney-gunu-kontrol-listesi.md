@@ -82,7 +82,7 @@ iki aşamada da aynı kalmak zorundadır.
 - [ ] **Kod kartları hazır.** 60 kod (K001–K030 Kontrol, D001–D030 Deney) kartlara basıldı. 001–020 asıl, 021–030 yedek koddur. Hangi öğrencinin hangi kodu alacağı önceden belirlendi. Öğrenci adı ↔ kod listesi **yalnızca kâğıtta** ve öğretmende durur; sisteme hiçbir yerde ad yazılmaz. **[Öğretmen]**
 - [ ] **Öğrenci kartlarında amaç yazmıyor.** Kartta yalnızca adres ve kod bulunur. "Çevre", "enerji", "EkoToken" gibi sözcükler geçmez (kör deney). **[Öğretmen]**
 - [ ] **Cihazlar hazır.** Her bilgisayarda internet çalışıyor. Tarayıcı güncel. Adres (https://egitim-asistani-2204.vercel.app) açılıyor ve "Eğitim Asistanı Girişi" ekranı görünüyor. Reklam engelleyici varsa bu site için kapatıldı. **[Öğretmen]**
-- [ ] **Cihazlarda eski oturum yok.** Her bilgisayarda site açıldı ve doğrudan sohbet değil, **giriş ekranı** geldi. Sohbet ekranı geliyorsa önceki kişi Çıkış yapmamıştır: sağ üstteki **Çıkış**'a basın. Bu kontrol **Verileri Temizle'den önce** yapılır (2c). **[Öğretmen]**
+- [ ] **Cihazlarda eski oturum yok.** Her bilgisayarda site açıldı ve doğrudan sohbet değil, **giriş ekranı** geldi. Sohbet ekranı geliyorsa önceki kişi Çıkış yapmamıştır: sağ üstteki **Çıkış**'a basın (yazısız, ok simgeli yuvarlak buton; fareyle üzerine gelince "Çıkış" yazar). Bu kontrol **Verileri Temizle'den önce** yapılır (2c). **[Öğretmen]**
   - **Önemli:** Sistem öğrencinin kodunu bilgisayarda saklar. **Tarayıcıyı kapatmak bu kodu silmez; kodu yalnızca "Çıkış" siler.** Çıkış yapılmamış bir bilgisayarda site açıldığı anda, o kod adına o günkü aşamada giriş kaydedilir.
 
 ### 2c. Deneme kullanımı (UAT) ve temizlik
@@ -112,7 +112,7 @@ iki aşamada da aynı kalmak zorundadır.
 - [ ] Ön Test'te iki grup (K ve D) **aynı sade ekranı** görüyor. Deney grubundan birinin ekranında enerji/su/karbon rozeti görünürse aşama yanlıştır: hemen panelden aşamayı kontrol edin. **[Öğretmen]**
 
 ### Oturum sonunda
-- [ ] **(B13-12) Her öğrenci sağ üstteki "Çıkış" butonuna bastı. Bu ASIL önlemdir.** Öğretmen her ekranda giriş ekranının göründüğünü kontrol eder. **[Öğretmen]**
+- [ ] **(B13-12) Her öğrenci sağ üstteki "Çıkış" butonuna (ok simgeli yuvarlak buton, en sağdaki) bastı. Bu ASIL önlemdir.** Öğretmen her ekranda giriş ekranının göründüğünü kontrol eder. **[Öğretmen]**
   - **Neden?** Sistem kodu bilgisayarda saklar ve tarayıcı kapanınca da unutmaz. Çıkış yapılmamış bir bilgisayarda site Son Test günü açılırsa (ya da sekme açık kalırsa) sistem o öğrenci için **Son Test girişi kaydeder**. Böylece öğrenci Son Test'e hiç katılmadığı halde katılmış görünür.
 - [ ] **Ek önlem: bütün tarayıcı pencereleri kapatıldı** (yalnızca sekme değil, tarayıcının tamamı). Bu, açık kalan bir sekmenin aşama değişince kendiliğinden yeni aşamaya geçmesini önler. Çıkış'ın yerini **tutmaz**. **[Öğretmen]**
 - [ ] Panelde **Katılımcı Kodları** sekmesinden giriş yapan kodlar kontrol edildi. Giriş sayısı beklenenden fazla olan kod (aynı kodla birden çok giriş) tutanağa not edildi. **[Öğretmen]**
@@ -154,7 +154,7 @@ iki aşamada da aynı kalmak zorundadır.
 
 ### Oturum sonunda
 - [ ] Her öğrenci **Çıkış**'a bastı (asıl önlem; giriş ekranı göründü) ve ek önlem olarak **bütün tarayıcılar kapatıldı.** **[Öğretmen]**
-- [ ] **Yapılandırma özeti kutusu yeşil** ve "Kayıtlardaki yapılandırma özeti" Ön Test'ten önce yazılan değerle aynı (en üstteki kutu). **[Öğretmen]**
+- [ ] **Yapılandırma Mührü kartında onay işareti (✓)** var ve "Kayıtlardaki yapılandırma özeti" Ön Test'ten önce yazılan değerle aynı (İstatistik sekmesindeki siyah kart). **[Öğretmen]**
 
 ---
 
