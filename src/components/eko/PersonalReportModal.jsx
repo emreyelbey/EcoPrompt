@@ -23,7 +23,6 @@ import {
 import { Droplets, Zap, Cloud } from 'lucide-react';
 import Modal from '../Modal.jsx';
 import { BrandMark } from '../ui/BrandMark.jsx';
-import MetricIcon from '../ui/MetricIcon.jsx';
 import { fmtNum, fmtSmart } from '../../lib/format.js';
 import { chartSliceStyle, modelSwatchStyle } from '../../lib/modelColors.js';
 
@@ -93,21 +92,21 @@ function ReportBody({ summary }) {
       {/* Günlük hayat karşılık kartları */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <StatCard
-          icon={<MetricIcon icon={Droplets} metric="water" />}
+          icon={<Droplets className="w-4 h-4" aria-hidden="true" />}
           label="Toplam Su Ayak İzi"
           value={`${fmtSmart(summary.water)} mL`}
           primary={eq.waterPrimary}
           secondary={`${fmtNum(eq.glasses, 3)} su bardağı · ${fmtNum(eq.bottles, 3)} şişe`}
         />
         <StatCard
-          icon={<MetricIcon icon={Zap} metric="energy" />}
+          icon={<Zap className="w-4 h-4" aria-hidden="true" />}
           label="Toplam Enerji Tüketimi"
           value={`${fmtSmart(summary.energy)} Wh`}
           primary={eq.ledText}
           secondary={eq.phoneText}
         />
         <StatCard
-          icon={<MetricIcon icon={Cloud} metric="co2" />}
+          icon={<Cloud className="w-4 h-4" aria-hidden="true" />}
           label="Toplam Karbon Emisyonu"
           value={`${fmtSmart(summary.co2)} g CO₂`}
           primary={eq.carText}
@@ -218,7 +217,7 @@ function ReportBody({ summary }) {
   );
 }
 
-// Toplam kartı: etiket + renkli yuvarlak zeminde ölçü ikonu (metricColors.js), büyük mono değer, günlük karşılıklar.
+// Toplam kartı: etiket + ikon, büyük mono değer, günlük hayat karşılıkları. Üç kart da nötr beyazdır.
 function StatCard({ icon, label, value, primary, secondary }) {
   return (
     <div className="p-4 rounded-2xl border border-line bg-surface">

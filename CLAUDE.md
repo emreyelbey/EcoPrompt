@@ -180,7 +180,6 @@ Görsel referans: `reference/tasarim-yon2b/TASARIM.md` ve taslaklar. Yalnızca g
 - **Hareketi azalt:** `prefers-reduced-motion: reduce` olan cihazlarda bütün CSS animasyon ve geçişleri kapanır (`index.css`); grafik kütüphanesinin JS animasyonları (`isAnimationActive`) ve sohbetin otomatik kaydırması da bu ayarı okur. Animasyonlar içeriği asla geciktirmez.
 - **Tek kaynak kuralları:**
   - `src/lib/modelColors.js`: model sınıfı → renk + biçim (Hafif dolu yeşil, Standart içi boş + çerçeve, Akıl Yürütme dolu siyah; koyu zeminde Akıl Yürütme açık ton). SVG grafiklerinde çerçeve kuralı da buradadır (`chartSliceStyle`, `insetSliceRect`: üç sınıfın dış ölçüleri aynı). Başka dosya kendi model paleti tanımlamaz (`tests/modelColors.test.js`).
-  - `src/lib/metricColors.js` + `src/components/ui/MetricIcon.jsx`: ölçü ikonları (Enerji amber, Su mavi, CO₂ kurşuni; ölçü olmayan ikonlar nötr gri). İkon zemine karşı en az 3:1 (`tests/metricColors.test.js`).
 - **Yeşil yalnızca Hafif Model / EkoToken içindir.** Sade ekranda, girişte ve yönetici panelinde yeşil kullanılmaz (panel mührünün "uyumlu" durumu nötr renktedir); `tests/chat-ekran.test.jsx` sade ekranın işaretlemesinde yeşil sınıf arar. Token, trend, grup ve aşama grafikleri model renkleriyle karışmayan tonlar kullanır.
 - **Düzen:** Sohbet okuma sütunu 760 px (2xl'de 800 px); xl ve üstünde EkoToken oturum özeti sağdaki "birikim sütunu"dur ve sütunu itmez. Yönetici panelinde başlık ve içerik ortak 1440 px kapsayıcıdadır; telefonda sekmeler siyah şeritteki seçim kutusundan seçilir.
 

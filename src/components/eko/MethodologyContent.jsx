@@ -7,10 +7,8 @@
 // öğrenci de bu dosyayı gördüğü için o anlatım yalnızca admin/ExperimentDesignSection.jsx dosyasındadır.
 // Kaynakçada ticari yapay zeka marka adı geçmez (tests/marka-yasagi.test.js).
 // Görünüm (Yön 2b): nötr beyaz kartlar, formül siyah kutuda mono. Bu içerik yönetici panelinde de göründüğü için
-// yeşil (eco) renk kullanılmaz. Başlık ikonları yuvarlak zeminlidir (src/lib/metricColors.js): Enerji, Su ve Karbon
-// başlıkları renkli; ölçü olmayan başlıklar (formül, günlük karşılıklar, kaynakça) nötr gri.
-import { FlaskConical, Droplets, Cloud, BookOpen, Lightbulb, Zap } from 'lucide-react';
-import MetricIcon from '../ui/MetricIcon.jsx';
+// yeşil (eco) renk kullanılmaz.
+import { FlaskConical, Droplets, Cloud, BookOpen, Lightbulb } from 'lucide-react';
 import {
   MODEL_ORDER,
   MODEL_SCALES,
@@ -34,8 +32,8 @@ export default function MethodologyContent() {
     <div className="space-y-5 text-sm text-text-2b">
       {/* Ağırlıklı token formülü */}
       <section className="p-4 rounded-2xl bg-surface border border-line">
-        <h3 className="font-semibold text-ink flex items-center gap-2.5">
-          <MetricIcon icon={FlaskConical} metric="neutral" />
+        <h3 className="font-semibold text-ink flex items-center gap-2">
+          <FlaskConical className="w-4 h-4" aria-hidden="true" />
           Ağırlıklı Token Formülü
         </h3>
         <p className="mt-1.5 text-text-2b leading-relaxed">
@@ -60,10 +58,7 @@ export default function MethodologyContent() {
 
       {/* Katsayı tablosu */}
       <section>
-        <h3 className="font-semibold text-ink mb-2 flex items-center gap-2.5">
-          <MetricIcon icon={Zap} metric="energy" />
-          Model Sınıfları ve Enerji Katsayıları (1.000 ağırlıklı token başına)
-        </h3>
+        <h3 className="font-semibold text-ink mb-2">Model Sınıfları ve Enerji Katsayıları (1.000 ağırlıklı token başına)</h3>
         <div className="overflow-x-auto rounded-2xl border border-line">
           <table className="min-w-full text-xs text-left">
             <thead className="bg-muted text-text-2b font-semibold">
@@ -98,8 +93,8 @@ export default function MethodologyContent() {
       {/* Su ve karbon katsayıları */}
       <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="p-3.5 rounded-2xl bg-surface border border-line">
-          <h3 className="font-semibold text-ink flex items-center gap-2.5">
-            <MetricIcon icon={Droplets} metric="water" />
+          <h3 className="font-semibold text-ink flex items-center gap-1.5">
+            <Droplets className="w-4 h-4 text-text-3" aria-hidden="true" />
             Su Ayak İzi (WUE)
           </h3>
           <p className="mt-1 text-xs text-text-2 leading-relaxed">
@@ -109,8 +104,8 @@ export default function MethodologyContent() {
           </p>
         </div>
         <div className="p-3.5 rounded-2xl bg-surface border border-line">
-          <h3 className="font-semibold text-ink flex items-center gap-2.5">
-            <MetricIcon icon={Cloud} metric="co2" />
+          <h3 className="font-semibold text-ink flex items-center gap-1.5">
+            <Cloud className="w-4 h-4 text-text-3" aria-hidden="true" />
             Karbon Yoğunluğu (Şebeke)
           </h3>
           <p className="mt-1 text-xs text-text-2 leading-relaxed">
@@ -127,8 +122,8 @@ export default function MethodologyContent() {
 
       {/* Günlük hayat karşılıkları */}
       <section className="p-4 rounded-2xl bg-surface border border-line">
-        <h3 className="font-semibold text-ink flex items-center gap-2.5">
-          <MetricIcon icon={Lightbulb} metric="neutral" />
+        <h3 className="font-semibold text-ink flex items-center gap-1.5">
+          <Lightbulb className="w-4 h-4 text-text-3" aria-hidden="true" />
           Günlük Hayat Karşılıkları
         </h3>
         <ul className="mt-1.5 space-y-1 text-xs text-text-2 list-disc pl-4">
@@ -149,8 +144,8 @@ export default function MethodologyContent() {
 
       {/* Kaynakça */}
       <section>
-        <h3 className="font-semibold text-ink mb-2 flex items-center gap-2.5">
-          <MetricIcon icon={BookOpen} metric="neutral" />
+        <h3 className="font-semibold text-ink mb-2 flex items-center gap-1.5">
+          <BookOpen className="w-4 h-4 text-text-3" aria-hidden="true" />
           Akademik Kaynakça
         </h3>
         <ol className="space-y-2">
