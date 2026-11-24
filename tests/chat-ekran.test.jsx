@@ -161,3 +161,50 @@ describe('EkoToken görünümü (Deney grubu + Son Test)', () => {
     expect(dialog.textContent).toContain('2 istem (%100)');
   });
 });
+
+describe('Model seçiminin hatırlanması', () => {
+  beforeEach(() => sessionStorage.clear());
+
+  const pressed = (name) => screen.getByRole('button', { name }).getAttribute('aria-pressed');
+
+  it('ilk açılışta Standart seçilidir', async () => {
+    await renderScreen({
+      view: 'sade',
+      student: { code: 'K001', group: 'Kontrol', phase: 'pretest' },
+      messages: [plainMessage('a', 'light')],
+      phase: 'pretest',
+    });
+    expect(pressed(/Standart Model/)).toBe('true');
+  });
+
+  it('sayfa yenilenince (yeniden açılış) seçim korunur', async () => {
+    const student = { code: 'K001', group: 'Kontrol', phase: 'pretest' };
+    await renderScreen({ view: 'sade', student, messages: [plainMessage('a', 'light')], phase: 'pretest' });
+    fireEvent.click(screen.getByRole('button', { name: /Hafif Model/ }));
+    expect(pressed(/Hafif Model/)).toBe('true');
+
+    cleanup(); // Sayfa kapandı…
+    await renderScreen({ view: 'sade', student, messages: [plainMessage('a', 'light')], phase: 'pretest' }); // …ve yeniden açıldı.
+    expect(pressed(/Hafif Model/)).toBe('true');
+    expect(pressed(/Standart Model/)).toBe('false');
+  });
+
+  it('ekran açıkken aşama değişince Standart\'a döner', async () => {
+    const pre = { code: 'D001', group: 'Deney', phase: 'pretest' };
+    apiRequest.mockResolvedValue({ phase: 'pretest', messages: [plainMessage('a', 'light')] });
+    const { rerender } = render(<ChatScreen student={pre} view="sade" onServerPhase={() => {}} onLogout={() => {}} />);
+    await screen.findByText('cevap a');
+    fireEvent.click(screen.getByRole('button', { name: /Hafif Model/ }));
+
+    // Yönetici Son Test'e geçirdi (dinleyici bildirdi).
+    apiRequest.mockResolvedValue({ phase: 'posttest', messages: [ecoMessage('b', 'light', 10, 5)] });
+    rerender(
+      <ChatScreen student={{ ...pre, phase: 'posttest' }} view="ekotoken" onServerPhase={() => {}} onLogout={() => {}} />
+    );
+    await screen.findByText('cevap b');
+    expect(pressed(/Standart Model/)).toBe('true');
+    expect(sessionStorage.getItem('model:D001:posttest')).toBe('standard');
+    // Ön Test seçimi kendi anahtarında durur ama Son Test'e taşınmadı.
+    expect(sessionStorage.getItem('model:D001:pretest')).toBe('light');
+  });
+});

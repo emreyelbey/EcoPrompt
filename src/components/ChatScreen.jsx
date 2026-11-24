@@ -33,6 +33,7 @@ import { summarizeSession } from '../lib/ecoSummary.js';
 import { apiRequest } from '../lib/api.js';
 import { MODEL_ORDER, MODEL_SCALES } from '../lib/footprint.js';
 import { chatResponseAction } from '../lib/phases.js';
+import { DEFAULT_MODEL, loadModelChoice, saveModelChoice } from '../lib/session.js';
 
 // Pencereler ihtiyaç anında yüklenir: grafik kütüphanesi ayrı bir parçaya düşer ve
 // sade ekrandaki öğrencinin tarayıcısı bu kodu hiç indirmez.
@@ -60,7 +61,8 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
   const isEco = view === 'ekotoken';
   const [messages, setMessages] = useState([]); // Sunucudan gelen, kaydı yazılmış mesajlar
   const [historyState, setHistoryState] = useState('loading'); // 'loading' | 'ready' | hata metni
-  const [selectedModel, setSelectedModel] = useState('standard');
+  // Seçili model sayfa yenilenince korunur (sessionStorage, kod + aşama başına); yoksa Standart.
+  const [selectedModel, setSelectedModel] = useState(() => loadModelChoice(student.code, student.phase));
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(null); // Gönderilen ama henüz yanıtı gelmemiş istem: { prompt, modelId }
   const [isSending, setIsSending] = useState(false);
@@ -79,6 +81,19 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
   // Her geçmiş yüklemesine sıra numarası verilir; geç gelen eski yanıt yok sayılır.
   const historyRequestRef = useRef(0);
 
+  // Kullanıcı bir model seçti: ekranda göster ve bu kod + aşama için hatırla.
+  const chooseModel = (modelId) => {
+    setSelectedModel(modelId);
+    saveModelChoice(student.code, student.phase, modelId);
+  };
+
+  // Aşama değişti: seçim varsayılana (Standart) döner. Varsayılan yeni aşamanın anahtarına da yazılır;
+  // böylece o aşamadan kalmış eski bir seçim (ör. Son Test'ten Ön Test'e dönüş) geri gelmez.
+  const resetModelForPhase = (phase) => {
+    setSelectedModel(DEFAULT_MODEL);
+    saveModelChoice(student.code, phase, DEFAULT_MODEL);
+  };
+
   // Aktif aşamadaki kendi mesajlarımızı sunucudan yükle. Bu çağrı sunucuda giriş kaydını da günceller.
   const loadHistory = async () => {
     const requestNo = ++historyRequestRef.current;
@@ -87,7 +102,13 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
       const data = await apiRequest('/api/messages', { method: 'POST', body: { code: student.code } });
       if (requestNo !== historyRequestRef.current) return; // Daha yeni bir yükleme başladı.
       // Ekrandaki aşamadan farklı bir aşamaya geçildiyse nötr not gösterilir (ilk açılışta gösterilmez).
-      if (loadedPhaseRef.current !== null && loadedPhaseRef.current !== data.phase) setSessionNote(true);
+      if (loadedPhaseRef.current !== null && loadedPhaseRef.current !== data.phase) {
+        setSessionNote(true);
+        resetModelForPhase(data.phase);
+      } else if (loadedPhaseRef.current === null && data.phase !== student.phase) {
+        // İlk açılışta sunucu farklı bir aşama söyledi: seçim o aşamanın kaydından okunur.
+        setSelectedModel(loadModelChoice(student.code, data.phase));
+      }
       loadedPhaseRef.current = data.phase;
       setMessages(data.messages);
       setHistoryState('ready');
@@ -109,6 +130,7 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
       setPending(null);
       setError('');
       setSessionNote(true);
+      resetModelForPhase(student.phase);
     }
     loadHistory();
   }, [student.code, student.phase]);
@@ -256,7 +278,7 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
                 <button
                   key={id}
                   type="button"
-                  onClick={() => setSelectedModel(id)}
+                  onClick={() => chooseModel(id)}
                   aria-pressed={active}
                   className={`py-1.5 px-1.5 sm:px-3 rounded-lg text-center transition-all text-[11px] sm:text-xs font-semibold truncate ${
                     !active

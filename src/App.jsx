@@ -7,16 +7,33 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import LoginScreen from './components/LoginScreen.jsx';
-import ChatScreen from './components/ChatScreen.jsx';
 import { apiRequest } from './lib/api.js';
 import { applyPhaseReport, getStudentView } from './lib/phases.js';
 import { subscribeToPhase } from './lib/phaseListener.js';
 import { saveStudent, saveAdmin, loadSession, clearSession } from './lib/session.js';
 
+// Sohbet ekranı ayrı bir parçada yüklenir (Markdown, KaTeX ve KaTeX'in CSS'i bu parçadadır):
+// giriş ekranı bu büyük kodu beklemeden açılır. Parça, giriş ekranı açıkken tarayıcı boştayken
+// önceden indirilir (preloadChatScreen); öğrenci kodunu yazıp girdiğinde çoğu zaman hazırdır.
+// import() aynı dosya için tek bir indirme yapar; ikinci çağrı aynı sonucu bekler.
+const loadChatScreen = () => import('./components/ChatScreen.jsx');
+const ChatScreen = lazy(loadChatScreen);
+
+function preloadChatScreen() {
+  // İndirme başarısız olursa sorun değil: lazy() ekran açılırken yeniden dener.
+  const start = () => loadChatScreen().catch(() => {});
+  if (typeof window.requestIdleCallback === 'function') {
+    const id = window.requestIdleCallback(start, { timeout: 2000 });
+    return () => window.cancelIdleCallback(id);
+  }
+  const id = window.setTimeout(start, 300); // requestIdleCallback olmayan tarayıcılar (ör. Safari)
+  return () => window.clearTimeout(id);
+}
+
 // Yönetici paneli ayrı bir parçada yüklenir: öğrencinin tarayıcısı panel ve grafik kodunu hiç indirmez.
 const AdminScreen = lazy(() => import('./components/admin/AdminScreen.jsx'));
 
-// Yükleniyor ekranı (ilk açılış ve panel parçası inerken).
+// Yükleniyor ekranı (ilk açılış ve sohbet/panel parçası inerken).
 function FullScreenLoader() {
   return (
     <div className="fixed inset-0 w-full h-full flex items-center justify-center overflow-hidden bg-slate-50 text-slate-500">
@@ -55,6 +72,7 @@ export default function App() {
       }
 
       if (saved?.role === 'student') {
+        loadChatScreen().catch(() => {}); // Kod doğrulanırken sohbet ekranı parçası da insin.
         try {
           // Kod yeniden doğrulanır; bu aşamanın giriş kaydı da tazelenir.
           const data = await apiRequest('/api/login', { method: 'POST', body: { code: saved.code } });
@@ -79,6 +97,12 @@ export default function App() {
       cancelled = true;
     };
   }, []);
+
+  // Giriş ekranı açıkken sohbet ekranı parçasını boşta önceden indir.
+  useEffect(() => {
+    if (view !== 'login') return undefined;
+    return preloadChatScreen();
+  }, [view]);
 
   // Yeni bir aşama bildirimi (dinleyiciden veya sunucu yanıtından) öğrenci durumuna uygulanır.
   // Aşama değişmediyse durum aynı kalır.
@@ -123,12 +147,14 @@ export default function App() {
     const studentView = getStudentView(student.group, student.phase);
     // 'ekotoken' (yalnızca Deney + Son Test) → EkoToken arayüzü; diğer üç durumda sade ekran.
     return (
-      <ChatScreen
-        student={student}
-        view={studentView}
-        onServerPhase={handlePhaseReport}
-        onLogout={handleLogout}
-      />
+      <Suspense fallback={<FullScreenLoader />}>
+        <ChatScreen
+          student={student}
+          view={studentView}
+          onServerPhase={handlePhaseReport}
+          onLogout={handleLogout}
+        />
+      </Suspense>
     );
   }
 
