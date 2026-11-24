@@ -24,7 +24,7 @@ import { Droplets, Zap, Cloud } from 'lucide-react';
 import Modal from '../Modal.jsx';
 import { BrandMark } from '../ui/BrandMark.jsx';
 import { fmtNum, fmtSmart } from '../../lib/format.js';
-import { modelStyle, modelSwatchStyle, STANDARD_STROKE_WIDTH } from '../../lib/modelColors.js';
+import { chartSliceStyle, modelSwatchStyle } from '../../lib/modelColors.js';
 
 // Model sınıfı görünümü tek kaynaktan gelir (src/lib/modelColors.js, 'chart' zemini): Hafif dolu yeşil,
 // Standart çok açık gri dolgu + koyu çerçeve, Akıl Yürütme dolu siyah. Birikim sütunu ve oturum kartıyla aynı
@@ -152,22 +152,15 @@ function ReportBody({ summary }) {
                   nameKey="name"
                   innerRadius={42}
                   outerRadius={70}
-                  paddingAngle={2}
-                  stroke="#ffffff"
-                  strokeWidth={2}
+                  // 3°: eşit kalınlıktaki çerçeveler (1,5 px) aralığın bir kısmını kapladığı için boşluk görünür kalsın.
+                  paddingAngle={3}
                 >
-                  {/* Standart: çok açık gri dolgu + koyu çerçeve; diğerleri dolu (aralarında beyaz boşluk çizgisi). */}
-                  {summary.modelDistribution.map((item) => {
-                    const look = modelStyle(item.id, 'chart');
-                    return (
-                      <Cell
-                        key={item.id}
-                        fill={look.fill}
-                        stroke={look.stroke ?? '#ffffff'}
-                        strokeWidth={look.stroke ? STANDARD_STROKE_WIDTH : 2}
-                      />
-                    );
-                  })}
+                  {/* Dilim görünümü modelColors.js'teki kurala göre (chartSliceStyle): üç sınıf da aynı kalınlıkta
+                      çerçeve alır (dolu sınıfta çerçeve = dolgu rengi), böylece dış ölçüler aynıdır. Dilimler arası
+                      boşluğu paddingAngle verir. Standart: çok açık gri dolgu + koyu çerçeve. */}
+                  {summary.modelDistribution.map((item) => (
+                    <Cell key={item.id} {...chartSliceStyle(item.id)} />
+                  ))}
                 </Pie>
                 <Tooltip formatter={(v) => `${v} istem`} />
               </PieChart>

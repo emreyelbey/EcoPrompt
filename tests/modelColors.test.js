@@ -10,6 +10,9 @@ import {
   modelStyle,
   modelSwatchStyle,
   modelLegend,
+  chartSliceStyle,
+  insetSliceRect,
+  SLICE_GAP,
 } from '../src/lib/modelColors.js';
 import { BRAND_PATTERNS } from './helpers/brand-patterns.js';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
@@ -113,5 +116,38 @@ describe('Model görünümü tek kaynaktan', () => {
       .filter((f) => !f.endsWith('modelColors.js'))
       .filter((f) => /MODEL_COLORS\s*=|light:\s*'#[0-9a-fA-F]{6}',\s*standard:/.test(readFileSync(f, 'utf8')));
     expect(offenders).toEqual([]);
+  });
+});
+
+// SVG çerçevesi çizginin ortasından çizilir; kural: üç sınıfın dış ölçüleri birebir aynı, çerçeve şeklin dışına taşmaz.
+describe('SVG grafik çerçeve kuralı (dış ölçüler aynı)', () => {
+  const ids = ['light', 'standard', 'reasoning'];
+
+  it('halka dilimleri: üç sınıf da aynı kalınlıkta çerçeve; dolu sınıfta çerçeve = dolgu', () => {
+    const widths = ids.map((id) => chartSliceStyle(id).strokeWidth);
+    expect(new Set(widths).size).toBe(1);
+    expect(chartSliceStyle('light').stroke).toBe(chartSliceStyle('light').fill);
+    expect(chartSliceStyle('reasoning').stroke).toBe(chartSliceStyle('reasoning').fill);
+    expect(chartSliceStyle('standard').stroke).not.toBe(chartSliceStyle('standard').fill); // içi boş görünüm
+  });
+
+  it('çubuk dilimleri: görünen dış kenar (rect + yarım çerçeve) üç sınıfta aynı ve veri sınırından yarım aralık içeride', () => {
+    const data = { x: 100, y: 20, width: 80, height: 28 };
+    const outer = ids.map((id) => {
+      const r = insetSliceRect(data, id);
+      const half = r.strokeWidth / 2;
+      return { left: r.x - half, top: r.y - half, right: r.x + r.width + half, bottom: r.y + r.height + half };
+    });
+    for (const o of outer) {
+      expect(o).toEqual(outer[0]);
+      expect(o.left).toBeCloseTo(data.x + SLICE_GAP / 2, 10);
+      expect(o.right).toBeCloseTo(data.x + data.width - SLICE_GAP / 2, 10);
+    }
+  });
+
+  it('çok dar dilimde negatif genişlik oluşmaz', () => {
+    const r = insetSliceRect({ x: 0, y: 0, width: 1, height: 1 }, 'standard');
+    expect(r.width).toBe(0);
+    expect(r.height).toBe(0);
   });
 });

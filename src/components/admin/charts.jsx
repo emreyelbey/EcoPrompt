@@ -9,7 +9,7 @@
 import { ResponsiveContainer, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, LabelList } from 'recharts';
 import { MODEL_ORDER, MODEL_SCALES } from '../../lib/footprint.js';
 import { fmtNum, fmtSmart } from '../../lib/format.js';
-import { modelStyle, modelSwatchStyle, STANDARD_STROKE_WIDTH } from '../../lib/modelColors.js';
+import { insetSliceRect, modelStyle, modelSwatchStyle } from '../../lib/modelColors.js';
 import { PreviewMark } from './PreviewContext.jsx';
 
 // Kontrol: gri, Deney: nötr çivit (model renkleri olan yeşil/siyah kullanılmaz).
@@ -109,14 +109,14 @@ export function ModelShareChart({ groups }) {
             {MODEL_ORDER.map((id) => {
               const look = modelStyle(id, 'chart');
               return (
-                // Dolu dilimler arasında 2 px beyaz boşluk; Standart'ın kendi koyu çerçevesi vardır.
+                // Dilim şekli modelColors.js'teki kurala göre çizilir (insetSliceRect): üç sınıf da aynı kalınlıkta
+                // çerçeve alır ve çerçeve şeklin İÇİNE çizilir; dış ölçüler birebir aynıdır, aralarında 2 px boşluk kalır.
                 <Bar
                   key={id}
                   dataKey={id}
                   stackId="pay"
                   fill={look.fill}
-                  stroke={look.stroke ?? '#ffffff'}
-                  strokeWidth={look.stroke ? STANDARD_STROKE_WIDTH : 2}
+                  shape={(props) => <rect {...insetSliceRect(props, id)} />}
                 >
                   <LabelList
                     dataKey={id}

@@ -69,6 +69,41 @@ export function modelSwatchStyle(modelId, tone = 'light') {
   };
 }
 
+/* ---------------------------------------------------------------------------
+ * SVG GRAFİKLERİ (recharts) İÇİN ÇERÇEVE KURALI — yeni grafiklerde de bunları kullanın.
+ * SVG'de çerçeve (stroke) çizginin ORTASINDAN çizilir: yarısı şeklin dışına taşar. Yalnızca Standart'a çerçeve
+ * verilirse Standart dilim diğerlerinden daha büyük görünür ve komşusunun üstüne biner. Kural:
+ *   1) Üç sınıf da AYNI kalınlıkta çerçeve alır; dolu sınıflarda (Hafif, Akıl Yürütme) çerçeve rengi = dolgu rengi.
+ *      Böylece üç dilimin dış ölçüleri birebir aynıdır (chartSliceStyle; halka/pasta grafikleri).
+ *   2) Yan yana dizilen çubuklarda dikdörtgen ayrıca çerçevenin yarısı + dilim aralığının yarısı kadar içeri alınır:
+ *      dilimin görünen dış kenarı veri sınırından tam yarım aralık içeridedir, çerçeve hiç taşmaz (insetSliceRect).
+ * ------------------------------------------------------------------------- */
+
+// Yan yana iki dilim arasındaki boşluk (px).
+export const SLICE_GAP = 2;
+
+/** Halka/pasta dilimi için SVG özellikleri: { fill, stroke, strokeWidth } (üç sınıfta aynı kalınlık). */
+export function chartSliceStyle(modelId) {
+  const { fill, stroke } = modelStyle(modelId, 'chart');
+  return { fill, stroke: stroke ?? fill, strokeWidth: STANDARD_STROKE_WIDTH };
+}
+
+/**
+ * Çubuk grafiği dilimi: verinin dikdörtgeninden ({ x, y, width, height }) içeri alınmış SVG <rect> özellikleri.
+ * İçeri alma = çerçevenin yarısı + aralığın yarısı. Görünen dış kenar her sınıfta veri sınırından SLICE_GAP / 2 içeridedir.
+ */
+export function insetSliceRect({ x, y, width, height }, modelId, gap = SLICE_GAP) {
+  const style = chartSliceStyle(modelId);
+  const inset = gap / 2 + style.strokeWidth / 2;
+  return {
+    x: x + inset,
+    y: y + inset,
+    width: Math.max(0, width - 2 * inset),
+    height: Math.max(0, height - 2 * inset),
+    ...style,
+  };
+}
+
 /** Lejant için sabit sıralı liste: [{ id, name, style }]. */
 export function modelLegend(tone = 'light') {
   return MODEL_ORDER.map((id) => ({ id, name: MODEL_SHORT_NAMES[id], style: modelSwatchStyle(id, tone) }));
