@@ -56,6 +56,14 @@ describe('summarizeSession', () => {
     expect(s.perInteraction[1].Su).toBeGreaterThan(s.perInteraction[0].Su);
   });
 
+  it('istem başına enerji: birikimli değil, her istemin kendi değeri (sütun grafiği için)', () => {
+    const a = msg('reasoning', 300, 200);
+    const b = msg('light', 40, 10);
+    const s = summarizeSession([a, b]);
+    expect(s.energyPerPrompt).toEqual([a.eco.energyAvg, b.eco.energyAvg]);
+    expect(summarizeSession([]).energyPerPrompt).toEqual([]);
+  });
+
   it('model dağılımı sabit sırada, kullanılmayan sınıf yok, yüzdeler doğru', () => {
     const s = summarizeSession([msg('reasoning', 10, 10), msg('light', 10, 10), msg('light', 20, 10), msg('light', 30, 10)]);
     expect(s.modelDistribution).toEqual([

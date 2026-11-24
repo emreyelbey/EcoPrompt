@@ -308,15 +308,16 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
           <p className={`text-xs text-text-3 text-center truncate ${inputFocused ? 'hidden sm:block' : ''}`}>
             {MODEL_LABELS[selectedModel].desc}
           </p>
-        </div>
 
-        {/* EkoToken canlı özet şeridi (yalnızca Deney + Son Test). Mobilde yazarken (klavye açık) gizlenir,
-            yazma bitince geri gelir: klavye açıkken iki grubun mesaj alanı eşit kalır. */}
-        {isEco && (
-          <div data-testid="eko-ozet-kapsayici" className={inputFocused ? 'hidden sm:block' : undefined}>
-            <EcoSummaryBar summary={ecoSummary} />
-          </div>
-        )}
+          {/* EkoToken "Bu oturum" kartı (yalnızca Deney + Son Test), sohbet sütunu genişliğinde.
+              Mobilde yazarken (klavye açık) gizlenir, yazma bitince geri gelir: klavye açıkken iki grubun
+              mesaj alanı eşit kalır (Dilim 8d). */}
+          {isEco && (
+            <div data-testid="eko-ozet-kapsayici" className={inputFocused ? 'hidden sm:block' : undefined}>
+              <EcoSummaryBar summary={ecoSummary} />
+            </div>
+          )}
+        </div>
       </header>
 
       {/* KAYAN MESAJ LİSTESİ */}
@@ -370,7 +371,7 @@ export default function ChatScreen({ student, view = 'sade', onServerPhase, onLo
                   textClassName="text-base leading-[1.625] text-ink-2"
                 />
                 {/* Rozetler yalnızca EkoToken görünümünde ve sunucu eco alanını gönderdiyse */}
-                {isEco && item.eco && <EcoImpactFooter eco={item.eco} />}
+                {isEco && item.eco && <EcoImpactFooter eco={item.eco} modelId={item.modelId} />}
               </article>
             </div>
           ))}

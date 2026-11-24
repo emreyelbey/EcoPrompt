@@ -24,6 +24,7 @@ function round4(value) {
  *   energy: number, water: number, co2: number,
  *   equivalents: object,
  *   perInteraction: { name: string, Girdi: number, Çıktı: number, Su: number, Enerji: number, CO2: number }[],
+ *   energyPerPrompt: number[],
  *   modelDistribution: { id: string, name: string, count: number, pct: number }[],
  * }}
  */
@@ -77,6 +78,9 @@ export function summarizeSession(messages) {
     co2,
     equivalents: getDailyEquivalents(water, energy, co2),
     perInteraction,
+    // Her istemin kendi enerjisi (Wh, ortalama katsayı), eskiden yeniye. EkoToken oturum kartındaki
+    // küçük sütun grafiği bunu kullanır (birikimli değil; her sütun tek bir istemdir).
+    energyPerPrompt: ecoMessages.map((m) => num(m.eco.energyAvg)),
     modelDistribution,
   };
 }

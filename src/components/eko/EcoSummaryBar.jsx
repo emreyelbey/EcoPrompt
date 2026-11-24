@@ -1,43 +1,70 @@
-// EkoToken üst özet şeridi (yalnızca Deney grubu + Son Test).
-// Bu aşamadaki istem ve token sayısı, toplam enerji, su, CO₂ ve bir günlük karşılık gösterir.
-// Toplamlar src/lib/ecoSummary.js → summarizeSession ile hesaplanır (yeni formül yok).
-// Mobil (Dilim 8d): sayılar tek satırda kalır (sığmazsa yatay kayar), günlük karşılık satırı kırpılmaz,
-// alt satıra kayar. Yazarken (klavye açık) şeridin tamamı ChatScreen tarafından mobilde gizlenir.
-import { Zap, Droplets, Cloud } from 'lucide-react';
+// EkoToken "Bu oturum" kartı (yalnızca Deney grubu + Son Test). Yön 2b: siyah kart, sohbet sütunu genişliğinde.
+// Solda: bu aşamadaki istem ve token sayısı, büyük mono oturum enerjisi, altında su · CO₂.
+// Sağda: istem başına küçük sütun grafiği (son 12 istem; her sütun bir istemin enerjisi, en yenisi yeşil).
+// Altta: günlük karşılık satırı (henüz istem yoksa ipucu).
+// Toplamlar src/lib/ecoSummary.js → summarizeSession, sütun ölçeği src/lib/ecoVisual.js → promptColumns
+// ile hesaplanır (yeni formül yok). Metinler önceki özet şeridiyle aynıdır (müdahale içeriği değişmez).
+// Mobil (Dilim 8d): günlük karşılık satırı kırpılmaz, alt satıra kayar. Yazarken (klavye açık) kartın tamamı
+// ChatScreen tarafından mobilde gizlenir. Sütunlar yalnızca süslemedir; değerler metin olarak da yazılıdır.
 import { fmtSmart } from '../../lib/format.js';
+import { promptColumns } from '../../lib/ecoVisual.js';
 
 export default function EcoSummaryBar({ summary }) {
-  const { prompts, totalTokens, energy, water, co2, equivalents } = summary;
+  const { prompts, totalTokens, energy, water, co2, equivalents, energyPerPrompt } = summary;
+  const columns = promptColumns(energyPerPrompt);
 
   return (
-    <div
-      data-testid="eko-ozet"
-      className="bg-gradient-to-r from-emerald-700 via-teal-700 to-emerald-800 text-white border-t border-emerald-600/50"
-    >
-      <div className="max-w-5xl mx-auto px-3 sm:px-5 py-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-[11px] sm:text-xs">
-        <div className="flex flex-nowrap sm:flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-1 max-w-full overflow-x-auto whitespace-nowrap">
-          <span className="font-semibold text-emerald-100">
-            {prompts} İstem · {totalTokens.toLocaleString('tr-TR')} Token
-          </span>
-          <span className="inline-flex items-center gap-1 font-semibold">
-            <Zap className="w-3.5 h-3.5 text-amber-300" aria-hidden="true" />
-            {fmtSmart(energy)} Wh
-          </span>
-          <span className="inline-flex items-center gap-1 font-semibold">
-            <Droplets className="w-3.5 h-3.5 text-sky-300" aria-hidden="true" />
-            {fmtSmart(water)} mL
-          </span>
-          <span className="inline-flex items-center gap-1 font-semibold">
-            <Cloud className="w-3.5 h-3.5 text-slate-200" aria-hidden="true" />
-            {fmtSmart(co2)} g CO₂
-          </span>
-        </div>
-        <div className="text-[11px] text-emerald-100 font-medium max-w-full sm:truncate">
-          {prompts > 0
-            ? `Günlük karşılık: ${equivalents.waterPrimary} · ${equivalents.carText}`
-            : 'İpucu: Kısa ve net istemler ile Hafif Model en düşük ayak izini üretir.'}
-        </div>
+    <div data-testid="eko-ozet" className="rounded-[18px] bg-ink text-on-dark px-4 py-3.5 flex flex-col gap-2">
+      {/* Üst satır tam genişlikte: 360 px'te sütun grafiği yanında sayıların kaymaması için ayrı satırdadır. */}
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-[11px] font-medium tracking-[0.1em] uppercase text-on-dark-2">Bu oturum</span>
+        <span className="font-mono text-[11px] text-on-dark-2 truncate">
+          {prompts} İstem · {totalTokens.toLocaleString('tr-TR')} Token
+        </span>
       </div>
+      <div className="flex items-end justify-between gap-3">
+        <div className="min-w-0 flex flex-col gap-1">
+          <span className="font-mono text-[26px] leading-7">
+            {fmtSmart(energy)}
+            <span className="text-[13px] text-on-dark-2"> Wh</span>
+          </span>
+          <span className="font-mono text-[11px] text-on-dark-2">
+            {fmtSmart(water)} mL su · {fmtSmart(co2)} g CO₂
+          </span>
+        </div>
+
+        {columns.length > 0 && (
+          <div className="shrink-0 flex flex-col items-end gap-1.5">
+            {/* Sütun grafiği: ekran okuyucuya tek cümleyle anlatılır (değerler zaten yukarıda yazılı). */}
+            <div
+              role="img"
+              aria-label={`İstem başına enerji, son ${columns.length} istem`}
+              className="flex items-end h-10"
+              style={{ gap: columns.length > 6 ? 3 : 5 }}
+            >
+              {columns.map((col, i) => (
+                <div
+                  // Anahtar istemin oturumdaki sırasıdır: yeni istem gelince yalnızca yeni sütun dolarak belirir.
+                  key={col.index}
+                  className={`rounded-[3px] animate-up origin-up ${i === columns.length - 1 ? 'bg-eco' : 'bg-text-2'}`}
+                  style={{
+                    width: columns.length > 6 ? 6 : 10,
+                    height: `${col.height}%`,
+                    animationDelay: `${Math.min(i, 6) * 0.05}s`,
+                  }}
+                />
+              ))}
+            </div>
+            <span className="text-[10px] tracking-[0.06em] uppercase text-on-dark-2">İstem başına</span>
+          </div>
+        )}
+      </div>
+
+      <p className="pt-2 border-t border-white/10 text-[11px] leading-4 text-on-dark-2">
+        {prompts > 0
+          ? `Günlük karşılık: ${equivalents.waterPrimary} · ${equivalents.carText}`
+          : 'İpucu: Kısa ve net istemler ile Hafif Model en düşük ayak izini üretir.'}
+      </p>
     </div>
   );
 }

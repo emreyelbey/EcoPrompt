@@ -1,8 +1,10 @@
-// Ortak pencere kabuğu: Kişisel Rapor ve Metodoloji pencereleri bunu kullanır.
+// Ortak pencere kabuğu: Kişisel Rapor, Metodoloji ve yönetici panelindeki pencereler bunu kullanır.
 // Arka plana, ✕ butonuna veya Escape tuşuna basınca kapanır. İçerik pencerenin içinde kayar,
 // böylece sayfanın kendisi (body) hiç kaymaz (proje rehberi Bölüm 8).
 // Yükseklik dvh ile sınırlanır: mobilde vh adres çubuğu gizliyken ölçülür ve pencerenin altı araç çubuğunun
 // altında kalabilirdi; dvh o an gerçekten görünen yüksekliği kullanır.
+// Görünüm (Yön 2b): kâğıt beyazı gövde (içindeki beyaz kartlar öne çıksın), beyaz başlık şeridi,
+// 20 px köşe, 40 px yuvarlak kapat butonu. title metin veya öğe olabilir (ör. ikinci kelimesi italik serif).
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
 
@@ -20,31 +22,31 @@ export default function Modal({ open, title, subtitle, onClose, maxWidth = 'max-
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-3 sm:p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-3 sm:p-4" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="pencere-baslik"
-        className={`w-full ${maxWidth} max-h-[90dvh] flex flex-col overflow-hidden rounded-2xl bg-white shadow-xl`}
+        className={`w-full ${maxWidth} max-h-[90dvh] flex flex-col overflow-hidden rounded-[20px] bg-paper text-ink shadow-2xl`}
         onClick={(e) => e.stopPropagation()} // Pencerenin içine tıklamak onu kapatmasın.
       >
-        <div className="shrink-0 flex items-start justify-between gap-3 px-4 sm:px-5 py-3.5 border-b border-slate-200">
+        <div className="shrink-0 flex items-start justify-between gap-3 px-4 sm:px-6 py-3.5 sm:py-4 border-b border-line bg-surface">
           <div className="min-w-0">
-            <h2 id="pencere-baslik" className="text-base font-bold text-slate-900">
+            <h2 id="pencere-baslik" className="text-lg leading-6 font-semibold tracking-[-0.02em]">
               {title}
             </h2>
-            {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
+            {subtitle && <p className="text-xs text-text-3 mt-1">{subtitle}</p>}
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Kapat"
-            className="shrink-0 p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+            className="shrink-0 w-10 h-10 rounded-full bg-muted hover:bg-line-2 text-ink flex items-center justify-center transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-[18px] h-[18px]" aria-hidden="true" />
           </button>
         </div>
-        <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-5 py-4">{children}</div>
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5">{children}</div>
       </div>
     </div>
   );

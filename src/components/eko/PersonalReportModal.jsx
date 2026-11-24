@@ -20,18 +20,22 @@ import {
   Tooltip,
   Legend,
 } from 'recharts';
-import { Droplets, Zap, Cloud, Leaf } from 'lucide-react';
+import { Droplets, Zap, Cloud } from 'lucide-react';
 import Modal from '../Modal.jsx';
+import { BrandMark } from '../ui/BrandMark.jsx';
 import { fmtNum, fmtSmart } from '../../lib/format.js';
 
-// Renkler: doğrulanmış kategorik paletin ilk üç rengi (renk körlüğünde de ayırt edilebilir).
-// Her model sınıfı her grafikte hep aynı rengi alır.
-const MODEL_COLORS = { light: '#2a78d6', standard: '#eb6834', reasoning: '#1baf7a' };
-const TOKEN_COLORS = { Girdi: '#2a78d6', Çıktı: '#eb6834' };
+// Renkler (Yön 2b tasarım belirteçleri, src/index.css): mürekkep siyahı, gri ve EkoToken yeşili.
+// Üç model sınıfı parlaklıkça belirgin farklı tonlardır (renk körlüğünde de ayırt edilir); Hafif Model yeşildir.
+// Her model sınıfı her grafikte hep aynı rengi alır. Renk tek başına bilgi taşımaz: adlar ve sayılar yazılıdır.
+const MODEL_COLORS = { light: '#10B981', standard: '#0A0A0B', reasoning: '#A1A1AA' };
+const TOKEN_COLORS = { Girdi: '#A1A1AA', Çıktı: '#0A0A0B' };
+// Birikimli su / enerji / CO₂ grafikleri (her biri kendi grafiğinde, tek seri): EkoToken yeşili.
+const TREND_COLOR = '#10B981';
 
 // Eksen ve ızgara çizgileri soluk tutulur; veri öne çıkar.
-const AXIS_TICK = { fontSize: 11, fill: '#64748b' };
-const GRID_COLOR = '#e2e8f0';
+const AXIS_TICK = { fontSize: 11, fill: '#71717A', fontFamily: 'JetBrains Mono, monospace' };
+const GRID_COLOR = '#ECECEA';
 
 // Y ekseni yazılarına ayrılan genişlik (px). "0,0012" veya "120.000" gibi değerler dar ekranda kesilmesin.
 const Y_AXIS_WIDTH = 56;
@@ -39,6 +43,10 @@ const Y_AXIS_WIDTH = 56;
 // Token grafiğinde etkileşim başına en az genişlik (px). Etkileşim çoksa ve ekran darsa (mobil 360 px)
 // çubuklar sıkışmaz; grafik bu genişliği aşınca kendi kutusu içinde yatay kayar.
 const MIN_PX_PER_INTERACTION = 24;
+
+// Grafik kütüphanesinin kendi (JS) animasyonları CSS'teki "hareketi azalt" kuralıyla durmaz; bu yüzden ayar
+// burada da okunur ve açıksa çubuklar/alanlar animasyonsuz, hemen son halinde çizilir.
+const ANIMATE = !(typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
 
 // Araç ipucundaki sayıları Türkçe biçimde yazar.
 const formatTooltip = (value) => fmtSmart(value);
@@ -48,14 +56,22 @@ export default function PersonalReportModal({ open, onClose, summary, participan
     <Modal
       open={open}
       onClose={onClose}
-      title={`Kişisel Rapor — ${participantCode}`}
+      // Başlık metni değişmedi ("Kişisel Rapor — D001"); yalnızca ikinci kelime italik serif, kod mono.
+      title={
+        <>
+          Kişisel <span className="font-serif italic font-normal text-[1.1em]">Rapor</span> —{' '}
+          <span className="font-mono text-[0.85em] font-medium">{participantCode}</span>
+        </>
+      }
       subtitle="Bu oturumdaki etkileşimlerinin özeti ve günlük hayat karşılıkları"
       maxWidth="max-w-4xl"
     >
       {summary.prompts === 0 ? (
-        <div className="py-12 text-center text-slate-500">
-          <Leaf className="w-10 h-10 mx-auto text-emerald-400 mb-3" aria-hidden="true" />
-          <p className="font-medium text-slate-700">Henüz bu oturumda bir etkileşimin yok.</p>
+        <div className="py-12 flex flex-col items-center text-center text-text-3">
+          <div className="mb-4">
+            <BrandMark variant="ring" size={48} />
+          </div>
+          <p className="font-medium text-ink">Henüz bu oturumda bir etkileşimin yok.</p>
           <p className="text-xs mt-1">İlk sorunu sorduktan sonra kişisel grafiklerin burada oluşacak.</p>
         </div>
       ) : (
@@ -78,7 +94,6 @@ function ReportBody({ summary }) {
           value={`${fmtSmart(summary.water)} mL`}
           primary={eq.waterPrimary}
           secondary={`${fmtNum(eq.glasses, 3)} su bardağı · ${fmtNum(eq.bottles, 3)} şişe`}
-          tone="sky"
         />
         <StatCard
           icon={<Zap className="w-4 h-4" aria-hidden="true" />}
@@ -86,7 +101,6 @@ function ReportBody({ summary }) {
           value={`${fmtSmart(summary.energy)} Wh`}
           primary={eq.ledText}
           secondary={eq.phoneText}
-          tone="amber"
         />
         <StatCard
           icon={<Cloud className="w-4 h-4" aria-hidden="true" />}
@@ -94,7 +108,6 @@ function ReportBody({ summary }) {
           value={`${fmtSmart(summary.co2)} g CO₂`}
           primary={eq.carText}
           secondary={eq.treeText}
-          tone="slate"
         />
       </div>
 
@@ -107,10 +120,10 @@ function ReportBody({ summary }) {
               <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} vertical={false} />
               <XAxis dataKey="name" tick={AXIS_TICK} />
               <YAxis tick={AXIS_TICK} width={Y_AXIS_WIDTH} />
-              <Tooltip formatter={(v) => Number(v).toLocaleString('tr-TR')} cursor={{ fill: '#f1f5f9' }} />
+              <Tooltip formatter={(v) => Number(v).toLocaleString('tr-TR')} cursor={{ fill: '#F4F4F5' }} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="Girdi" fill={TOKEN_COLORS.Girdi} radius={[4, 4, 0, 0]} maxBarSize={28} />
-              <Bar dataKey="Çıktı" fill={TOKEN_COLORS.Çıktı} radius={[4, 4, 0, 0]} maxBarSize={28} />
+              <Bar isAnimationActive={ANIMATE} dataKey="Girdi" fill={TOKEN_COLORS.Girdi} radius={[4, 4, 0, 0]} maxBarSize={28} />
+              <Bar isAnimationActive={ANIMATE} dataKey="Çıktı" fill={TOKEN_COLORS.Çıktı} radius={[4, 4, 0, 0]} maxBarSize={28} />
             </BarChart>
           </ResponsiveContainer>
           </div>
@@ -119,9 +132,9 @@ function ReportBody({ summary }) {
 
       {/* Birikimli trendler: her ölçü kendi grafiğinde (farklı birimler) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <TrendChart title="Birikimli Su (mL)" dataKey="Su" color="#2a78d6" data={summary.perInteraction} />
-        <TrendChart title="Birikimli Enerji (Wh)" dataKey="Enerji" color="#eda100" data={summary.perInteraction} />
-        <TrendChart title="Birikimli CO₂ (g)" dataKey="CO2" color="#6250d6" data={summary.perInteraction} />
+        <TrendChart title="Birikimli Su (mL)" dataKey="Su" color={TREND_COLOR} data={summary.perInteraction} />
+        <TrendChart title="Birikimli Enerji (Wh)" dataKey="Enerji" color={TREND_COLOR} data={summary.perInteraction} />
+        <TrendChart title="Birikimli CO₂ (g)" dataKey="CO2" color={TREND_COLOR} data={summary.perInteraction} />
       </div>
 
       {/* Model tercih dağılımı */}
@@ -130,7 +143,7 @@ function ReportBody({ summary }) {
           <div className="h-44 w-44 shrink-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie
+                <Pie isAnimationActive={ANIMATE}
                   data={summary.modelDistribution}
                   dataKey="count"
                   nameKey="name"
@@ -152,11 +165,11 @@ function ReportBody({ summary }) {
           <ul className="flex-1 w-full space-y-1.5">
             {summary.modelDistribution.map((item) => (
               <li key={item.id} className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2 text-slate-700">
+                <span className="flex items-center gap-2 text-text-2b">
                   <span className="w-3 h-3 rounded-full" style={{ backgroundColor: MODEL_COLORS[item.id] }} />
                   {item.name}
                 </span>
-                <span className="font-semibold text-slate-900">
+                <span className="font-mono text-[13px] text-ink">
                   {item.count} istem (%{item.pct})
                 </span>
               </li>
@@ -166,11 +179,11 @@ function ReportBody({ summary }) {
       </ChartCard>
 
       {/* Tablo görünümü: grafiklerdeki sayıların tamamı */}
-      <details className="rounded-xl border border-slate-200 bg-white">
-        <summary className="cursor-pointer px-4 py-2.5 text-sm font-semibold text-slate-700">Tablo olarak göster</summary>
+      <details className="rounded-2xl border border-line bg-surface">
+        <summary className="cursor-pointer min-h-11 flex items-center px-4 text-sm font-semibold text-ink">Tablo olarak göster</summary>
         <div className="overflow-x-auto px-4 pb-3">
-          <table className="min-w-full text-xs text-left">
-            <thead className="text-slate-500">
+          <table className="min-w-full text-xs text-left font-mono">
+            <thead className="text-text-3 font-sans">
               <tr>
                 <th className="py-1.5 pr-3">Etkileşim</th>
                 <th className="py-1.5 pr-3">Girdi token</th>
@@ -180,10 +193,10 @@ function ReportBody({ summary }) {
                 <th className="py-1.5">Birikimli CO₂ (g)</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-800">
+            <tbody className="divide-y divide-line text-ink">
               {summary.perInteraction.map((row) => (
                 <tr key={row.name}>
-                  <td className="py-1.5 pr-3 font-semibold">{row.name}</td>
+                  <td className="py-1.5 pr-3">{row.name}</td>
                   <td className="py-1.5 pr-3">{row.Girdi.toLocaleString('tr-TR')}</td>
                   <td className="py-1.5 pr-3">{row.Çıktı.toLocaleString('tr-TR')}</td>
                   <td className="py-1.5 pr-3">{fmtSmart(row.Su)}</td>
@@ -199,31 +212,26 @@ function ReportBody({ summary }) {
   );
 }
 
-// Renk tonlarına göre kart sınıfları (Tailwind sınıfları tam yazılır ki derlemede kaybolmasın).
-const TONES = {
-  sky: 'bg-sky-50 border-sky-200 text-sky-950',
-  amber: 'bg-amber-50 border-amber-200 text-amber-950',
-  slate: 'bg-slate-100 border-slate-200 text-slate-900',
-};
-
-function StatCard({ icon, label, value, primary, secondary, tone }) {
+// Toplam kartı: etiket + ikon, büyük mono değer, günlük hayat karşılıkları. Üç kart da nötr beyazdır.
+function StatCard({ icon, label, value, primary, secondary }) {
   return (
-    <div className={`p-4 rounded-xl border ${TONES[tone]}`}>
-      <div className="flex items-center justify-between text-xs font-semibold opacity-80">
+    <div className="p-4 rounded-2xl border border-line bg-surface">
+      <div className="flex items-center justify-between text-xs font-medium text-text-3">
         <span>{label}</span>
         {icon}
       </div>
-      <div className="text-2xl font-bold mt-1">{value}</div>
-      <div className="text-xs mt-1.5 font-medium">{primary}</div>
-      <div className="text-[11px] mt-0.5 opacity-75">{secondary}</div>
+      <div className="font-mono text-[22px] leading-7 text-ink mt-1.5">{value}</div>
+      <div className="text-xs mt-1.5 font-medium text-text-2b">{primary}</div>
+      <div className="text-[11px] mt-0.5 text-text-3">{secondary}</div>
     </div>
   );
 }
 
+// Grafik kartı: başlık + içerik.
 function ChartCard({ title, children }) {
   return (
-    <div className="p-4 rounded-xl border border-slate-200 bg-white">
-      <h3 className="text-sm font-bold text-slate-900 mb-3">{title}</h3>
+    <div className="p-4 rounded-2xl border border-line bg-surface">
+      <h3 className="text-sm font-semibold tracking-[-0.01em] text-ink mb-3">{title}</h3>
       {children}
     </div>
   );
@@ -240,7 +248,7 @@ function TrendChart({ title, dataKey, color, data }) {
             <XAxis dataKey="name" tick={AXIS_TICK} />
             <YAxis tick={AXIS_TICK} width={Y_AXIS_WIDTH} tickFormatter={formatTooltip} />
             <Tooltip formatter={formatTooltip} />
-            <Area
+            <Area isAnimationActive={ANIMATE}
               type="monotone"
               dataKey={dataKey}
               stroke={color}

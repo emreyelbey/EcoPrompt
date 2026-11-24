@@ -7,7 +7,17 @@ import MethodologyContent from './MethodologyContent.jsx';
 
 export default function MethodologyModal({ open, onClose }) {
   return (
-    <Modal open={open} onClose={onClose} title="Metodoloji ve Kaynakça" subtitle="Çevresel etki değerleri nasıl hesaplanıyor?">
+    <Modal
+      open={open}
+      onClose={onClose}
+      // Başlık metni değişmedi ("Metodoloji ve Kaynakça"); yalnızca son kelime italik serif.
+      title={
+        <>
+          Metodoloji ve <span className="font-serif italic font-normal text-[1.1em]">Kaynakça</span>
+        </>
+      }
+      subtitle="Çevresel etki değerleri nasıl hesaplanıyor?"
+    >
       <MethodologyContent />
     </Modal>
   );
