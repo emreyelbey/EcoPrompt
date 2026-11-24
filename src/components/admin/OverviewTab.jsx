@@ -11,6 +11,7 @@ import { MODEL_ORDER, MODEL_SCALES } from '../../lib/footprint.js';
 import { fmtNum, fmtSmart } from '../../lib/format.js';
 import { ChartCard, GroupBarChart, ModelShareChart, DataTable } from './charts.jsx';
 import { PreviewMark, usePreview } from './PreviewContext.jsx';
+import MetricIcon from '../ui/MetricIcon.jsx';
 
 const PHASE_FILTERS = [
   { id: 'all', label: 'Tümü' },
@@ -79,11 +80,11 @@ export default function OverviewTab({ records, logins, codeGroups, onClearClick,
 
       {/* 5 KPI kartı */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
-        <Kpi icon={Users} label="Aktif Katılımcılar" value={fmtInt(s.activeParticipants)} unit={`/ ${s.totalCodes}`} note={`Giriş yapan: ${s.loggedInParticipants}`} />
-        <Kpi icon={MessageSquare} label="Toplam İstem" value={fmtInt(s.totalPrompts)} />
-        <Kpi icon={Zap} label="Toplam Enerji" value={fmtSmart(s.totalEnergy)} unit="Wh" />
-        <Kpi icon={Droplets} label="Toplam Su" value={fmtSmart(s.totalWater)} unit="mL" />
-        <Kpi icon={Cloud} label="Toplam CO₂" value={fmtSmart(s.totalCo2)} unit="g" className="col-span-2 lg:col-span-1" />
+        <Kpi icon={Users} metric="neutral" label="Aktif Katılımcılar" value={fmtInt(s.activeParticipants)} unit={`/ ${s.totalCodes}`} note={`Giriş yapan: ${s.loggedInParticipants}`} />
+        <Kpi icon={MessageSquare} metric="neutral" label="Toplam İstem" value={fmtInt(s.totalPrompts)} />
+        <Kpi icon={Zap} metric="energy" label="Toplam Enerji" value={fmtSmart(s.totalEnergy)} unit="Wh" />
+        <Kpi icon={Droplets} metric="water" label="Toplam Su" value={fmtSmart(s.totalWater)} unit="mL" />
+        <Kpi icon={Cloud} metric="co2" label="Toplam CO₂" value={fmtSmart(s.totalCo2)} unit="g" className="col-span-2 lg:col-span-1" />
       </div>
 
       {/* Ana karşılaştırma: iki ayrı ölçek → iki ayrı grafik */}
@@ -134,13 +135,14 @@ export default function OverviewTab({ records, logins, codeGroups, onClearClick,
   );
 }
 
-function Kpi({ icon: Icon, label, value, unit, note, className = '' }) {
+// KPI kartı. İkon renkli yuvarlak zeminde (src/lib/metricColors.js): Enerji/Su/CO₂ renkli, katılımcı ve istem nötr gri.
+function Kpi({ icon, metric, label, value, unit, note, className = '' }) {
   return (
     <div className={`relative bg-surface rounded-[20px] border border-line p-5 ${className}`}>
       <PreviewMark />
-      <div className="flex items-center justify-between text-xs text-text-3">
+      <div className="flex items-center justify-between gap-2 text-xs text-text-3">
         <span>{label}</span>
-        <Icon className="w-4 h-4 text-text-3" aria-hidden="true" />
+        <MetricIcon icon={icon} metric={metric} />
       </div>
       <div className="mt-2 font-mono text-[26px] leading-8 text-ink">
         {value} {unit && <span className="text-sm text-text-3">{unit}</span>}

@@ -13,6 +13,7 @@ import { Zap, Droplets, Cloud, ChevronDown } from 'lucide-react';
 import { getDailyEquivalents, MODEL_SCALES } from '../../lib/footprint.js';
 import { fmtSmart } from '../../lib/format.js';
 import { rangeBands, savingsBars } from '../../lib/ecoVisual.js';
+import MetricIcon from '../ui/MetricIcon.jsx';
 
 // Seçili model çubuğunun kısa etiketi (Tasarruf kartında).
 const SHORT_NAMES = { light: 'Hafif', standard: 'Standart', reasoning: 'Akıl Yürütme' };
@@ -88,14 +89,16 @@ export default function EcoImpactFooter({ eco, modelId }) {
 
       {expanded && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-2xl border border-line bg-surface text-xs">
-          <EquivalentItem icon={Droplets} title={`Su (${fmtSmart(eco.waterAvg)} mL ort.)`} text={eq.waterPrimary} />
+          <EquivalentItem icon={Droplets} metric="water" title={`Su (${fmtSmart(eco.waterAvg)} mL ort.)`} text={eq.waterPrimary} />
           <EquivalentItem
             icon={Zap}
+            metric="energy"
             title={`Enerji (${fmtSmart(eco.energyAvg)} Wh ort.)`}
             text={`${eq.ledText} · ${eq.phoneText}`}
           />
           <EquivalentItem
             icon={Cloud}
+            metric="co2"
             title={`Karbon (${fmtSmart(eco.co2Avg)} g ort.)`}
             text={`${eq.carText} · ${eq.treeText}`}
           />
@@ -130,11 +133,11 @@ function SavingsCard({ pct, modelId }) {
   );
 }
 
-// Günlük karşılık ayrıntısındaki bir satır (ikon + başlık + metin).
-function EquivalentItem({ icon: Icon, title, text }) {
+// Günlük karşılık ayrıntısındaki bir satır: renkli yuvarlak zeminde ölçü ikonu (src/lib/metricColors.js) + başlık + metin.
+function EquivalentItem({ icon, metric, title, text }) {
   return (
-    <div className="flex items-start gap-2">
-      <Icon className="w-4 h-4 text-text-3 shrink-0 mt-0.5" aria-hidden="true" />
+    <div className="flex items-start gap-2.5">
+      <MetricIcon icon={icon} metric={metric} />
       <div>
         <div className="font-semibold text-ink">{title}</div>
         <div className="text-text-2 mt-0.5">{text}</div>
