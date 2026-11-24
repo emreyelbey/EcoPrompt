@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Yönetici Paneli — İstatistik</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Inter Tight',system-ui,sans-serif;background:#FAFAF9}
+a{color:#0A0A0B}a:hover{color:#3F3F46}
+@keyframes orbit{to{transform:rotate(360deg)}}
+@keyframes up{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.orbit{animation:orbit 6s linear infinite}.up{transform-origin:bottom;animation:up .9s cubic-bezier(.2,.8,.2,1) both}
+</style>
+</helmet>
+<div style="min-height:1320px;background:#FAFAF9;color:#0A0A0B;display:flex;flex-wrap:wrap;align-items:stretch">
+
+  <aside style="flex:1 1 240px;max-width:260px;min-width:220px;background:#0A0A0B;color:#FAFAFA;padding:24px 16px;box-sizing:border-box;display:flex;flex-direction:column;gap:28px">
+    <div style="display:flex;align-items:center;gap:12px;padding:0 8px">
+      <div style="position:relative;width:36px;height:36px;border-radius:12px;background:#18181B;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <div style="position:absolute;inset:8px;border:1.5px solid #3F3F46;border-radius:999px"></div>
+        <div class="orbit" style="position:absolute;inset:8px"><div style="position:absolute;top:-3px;left:50%;margin-left:-3px;width:6px;height:6px;border-radius:999px;background:#A5B4FC"></div></div>
+        <div style="width:5px;height:5px;border-radius:999px;background:#FAFAFA"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <span style="font-size:15px;font-weight:600;letter-spacing:-0.02em">Eğitim <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;font-size:17px">Asistanı</span></span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.1em;color:#A1A1AA">YÖNETİM</span>
+      </div>
+    </div>
+
+    <nav style="display:flex;flex-direction:column;gap:2px">
+      <sc-for list="{{tabs}}" as="t" hint-placeholder-count="5">
+        <button type="button" onClick="{{t.pick}}" style="{{t.style}}">
+          <span>{{t.label}}</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#71717A">{{t.count}}</span>
+        </button>
+      </sc-for>
+    </nav>
+
+    <div style="flex:1"></div>
+    <div style="border:1px solid #27272A;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.1em;color:#A1A1AA">CANLI</span>
+      <span style="font-size:13px;color:#E4E4E7">Son güncelleme 03:52:59</span>
+      <span style="font-size:12px;color:#A1A1AA">15 sn'de bir yenilenir</span>
+    </div>
+    <button type="button" style="height:44px;border:1px solid #27272A;border-radius:999px;background:transparent;color:#E4E4E7;font-size:13px;font-family:inherit;cursor:pointer">Çıkış</button>
+  </aside>
+
+  <main style="flex:999 1 560px;min-width:0;padding:28px 36px 48px;box-sizing:border-box;display:flex;flex-direction:column;gap:22px">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;color:#71717A">ÖN TEST – SON TEST</span>
+        <h1 style="margin:0;font-size:36px;line-height:40px;font-weight:600;letter-spacing:-0.035em">İstatistik <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400">özeti</span></h1>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:12px;color:#71717A">Aktif aşama</span>
+        <div style="display:flex;background:#F4F4F5;border-radius:999px;padding:4px">
+          <button type="button" style="height:40px;padding:0 18px;border:0;border-radius:999px;background:#0A0A0B;color:#FAFAFA;font-size:13px;font-weight:600;font-family:inherit">Ön Test</button>
+          <button type="button" style="height:40px;padding:0 18px;border:0;border-radius:999px;background:transparent;color:#52525B;font-size:13px;font-weight:500;font-family:inherit">Son Test</button>
+        </div>
+        <button type="button" style="height:44px;padding:0 18px;border:0;border-radius:999px;background:#0A0A0B;color:#FAFAFA;font-size:13px;font-weight:600;font-family:inherit;display:flex;align-items:center;gap:8px;cursor:pointer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FAFAFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"></path><path d="M7 10l5 5 5-5"></path><path d="M5 20h14"></path></svg>
+          Excel İndir
+        </button>
+      </div>
+    </div>
+
+    <div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:14px;padding:10px 16px;font-size:13px;color:#78350F;display:flex;align-items:center;gap:10px">
+      <b>ÖRNEK VERİ ÖNİZLEMESİ</b><span>Bu tasarım taslağındaki bütün sayılar örnek veriden; gerçek deney sonucu değildir.</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:14px">
+      <div style="grid-column:span 2;background:#0A0A0B;color:#FAFAFA;border-radius:20px;padding:20px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+        <div style="width:44px;height:44px;border-radius:999px;border:1.5px solid #34D399;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:220px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#A1A1AA">YAPILANDIRMA MÜHRÜ</span>
+          <span style="font-size:15px">Ölçüm koşulları deney boyunca değişmemiş.</span>
+        </div>
+        <div style="display:flex;gap:24px">
+          <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:11px;color:#A1A1AA">Sunucu</span><span style="font-family:'JetBrains Mono',monospace;font-size:14px">32d5f9e088de</span></div>
+          <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:11px;color:#A1A1AA">Kayıtlar</span><span style="font-family:'JetBrains Mono',monospace;font-size:14px">32d5f9e088de</span></div>
+        </div>
+      </div>
+      <div style="background:#FFFFFF;border:1px solid #ECECEA;border-radius:20px;padding:18px 20px;display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:12px;color:#71717A">Birincil ölçüt</span>
+        <span style="font-size:20px;font-weight:600;letter-spacing:-0.02em">Toplam Enerji (Wh)</span>
+        <span style="font-size:12px;color:#71717A">α = 0,05 · p çift yönlü · Welch / eşleştirilmiş t</span>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:14px">
+      <sc-for list="{{changes}}" as="c" hint-placeholder-count="4">
+        <div style="background:#FFFFFF;border:1px solid #ECECEA;border-radius:20px;padding:18px 20px;display:flex;flex-direction:column;gap:12px">
+          <span style="font-size:13px;color:#52525B">{{c.label}}</span>
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:12px;color:#71717A">Kontrol</span><span style="font-family:'JetBrains Mono',monospace;font-size:18px">{{c.k}}</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:12px;color:#71717A">Deney</span><span style="font-family:'JetBrains Mono',monospace;font-size:18px">{{c.d}}</span></div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="background:#FFFFFF;border:1px solid #ECECEA;border-radius:20px;padding:22px 24px;display:flex;flex-direction:column;gap:18px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
+        <span style="font-size:16px;font-weight:600;letter-spacing:-0.02em">Öğrenci başına ortalama enerji</span>
+        <span style="display:flex;gap:16px;font-size:12px;color:#52525B"><span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:#D4D4D8"></span>Ön Test</span><span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:#0A0A0B"></span>Son Test</span></span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:24px;height:220px;border-bottom:1px solid #E4E4E7">
+        <sc-for list="{{groups}}" as="g" hint-placeholder-count="2">
+          <div style="display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:10px">
+            <div style="display:flex;align-items:flex-end;gap:14px;height:180px">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#52525B">{{g.pre}}</span><div class="up" style="{{g.preStyle}}"></div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#0A0A0B">{{g.post}}</span><div class="up" style="{{g.postStyle}}"></div></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:24px;font-size:13px;color:#52525B;text-align:center"><span>Kontrol grubu · n = 20</span><span>Deney grubu · n = 20</span></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:14px">
+      <sc-for list="{{tests}}" as="t" hint-placeholder-count="4">
+        <div style="{{t.box}}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#71717A">TEST {{t.no}} · {{t.method}}</span>
+              <span style="font-size:16px;font-weight:600;letter-spacing:-0.02em">{{t.title}}</span>
+            </div>
+            <span style="{{t.badgeStyle}}">{{t.badge}}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:10px">
+            <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:11px;color:#71717A">t</span><span style="font-family:'JetBrains Mono',monospace;font-size:20px">{{t.t}}</span></div>
+            <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:11px;color:#71717A">p (çift yönlü)</span><span style="font-family:'JetBrains Mono',monospace;font-size:20px">{{t.p}}</span></div>
+            <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:11px;color:#71717A">n</span><span style="font-family:'JetBrains Mono',monospace;font-size:20px">{{t.n}}</span></div>
+          </div>
+          <div style="position:relative;height:6px;border-radius:999px;background:#F1F1F0">
+            <div style="position:absolute;top:-3px;bottom:-3px;left:5%;width:1px;background:#0A0A0B"></div>
+            <div style="{{t.pDot}}"></div>
+          </div>
+          <span style="font-size:12px;color:#71717A">Çizgi α = 0,05 eşiği; nokta bu testin p değeri.</span>
+        </div>
+      </sc-for>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1320}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { tab: 1 }; }
+  renderVals() {
+    const labels = [['Genel Bakış', ''], ['İstatistik', ''], ['Öğrenci Kayıtları', '442'], ['Katılımcı Kodları', '60'], ['Metodoloji', '']];
+    const tabs = labels.map((l, i) => ({
+      label: l[0], count: l[1], pick: () => this.setState({ tab: i }),
+      style: 'height:44px;padding:0 12px;border:0;border-radius:12px;font-size:14px;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:space-between;text-align:left;' +
+        (i === this.state.tab ? 'background:#FAFAFA;color:#0A0A0B;font-weight:600' : 'background:transparent;color:#D4D4D8;font-weight:500')
+    }));
+    const bar = (h, c) => 'width:44px;height:' + h + 'px;border-radius:8px 8px 2px 2px;background:' + c;
+    const box = (hi) => 'background:#FFFFFF;border:1px solid ' + (hi ? '#0A0A0B' : '#ECECEA') + ';border-radius:20px;padding:20px 22px;display:flex;flex-direction:column;gap:16px';
+    const badge = (sig) => 'flex-shrink:0;font-size:12px;font-weight:600;padding:6px 10px;border-radius:999px;' + (sig ? 'background:#0A0A0B;color:#FAFAFA' : 'background:#F4F4F5;color:#52525B');
+    const dot = (p) => 'position:absolute;top:-4px;width:14px;height:14px;margin-left:-7px;border-radius:999px;background:#0A0A0B;border:3px solid #FFFFFF;box-shadow:0 0 0 1px #0A0A0B;left:' + Math.min(98, p * 100) + '%';
+    const T = [
+      ['1', 'WELCH', 'Başlangıç denkliği (Ön Test: K – D)', '1,330', 0.192, '20 / 20', false],
+      ['2', 'EŞLEŞTİRİLMİŞ', 'Kontrol: Ön → Son', '0,686', 0.501, '20', false],
+      ['3', 'EŞLEŞTİRİLMİŞ', 'Deney: Ön → Son', '2,411', 0.026, '20', true],
+      ['4', 'WELCH', 'Son Test grup farkı (K – D)', '−0,838', 0.408, '20 / 20', false]
+    ];
+    return {
+      tabs,
+      changes: [
+        { label: 'İstem sayısı · net değişim', k: '+%21,0', d: '+%16,7' },
+        { label: 'Toplam enerji · net değişim', k: '+%12,6', d: '+%75,7' },
+        { label: 'Toplam su · net değişim', k: '+%12,6', d: '+%75,7' },
+        { label: 'Toplam CO₂ · net değişim', k: '+%12,6', d: '+%75,7' }
+      ],
+      groups: [
+        { pre: '5,10', post: '5,74', preStyle: bar(96, '#D4D4D8'), postStyle: bar(108, '#0A0A0B') },
+        { pre: '4,63', post: '8,14', preStyle: bar(87, '#D4D4D8'), postStyle: bar(152, '#0A0A0B') }
+      ],
+      tests: T.map((x) => ({
+        no: x[0], method: x[1], title: x[2], t: x[3], p: String(x[4]).replace('.', ','), n: x[5],
+        badge: x[6] ? 'Anlamlı' : 'Anlamlı değil', badgeStyle: badge(x[6]), box: box(x[6]), pDot: dot(x[4])
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>

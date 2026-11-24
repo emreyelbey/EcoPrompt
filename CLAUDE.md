@@ -1,7 +1,7 @@
 # EkoToken — Claude Code Proje Rehberi
 
 Bu dosya her oturumun başında okunur. Buradaki kurallar sohbetteki genel alışkanlıklardan önce gelir.
-Ayrıntılı gereksinimler: `docs/sartname.md`. Görsel ve mantık referansı: `reference/canvas-prototip.tsx`.
+Ayrıntılı gereksinimler: `docs/sartname.md`. Mantık referansı: `reference/canvas-prototip.tsx`. Görsel referans (Yön 2b arayüz tasarımı, `tasarim-yon2b` dalı): `reference/tasarim-yon2b/` (`TASARIM.md` + 4 `.dc.html` taslak; uygulama kodu değil, React + Tailwind'e uyarlanır).
 
 ## 1. Proje nedir?
 
@@ -209,6 +209,7 @@ isSample (boolean), engineVersion, configHash, createdAt (sunucu zamanı)
 - `npm run build` — üretim derlemesi (`dist/`)
 - `vercel dev` — sunucu fonksiyonlarıyla birlikte yerel çalıştırma (Vercel CLI gerekir; Dilim 2–3'te kurulacak)
 - Yayın: GitHub `main` dalına push → Vercel otomatik yayınlar (https://egitim-asistani-2204.vercel.app).
+- **Dal önizlemeleri:** Başka bir dal GitHub'a gönderilirse Vercel o dal için ayrı bir önizleme adresi üretir. Bu adres aynı ortam değişkenlerini ve **aynı Firestore'u** kullanabilir. Önizleme adresinde **öğrenci koduyla giriş yapılmaz** (giriş ve istemler gerçek `logins`/`interactions` kaydı olarak yazılır ve istatistiğe karışır). Önizleme yalnızca görsel kontrol içindir; gerekirse yalnızca yönetici girişiyle ve Örnek Veri Önizlemesi ile bakılır. Dikkat: önizlemedeki yönetici paneli de gerçek veriye bağlıdır; aşama anahtarı, kayıt silme ve "Verileri Temizle" canlı deneyi etkiler, önizlemede bunlara dokunulmaz. Dal GitHub'a gönderilmeden önce kullanıcıya sorulur.
 - `tests/marka-yasagi.test.js`: `src/`, `index.html`, `api/` içinde marka adı arar; `api/_lib/` hariçtir. Yasaklı ad listesi `tests/helpers/brand-patterns.js`'tedir (Excel testi de kullanır).
 - `python dogrulama/tcheck.py` — sabit örneklerin bağımsız hesabı; `python dogrulama/tcheck.py <dosya>.xlsx` — indirilen Excel'in panel değerleriyle çapraz kontrolü (yalnızca Python standart kütüphanesi).
 - Firestore kuralları: `firestore.rules` içeriği Firebase konsolu → Firestore Database → Rules sekmesine yapıştırılıp Publish edilir (Firebase CLI kullanılmıyor). Dosya değişirse konsol da güncellenir.
