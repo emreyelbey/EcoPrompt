@@ -142,11 +142,13 @@ export default function AdminScreen({ token, onLogout }) {
               id="panel-sekme"
               value={tab}
               onChange={(e) => setTab(e.target.value)}
-              // Düz koyu zemin: açılan listede de seçenekler okunur kalır (saydam zeminde beyaz üstüne beyaz olabilirdi).
-              className="w-full h-11 appearance-none rounded-full border border-white/15 bg-ink-2 pl-4 pr-10 text-base font-medium text-on-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              // Düz koyu zemin + color-scheme: dark → tarayıcı açılan seçenek listesini de koyu çizer (beyaz/mavi
+              // işletim sistemi görünümü yerine). Seçeneklerin zemini ve metni de belirteçlerden verilir; destekleyen
+              // tarayıcılar bunu kullanır. Yerel <select> olarak kalır (klavye ve ekran okuyucu desteği hazır gelir).
+              className="w-full h-11 appearance-none rounded-full border border-white/15 bg-ink-2 pl-4 pr-10 text-base font-medium text-on-dark [color-scheme:dark] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               {tabs.map((t) => (
-                <option key={t.id} value={t.id}>
+                <option key={t.id} value={t.id} className="bg-ink-2 text-on-dark">
                   {tabAccessibleName(t)}
                 </option>
               ))}
