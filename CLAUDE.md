@@ -45,6 +45,7 @@ Tarayıcı (React)  ──HTTP──>  Vercel sunucu fonksiyonları (/api/*)  �
 ### Teknoloji yığını
 - Frontend: Vite + React + Tailwind CSS + `lucide-react` + `recharts`
 - Markdown/formül: `react-markdown` + `remark-gfm` + `remark-math` + `remark-breaks` (tek satır sonu korunur) + kendi küçük eklentimiz `src/lib/remarkBrTags.js` (yanıttaki `<br>`, `<br/>`, `<br />` etiketlerini, tablo hücreleri dahil, gerçek satır sonuna çevirir; ham HTML kapalı kalır, başka etiketler ve kod içindeki `<br>` metin olarak görünür) + `rehype-katex` (KaTeX npm paketiyle, CDN yok) + KaTeX'in `mhchem` eklentisi (`\ce{H2O}` kimyasal formüller). `package.json` → `overrides` ile projede tek KaTeX kopyası (0.19.x) vardır; iki kopya olursa CSS ile çizici farklı sürümden gelir ve mhchem yanlış kopyaya kaydolur.
+  - **Formüllerde Türkçe (formul-duzeltme, 24.11.2026):** `$…$` ve `$$…$$` içinde Türkçe harf içeren kelimeler `\text{…}` içine alınır; yapay zekanın bazen yazdığı LaTeX harf aksanları (`\c{s}`, `\i`, `\u{g}`, `\"{o}`, `\.{I}`) gerçek harfe çevrilir (`src/lib/markdown.js` → `fixMathText`). Sebep: `\i` KaTeX'in matematik modunda tanımsızdır ve formülü kırmızı hatayla çizer. Türkçe içermeyen formüller ve kod değişmez. Blok formül ekrandan genişse kendi kutusunda yatay kayar (`index.css` → `.rich-message .katex-display`).
 - Excel: npm paketiyle `.xlsx` üretimi (CDN yok)
 - Sunucu: Vercel Serverless Functions (`/api`), `firebase-admin`
 - Veritabanı: Firebase Firestore (ücretsiz Spark planı)

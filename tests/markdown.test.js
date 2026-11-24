@@ -3,7 +3,8 @@
 import { describe, it, expect } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { protectCurrency, normalizeMathDelimiters, prepareMarkdown, promoteDisplayMath } from '../src/lib/markdown.js';
+import { protectCurrency, normalizeMathDelimiters, prepareMarkdown, promoteDisplayMath, fixMathText, latexAccentsToTurkish } from '../src/lib/markdown.js';
+import { readFileSync } from 'node:fs';
 import RichMessage from '../src/components/RichMessage.jsx';
 
 describe('protectCurrency', () => {
@@ -274,5 +275,81 @@ describe('<br> etiketleri gerçek satır sonuna dönüşür (ham HTML kapalı ka
     const html = render('a<brx>b ve c<br class="a">d');
     expect(html).toContain('&lt;brx&gt;');
     expect(html).toContain('&lt;br class=&quot;a&quot;&gt;');
+  });
+});
+
+// Formül içindeki Türkçe metin (formul-duzeltme, 24.11.2026; src/lib/markdown.js → fixMathText).
+// Gerçek kayıt: K001, "fotosentez nedir?", Hafif Model, 24.11.2026 20:54. Yapay zeka "Işık" kelimesini LaTeX
+// harf aksanlarıyla yazmış (\c{s} \i \u{g}) ve parantezleri kaydırmış; \i matematik modunda tanımsız olduğu için
+// KaTeX formülü kırmızı hata ile çiziyordu. Ham metin Firestore'dan olduğu gibi alındı.
+describe('formüllerde Türkçe metin', () => {
+  const render = (content) => renderToStaticMarkup(createElement(RichMessage, { content }));
+  const KATEX_ERROR = /color:\s*#cc0000/i;
+
+  const GERCEK_YANIT =
+    'Fotosentez, yeşil bitkilerin, alglerin ve bazı bakterilerin güneş ışığını kullanarak karbondioksit ve suyu besine (glikoza) dönüştürdüğü hayati bir biyolojik süreçtir. Bu sırada atmosfere oksijen verilir.\n\nFotosentez, bitki hücrelerindeki kloroplast adı verilen organellerde gerçekleşir. Klorofil pigmenti güneş ışığını soğurarak bu süreci başlatır.\n\nGenel kimyasal tepkimesi şu şekildedir:\n\n$$\\ce{6CO2 + 6H2O + I\\c{s}\\i\\u{g}}\\c{c}\\ce{k -> C6H12O6 + 6O2}$$';
+
+  it('regresyon: gerçek kaydın ham metni KaTeX hatasız çizilir; aksanlar harfe, Türkçe kelimeler \\text{}e döner', () => {
+    expect(prepareMarkdown(GERCEK_YANIT)).toContain(
+      '$$\n\\ce{6CO2 + 6H2O + \\text{Işığ}}\\text{ç}\\ce{k -> C6H12O6 + 6O2}\n$$',
+    );
+    const html = render(GERCEK_YANIT);
+    expect(html).not.toMatch(KATEX_ERROR);
+    expect(html).toContain('katex-display');
+    // Düz metindeki Türkçe harfler dokunulmadan kalır.
+    expect(html).toContain('güneş ışığını kullanarak');
+  });
+
+  it('\\ce{… + Işık -> …}: Işık \\text{} içine alınır, kimyasal formüller değişmez', () => {
+    expect(fixMathText('\\ce{6CO2 + 6H2O + Işık -> C6H12O6 + 6O2}')).toBe('\\ce{6CO2 + 6H2O + \\text{Işık} -> C6H12O6 + 6O2}');
+    expect(render('$$\\ce{6CO2 + 6H2O + Işık -> C6H12O6 + 6O2}$$')).not.toMatch(KATEX_ERROR);
+  });
+
+  it('$$ içinde Türkçe kelimeler (yanındaki küçük harfli kelimeyle birlikte) \\text{} içine alınır', () => {
+    expect(fixMathText('hız = \\frac{yol}{süre}')).toBe('\\text{hız} = \\frac{yol}{\\text{süre}}');
+    expect(fixMathText('Işık enerjisi + \\ce{CO2}')).toBe('\\text{Işık enerjisi} + \\ce{CO2}');
+    expect(fixMathText('x_{ölçülen} = 5')).toBe('x_{\\text{ölçülen}} = 5');
+    expect(prepareMarkdown('$$hız = \\frac{yol}{süre}$$')).toContain('\\text{hız} = \\frac{yol}{\\text{süre}}');
+    // Satır içi formülde de çalışır.
+    expect(prepareMarkdown('Hız $v = \\frac{yol}{süre}$ olur.')).toBe('Hız $v = \\frac{yol}{\\text{süre}}$ olur.');
+  });
+
+  it('zaten \\text{Işık} (veya \\mathrm{…}) olan metne dokunulmaz', () => {
+    expect(fixMathText('E = h \\cdot f \\quad (\\text{Işık})')).toBe('E = h \\cdot f \\quad (\\text{Işık})');
+    expect(fixMathText('\\ce{6CO2 + 6H2O ->[\\text{Işık}] C6H12O6}')).toBe('\\ce{6CO2 + 6H2O ->[\\text{Işık}] C6H12O6}');
+    expect(fixMathText('\\mathrm{ölçüm}')).toBe('\\mathrm{ölçüm}');
+  });
+
+  it('Türkçe kelime içermeyen formüller birebir aynı kalır', () => {
+    for (const formula of [
+      'v = \\frac{yol}{zaman}',
+      '\\ce{2H2 + O2 -> 2H2O}',
+      '\\int_0^1 x\\,dx + \\infty',
+      'E = mc^2',
+      '\\sin \\theta \\cdot \\iota \\in A',
+      '\\ce{H2O}',
+    ]) {
+      expect(fixMathText(formula)).toBe(formula);
+    }
+    expect(prepareMarkdown('$$E = mc^2$$')).toBe('\n$$\nE = mc^2\n$$\n');
+  });
+
+  it('LaTeX harf aksanları Türkçe harfe çevrilir; benzer komutlar (\\int, \\iota, \\cdot, \\cos, \\uparrow) korunur', () => {
+    expect(latexAccentsToTurkish('I\\c{s}\\i\\u{g}')).toBe('Işığ');
+    expect(latexAccentsToTurkish('\\c{C}\\"{o}\\"u{\\c s}\\.{I}{\\i}')).toBe('Çöüşİı');
+    expect(latexAccentsToTurkish('\\int \\iota \\cdot \\cos \\uparrow')).toBe('\\int \\iota \\cdot \\cos \\uparrow');
+  });
+
+  it('kod içindeki formül ve para tutarları etkilenmez', () => {
+    expect(prepareMarkdown('`$ışık$`')).toBe('`$ışık$`');
+    expect(prepareMarkdown('Fiyat $10 ve ışık $20.')).toBe('Fiyat \\$10 ve ışık \\$20.');
+  });
+
+  it('blok formül kutusu yatay kaydırılabilir (CSS)', () => {
+    const css = readFileSync('src/index.css', 'utf8');
+    const rule = css.match(/\.rich-message \.katex-display\s*\{([^}]*)\}/)[1];
+    expect(rule).toContain('overflow-x: auto');
+    expect(rule).toContain('max-width: 100%');
+    expect(rule).toContain('touch-action: pan-x pan-y');
   });
 });
