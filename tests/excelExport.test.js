@@ -58,6 +58,17 @@ describe('Tum_Kayitlar', () => {
     expect(JSON.stringify(sheetByName.Tum_Kayitlar.rows)).not.toContain('ÖRNEK KAYIT');
   });
 
+  it('Yapılandırma Özeti sütunu metin olarak yazılır; sözlükte açıklanır', () => {
+    const recs = [interaction('K001', 'pretest', 1, { configHash: '0123456789ab', prompt: 'özetli' })];
+    const [sheet] = buildWorkbookSheets(recs, loginsFor(recs), { now: NOW });
+    const header = sheet.rows[0];
+    const row = sheet.rows[1];
+    expect(header).toContain('Yapılandırma Özeti');
+    expect(header.at(-1)).toBe('İstem'); // istem yine son sütun
+    expect(row[header.indexOf('Yapılandırma Özeti')]).toBe('0123456789ab');
+    expect(JSON.stringify(sheetByName.Degisken_Sozlugu.rows)).toContain('Yapılandırma Özeti');
+  });
+
   it('60 kodun dışındaki kodlar (örnek veri kodları) hiçbir sayfada yok', () => {
     const all = JSON.stringify(sheets.map((s) => s.rows));
     expect(all).not.toContain('YABANCI KOD');

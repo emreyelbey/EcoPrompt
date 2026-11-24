@@ -22,6 +22,7 @@ Kapsam: Şartnamedeki **tüm** özellikler yapılacak. Hiçbir özellik kesilmey
 3. **Dil:** Arayüz, hata mesajları, grafikler, istatistik yorumları ve Excel başlıkları tamamen Türkçedir.
 4. **Giriş ekranında demo/önizleme butonu yoktur.** Yalnızca geçerli 60 koddan biriyle giriş yapılır. Altta sade bir "Yönetici Girişi" bağlantısı bulunur.
 5. **Kör deney için nötr adlar:** Yayın adresi, Vercel proje adı ve sekme başlığı (`<title>`) nötr olmalı; "eko" veya çevre (enerji, su, karbon, yeşil vb.) çağrışımı yapmamalı. Kontrol grubu deneyin amacını adres çubuğundan veya sekmeden tahmin edememeli. Mevcut adres: `https://egitim-asistani-2204.vercel.app`, sekme başlığı: "Eğitim Asistanı".
+6. **Dondurma kuralı (ölçüm koşulları):** Ön Test başladıktan sonra Son Test bitene kadar şunlar DEĞİŞTİRİLMEZ: sistem talimatı (`api/_lib/prompt.js`), model eşlemesi ve düşünme ayarları (`api/_lib/models.js`), sıcaklık (`api/_lib/ai.js` → `TEMPERATURE`), `footprint.js` katsayıları ve `HISTORY_LIMIT` (`api/_lib/interactions.js`). Sebep: sistem talimatı ve bağlam her istemin girdi tokenına eklenir, model ve katsayılar enerji hesabını belirler; aradaki bir değişiklik karıştırıcı değişken olur. Kanıt: her kayıt bu ayarların SHA-256 özetini `configHash` alanında taşır (`api/_lib/configHash.js`); yönetici panelinin İstatistik sekmesi kayıtlarda tek değer olup olmadığını gösterir. Bir hata düzeltmesi zorunluysa önce danışman öğretmene sorulur ve raporda belirtilir.
 
 ## 3. Mimari (KARARLAŞTIRILDI — değiştirmeden önce sor)
 
@@ -43,7 +44,7 @@ Tarayıcı (React)  ──HTTP──>  Vercel sunucu fonksiyonları (/api/*)  �
 
 ### Teknoloji yığını
 - Frontend: Vite + React + Tailwind CSS + `lucide-react` + `recharts`
-- Markdown/formül: `react-markdown` + `remark-gfm` + `remark-math` + `rehype-katex` (KaTeX npm paketiyle, CDN yok)
+- Markdown/formül: `react-markdown` + `remark-gfm` + `remark-math` + `remark-breaks` (tek satır sonu korunur) + `rehype-katex` (KaTeX npm paketiyle, CDN yok) + KaTeX'in `mhchem` eklentisi (`\ce{H2O}` kimyasal formüller). `package.json` → `overrides` ile projede tek KaTeX kopyası (0.19.x) vardır; iki kopya olursa CSS ile çizici farklı sürümden gelir ve mhchem yanlış kopyaya kaydolur.
 - Excel: npm paketiyle `.xlsx` üretimi (CDN yok)
 - Sunucu: Vercel Serverless Functions (`/api`), `firebase-admin`
 - Veritabanı: Firebase Firestore (ücretsiz Spark planı)
@@ -136,8 +137,9 @@ Zorunlu testler (Vitest):
 code, group ('Kontrol'|'Deney'), phase ('pretest'|'posttest'), modelId,
 prompt, response, inputTokens, outputTokens, weightedTokens, tokenSource,
 energyMin/Avg/Max, waterMin/Avg/Max, co2Min/Avg/Max, costUsd, savingsPct,
-isSample (boolean), engineVersion, createdAt (sunucu zamanı)
+isSample (boolean), engineVersion, configHash, createdAt (sunucu zamanı)
 ```
+- **`configHash` (Dilim 8):** Ölçüm koşullarının 12 karakterlik özeti (Bölüm 2/6, dondurma kuralı). Yönetici listesine ve Excel'in `Tum_Kayitlar` sayfasına ("Yapılandırma Özeti") girer; öğrenciye giden mesajlarda yoktur. Dilim 8'den önceki kayıtlarda alan yoktur.
 - **`engineVersion`:** Yapay zeka yanıtındaki gerçek model sürümü (`modelVersion`). Yanıtta yoksa `null` olur. Tekrarlanabilirlik için yalnızca veritabanında tutulur. Marka yasağı gereği bu alan **Excel'e, CSV'ye ve tarayıcıya giden yanıtlara ASLA girmez.** Tarayıcıya giden mesaj alanları `api/_lib/interactions.js` → `toClientMessage` ile sınırlıdır (`id, modelId, prompt, response, createdAt`). `tests/api-messages.test.js` ve `tests/api-chat.test.js` bunu denetler. Yönetici listesi/detayı (`api/_lib/admin.js`) ve CSV (`src/lib/csv.js`) bu alanı içermez (`tests/api-admin-data.test.js`, `tests/csv.test.js`). Excel de bu alanı içermez (`tests/excelExport.test.js` bütün dosya baytlarında `engineVersion`, model sürümü ve marka adı arar).
 - **Öğrenciye giden çevresel alanlar (Dilim 5):** Uç noktalar mesajı `toStudentMessage(id, data, view)` ile döner; `view` sunucuda `getStudentView(grup, aşama)` ile hesaplanır. Yalnızca `'ekotoken'` (Deney + Son Test) görünümünde mesaja `eco` nesnesi eklenir (`toEcoClientMessage`); içeriği açık listedir (`ECO_CLIENT_FIELDS`: `inputTokens, outputTokens, tokenSource, energy*, water*, co2*, savingsPct`). **`costUsd`, `weightedTokens` ve `engineVersion` hiçbir görünümde tarayıcıya çıkmaz.** Kontrol grubunun ve Ön Test'teki Deney grubunun yanıtında `eco` yoktur; `tests/api-chat.test.js`, `tests/api-messages.test.js` ve `tests/chat-ekran.test.jsx` denetler.
 - **Metodoloji penceresi** deney desenini (Kontrol grubunun ne gördüğünü) anlatmaz (kör deney; 23.11.2026 kararı). Sayılar `footprint.js` sabitlerinden üretilir, kaynakça `src/lib/methodology.js`'tedir.

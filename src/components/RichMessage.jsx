@@ -1,13 +1,18 @@
 // Asistan yanıtını zengin biçimde gösterir: Markdown (6 başlık seviyesi, tablo, alıntı,
 // iç içe liste, kod bloğu) ve KaTeX formülleri. Para tutarları formül sanılmaz (src/lib/markdown.js).
 // KaTeX yazı tipleri ve CSS'i npm paketinden gelir; dışarıdan (CDN) hiçbir şey yüklenmez.
+// Dilim 8: remark-breaks tek satır sonunu korur (alt alta yazılan satırlar birleşmez).
+// mhchem eklentisi kimyasal formülleri \ce{H2O} ile dik ve doğru alt simgeli çizer (KaTeX paketinin
+// parçasıdır; çiziciyle aynı KaTeX kopyasına kaydolur, package.json → overrides tek kopya sağlar).
 // İsteğe bağlı "Kopyala" butonu yanıtın ham metnini panoya kopyalar.
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
+import remarkBreaks from 'remark-breaks';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
+import 'katex/contrib/mhchem'; // \ce{...} komutunu KaTeX'e ekler (yan etkili içe aktarma)
 import { Copy, Check } from 'lucide-react';
 import { prepareMarkdown } from '../lib/markdown.js';
 
@@ -33,7 +38,7 @@ export default function RichMessage({ content, showCopyButton = false }) {
     <div>
       <div className="rich-message text-sm text-slate-800 leading-relaxed break-words">
         <ReactMarkdown
-          remarkPlugins={[remarkGfm, remarkMath]}
+          remarkPlugins={[remarkGfm, remarkMath, remarkBreaks]}
           rehypePlugins={[[rehypeKatex, { throwOnError: false }]]}
           components={components}
         >

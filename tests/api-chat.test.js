@@ -19,6 +19,7 @@ vi.mock('../api/_lib/ai.js', async (importOriginal) => {
 
 const { default: handler, config, AI_DEADLINE_MS } = await import('../api/chat.js');
 const { AiError, AI_MESSAGES } = await import('../api/_lib/ai.js');
+const { CONFIG_HASH } = await import('../api/_lib/configHash.js');
 
 async function post(body) {
   const res = createRes();
@@ -102,6 +103,9 @@ describe('/api/chat — başarılı istek', () => {
     expect(rec.energyAvg).toBeCloseTo((360 / 1000) * 2.1, 10);
     expect(rec.savingsPct).toBeGreaterThan(0);
     expect(rec.engineVersion).toBe('motor-surum-1');
+    // Ölçüm koşullarının özeti (dondurma kuralı): sunucunun hesapladığı değer kayda yazılır.
+    expect(rec.configHash).toBe(CONFIG_HASH);
+    expect(rec.configHash).toMatch(/^[0-9a-f]{12}$/);
   });
 
   it('tarayıcıya yalnızca id, modelId, prompt, response, createdAt gider (çevresel alan ve engineVersion yok)', async () => {
@@ -109,6 +113,7 @@ describe('/api/chat — başarılı istek', () => {
     expect(Object.keys(res.body).sort()).toEqual(['message', 'phase']);
     expect(Object.keys(res.body.message).sort()).toEqual(['createdAt', 'id', 'modelId', 'prompt', 'response']);
     expect(JSON.stringify(res.body)).not.toContain('motor-surum-1');
+    expect(JSON.stringify(res.body)).not.toContain(CONFIG_HASH); // özet öğrenciye gitmez
   });
 
   it('aktif aşama veritabanından okunur ve yanıtta kaydın aşaması döner', async () => {

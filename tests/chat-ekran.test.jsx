@@ -134,7 +134,7 @@ describe('EkoToken görünümü (Deney grubu + Son Test)', () => {
   it('Metodoloji penceresi açılır, kaynakçayı gösterir, deney tasarımını anlatmaz', async () => {
     await renderScreen({ view: 'ekotoken', student, messages: [ecoMessage('a', 'light', 10, 5)], phase: 'posttest' });
     fireEvent.click(screen.getByRole('button', { name: 'Metodoloji' }));
-    const dialog = await screen.findByRole('dialog');
+    const dialog = await screen.findByRole('dialog', {}, { timeout: 5000 }); // tembel yüklenen parça
     expect(dialog.textContent).toContain('Ağırlıklı Token');
     expect(dialog.textContent).toContain('Making AI Less Thirsty');
     for (const word of ['Kontrol', 'Kör Deney', 'Ön Test', 'Son Test', 'Deney grubu']) {
@@ -152,7 +152,9 @@ describe('EkoToken görünümü (Deney grubu + Son Test)', () => {
       phase: 'posttest',
     });
     fireEvent.click(screen.getByRole('button', { name: 'Kişisel Rapor' }));
-    const dialog = await screen.findByRole('dialog');
+    // Pencere tembel yüklenen ayrı bir parçadır (recharts); tam test takımı paralel çalışırken
+    // yüklenmesi 1 sn'yi (varsayılan bekleme) aşabildiği için daha uzun beklenir.
+    const dialog = await screen.findByRole('dialog', {}, { timeout: 5000 });
     expect(dialog.textContent).toContain('Kişisel Rapor — D001');
     expect(dialog.textContent).toContain('Toplam Su Ayak İzi');
     expect(dialog.textContent).toContain('Model Tercih Dağılımı');

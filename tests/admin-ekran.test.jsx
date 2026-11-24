@@ -117,6 +117,36 @@ describe('Yönetici paneli', () => {
     });
   }
 
+  it('yapılandırma özeti: tek değerde onay, iki farklı değerde kırmızı uyarı (dondurma kuralı)', async () => {
+    const withHash = (hashes) =>
+      apiRequest.mockImplementation(async (path) => {
+        if (path.startsWith('/api/admin/data')) {
+          const recs = [
+            { ...RECORDS[0], id: 'h1', configHash: hashes[0] },
+            { ...RECORDS[0], id: 'h2', phase: 'posttest', configHash: hashes[1] },
+          ];
+          return { interactions: recs, hasMore: false, next: null, logins: [], phase: 'pretest', serverTime: 5000 };
+        }
+        throw new Error(`beklenmeyen istek: ${path}`);
+      });
+
+    withHash(['aaaaaaaaaaaa', 'aaaaaaaaaaaa']);
+    render(<AdminScreen token="t" onLogout={() => {}} />);
+    await screen.findByText('Aktif Katılımcılar');
+    fireEvent.click(screen.getByRole('button', { name: 'Ön Test – Son Test & İstatistik' }));
+    expect(screen.getByTestId('yapilandirma-ozeti').textContent).toContain('tek değer');
+    cleanup();
+
+    withHash(['aaaaaaaaaaaa', 'bbbbbbbbbbbb']);
+    render(<AdminScreen token="t" onLogout={() => {}} />);
+    await screen.findByText('Aktif Katılımcılar');
+    fireEvent.click(screen.getByRole('button', { name: 'Ön Test – Son Test & İstatistik' }));
+    const alert = screen.getByTestId('yapilandirma-ozeti');
+    expect(alert.getAttribute('role')).toBe('alert');
+    expect(alert.textContent).toContain('2 farklı değer');
+    expect(alert.textContent).toContain('bbbbbbbbbbbb: 1 kayıt (Ön Test 0, Son Test 1)');
+  });
+
   it('5 sekme, aşama anahtarı ve örnek kayıt uyarı bandı', async () => {
     mockServer();
     render(<AdminScreen token="t" onLogout={() => {}} />);

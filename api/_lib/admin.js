@@ -44,6 +44,7 @@ export const ADMIN_LIST_FIELDS = [
   'costUsd',
   'savingsPct',
   'isSample',
+  'configHash', // ölçüm koşullarının özeti (Dilim 8; eski kayıtlarda null)
   'createdAt',
 ];
 

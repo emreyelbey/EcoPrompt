@@ -7,6 +7,7 @@ import {
   realRecords,
   latestMillis,
   mergeById,
+  configHashSummary,
 } from '../src/lib/adminSummary.js';
 
 const r = (o) => ({ energyAvg: 1, waterAvg: 2, co2Avg: 0.5, isSample: false, createdAt: 0, ...o });
@@ -120,5 +121,31 @@ describe('önbellek yardımcıları', () => {
   it('mergeById tekrarları üzerine yazar', () => {
     const m = mergeById(new Map([['a', { id: 'a', v: 1 }]]), [{ id: 'a', v: 2 }, { id: 'b', v: 3 }]);
     expect([...m.values()]).toEqual([{ id: 'a', v: 2 }, { id: 'b', v: 3 }]);
+  });
+});
+
+describe('configHashSummary (dondurma kuralı)', () => {
+  it('tek özet: ok; özetsiz eski kayıtlar ayrıca sayılır', () => {
+    const s = configHashSummary([
+      r({ phase: 'pretest', configHash: 'aaaaaaaaaaaa' }),
+      r({ phase: 'posttest', configHash: 'aaaaaaaaaaaa' }),
+      r({ phase: 'pretest' }), // alan eklenmeden önce yazılmış kayıt
+    ]);
+    expect(s.ok).toBe(true);
+    expect(s.missing).toBe(1);
+    expect(s.hashes).toEqual([{ hash: 'aaaaaaaaaaaa', count: 2, pretest: 1, posttest: 1 }]);
+  });
+
+  it('iki farklı özet: ok değil; en çok kayıtlı özet önce, aşama dağılımıyla', () => {
+    const s = configHashSummary([
+      r({ phase: 'pretest', configHash: 'aaaaaaaaaaaa' }),
+      r({ phase: 'pretest', configHash: 'aaaaaaaaaaaa' }),
+      r({ phase: 'posttest', configHash: 'bbbbbbbbbbbb' }),
+    ]);
+    expect(s.ok).toBe(false);
+    expect(s.hashes.map((h) => [h.hash, h.pretest, h.posttest])).toEqual([
+      ['aaaaaaaaaaaa', 2, 0],
+      ['bbbbbbbbbbbb', 0, 1],
+    ]);
   });
 });

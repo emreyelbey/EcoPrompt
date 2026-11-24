@@ -153,3 +153,29 @@ export function mergeById(map, items) {
   for (const item of items) next.set(item.id, item);
   return next;
 }
+
+/**
+ * Yapılandırma özeti kontrolü (Dilim 8, dondurma kuralı): kayıtlarda kaç farklı configHash var?
+ * Deney boyunca tek değer olmalıdır. Farklı değerler, Ön Test ile Son Test arasında sistem talimatının,
+ * model eşlemesinin, katsayıların veya bağlam sınırının değiştiğini gösterir (enerji ölçümünü etkiler).
+ * @param {object[]} records  gerçek kayıtlar
+ * @returns {{ hashes: { hash: string, count: number, pretest: number, posttest: number }[], missing: number, ok: boolean }}
+ *          hashes en çok kayıttan en aza sıralı; missing: alan eklenmeden önce yazılmış (özetsiz) kayıt sayısı;
+ *          ok: en fazla bir farklı özet var mı.
+ */
+export function configHashSummary(records) {
+  const byHash = new Map();
+  let missing = 0;
+  for (const r of records) {
+    if (typeof r.configHash !== 'string' || r.configHash === '') {
+      missing += 1;
+      continue;
+    }
+    if (!byHash.has(r.configHash)) byHash.set(r.configHash, { hash: r.configHash, count: 0, pretest: 0, posttest: 0 });
+    const entry = byHash.get(r.configHash);
+    entry.count += 1;
+    if (r.phase === 'pretest' || r.phase === 'posttest') entry[r.phase] += 1;
+  }
+  const hashes = [...byHash.values()].sort((a, b) => b.count - a.count);
+  return { hashes, missing, ok: hashes.length <= 1 };
+}

@@ -10,6 +10,7 @@ import { claimRateSlot } from './_lib/rateLimit.js';
 import { getHistory, saveInteraction, toStudentMessage } from './_lib/interactions.js';
 import { getStudentView } from '../src/lib/phases.js';
 import { generateReply, AiError } from './_lib/ai.js';
+import { CONFIG_HASH } from './_lib/configHash.js';
 import { allowMethod, readBody, sendError } from './_lib/http.js';
 import { normalizeCode, isValidCode, getGroup } from '../src/lib/participants.js';
 import { MODEL_ORDER, resolveTokens, calculateFootprint } from '../src/lib/footprint.js';
@@ -94,6 +95,9 @@ export default async function handler(req, res) {
     tokenSource: tokens.tokenSource,
     engineVersion: reply.modelVersion, // Yalnızca veritabanında; tarayıcıya/Excel'e/CSV'ye asla çıkmaz.
     isSample: false,
+    // Ölçüm koşullarının özeti (sistem talimatı, model eşlemesi, katsayılar, bağlam sınırı). Deney boyunca
+    // tek değer kalmalı (dondurma kuralı). Yalnızca veritabanında ve yönetici panelinde; öğrenciye gitmez.
+    configHash: CONFIG_HASH,
     createdAt: serverTimestamp(),
   };
 

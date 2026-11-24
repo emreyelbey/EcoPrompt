@@ -8,7 +8,7 @@
 // Örnek veri önizlemesinde (Dilim 8) AdminScreen örnek seti ve örnek kod listesini (codeGroups) verir;
 // o modda Excel butonu pasiftir ve her kartta "ÖRNEK VERİ" işareti görünür.
 import { useMemo, useState } from 'react';
-import { FileSpreadsheet, Loader2, Info, Star } from 'lucide-react';
+import { FileSpreadsheet, Loader2, Info, Star, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { COHENS_D_FORMULAS } from '../../lib/stats.js';
 import {
   METRIC_META,
@@ -21,6 +21,7 @@ import {
   testVerdict,
 } from '../../lib/statsReport.js';
 import { fmtNum, fmtSmart, formatPValue } from '../../lib/format.js';
+import { configHashSummary } from '../../lib/adminSummary.js';
 import { ChartCard, PrePostChart } from './charts.jsx';
 import { PreviewMark, usePreview } from './PreviewContext.jsx';
 
@@ -108,6 +109,9 @@ export default function StatsTab({ records, logins, codeGroups, onToast }) {
         {(metric === 'water' || metric === 'co2' || metric === 'energy') && <p className="pl-6">{SAME_AS_ENERGY_NOTE}</p>}
       </div>
 
+      {/* Dondurma kuralı kontrolü: ölçüm koşulları deney boyunca aynı kaldı mı? (örnek veride yok) */}
+      {!preview && <ConfigHashCheck records={records} />}
+
       {/* 4 net değişim kartı */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {report.changeCards.map((card) => (
@@ -167,6 +171,41 @@ export default function StatsTab({ records, logins, codeGroups, onToast }) {
         <p>• {COHENS_D_FORMULAS.paired}</p>
         <p>• Etiketler: {COHENS_D_FORMULAS.labels}</p>
       </section>
+    </div>
+  );
+}
+
+// Yapılandırma özeti satırı: kayıtlarda tek bir configHash varsa yeşil onay, birden fazlaysa kırmızı uyarı.
+function ConfigHashCheck({ records }) {
+  const { hashes, missing, ok } = useMemo(() => configHashSummary(records), [records]);
+  if (hashes.length === 0 && missing === 0) return null; // henüz kayıt yok
+
+  const missingNote = missing > 0 ? ` ${missing} kayıt bu alan eklenmeden önce yazılmış (özetsiz).` : '';
+  if (ok) {
+    return (
+      <div data-testid="yapilandirma-ozeti" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs text-emerald-900 flex items-start gap-2">
+        <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
+        <span>
+          Yapılandırma özeti: {hashes.length === 1 ? <>bütün kayıtlarda tek değer <code className="font-mono">{hashes[0].hash}</code> ✓</> : 'özetli kayıt yok.'}
+          {' '}Ölçüm koşulları (sistem talimatı, model eşlemesi, katsayılar, bağlam sınırı) değişmemiş.{missingNote}
+        </span>
+      </div>
+    );
+  }
+  return (
+    <div role="alert" data-testid="yapilandirma-ozeti" className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-2.5 text-xs text-rose-900 space-y-1">
+      <p className="flex items-start gap-2 font-semibold">
+        <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
+        Yapılandırma özeti: kayıtlarda {hashes.length} farklı değer var. Ölçüm koşulları deney sırasında değişmiş olabilir
+        (dondurma kuralı); enerji karşılaştırmaları etkilenebilir.{missingNote}
+      </p>
+      <ul className="pl-6 list-disc">
+        {hashes.map((h) => (
+          <li key={h.hash}>
+            <code className="font-mono">{h.hash}</code>: {h.count} kayıt (Ön Test {h.pretest}, Son Test {h.posttest})
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

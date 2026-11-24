@@ -34,6 +34,11 @@ export const SHEET_NAMES = ['Tum_Kayitlar', 'Ogrenci_Ozetleri', 'Grup_Karsilasti
 // Ortak notlar (Grup_Karsilastirma ve Degisken_Sozlugu'nda yazılır).
 export const P_VALUE_NOTE = 'Bütün p değerleri ÇİFT YÖNLÜDÜR (two-tailed). Anlamlılık düzeyi α = 0,05; p < 0,05 ise fark anlamlı sayılır.';
 const SAMPLE_NOTE = 'Örnek veriler (isSample) bu dosyaya girmez.';
+// Tum_Kayitlar sayfasındaki "Yapılandırma Özeti" sütununun açıklaması (Dilim 8).
+export const CONFIG_HASH_NOTE =
+  'Kaydın üretildiği andaki ölçüm koşullarının kısa özeti (sistem talimatı, model ölçek eşlemesi, ' +
+  'sıcaklık, bağlam sınırı ve enerji/su/CO₂ katsayıları). Deney boyunca tek değer olmalıdır; farklı ' +
+  'değerler koşulların değiştiğini gösterir. Boş hücre: bu alan eklenmeden önce yazılmış kayıt.';
 
 // Kayıttaki sayı alanını güvenle okur: yoksa veya geçersizse null (boş hücre), 0 değil.
 function num(value) {
@@ -68,6 +73,7 @@ function allRecordsSheet(records) {
     'CO₂ Maks (g)',
     'Tahmini Maliyet (USD, referans fiyat)',
     'Tasarruf Oranı (%)',
+    'Yapılandırma Özeti',
     'İstem',
   ];
   const sorted = [...records].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
@@ -92,6 +98,7 @@ function allRecordsSheet(records) {
     num(r.co2Max),
     num(r.costUsd),
     num(r.savingsPct),
+    r.configHash ?? '', // metin hücresi; eski kayıtlarda boş
     r.prompt ?? '',
   ]);
   return {
@@ -99,7 +106,7 @@ function allRecordsSheet(records) {
     rows: [header, ...rows],
     boldRows: [0],
     freezeHeader: true,
-    columnWidths: [19, 9, 14, 9, 20, 11, 11, 14, 13, ...Array(9).fill(14), 18, 14, 80],
+    columnWidths: [19, 9, 14, 9, 20, 11, 11, 14, 13, ...Array(9).fill(14), 18, 14, 16, 80],
   };
 }
 
@@ -376,6 +383,7 @@ function dictionarySheet(policy, now) {
   out.push(['Birincil ölçüt', `${METRIC_META[PRIMARY_METRIC].label} (${METRIC_META[PRIMARY_METRIC].unit}) → OnTest_${METRIC_META[PRIMARY_METRIC].spss}, SonTest_${METRIC_META[PRIMARY_METRIC].spss}`]);
   out.push(['SPSS aktarımı', 'SPSS_Veri_Seti sayfası: ilk satır değişken adlarıdır, her satır bir katılımcıdır. Grup_Kodu bağımsız değişkendir.']);
   out.push(['Örnek veri', SAMPLE_NOTE]);
+  out.push(['Yapılandırma Özeti', CONFIG_HASH_NOTE]);
   out.push(['Dışa aktarma zamanı', formatCsvDate(now.getTime())]);
 
   return {

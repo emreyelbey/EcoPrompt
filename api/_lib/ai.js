@@ -23,6 +23,10 @@ export const ATTEMPT_TIMEOUT_MS = { light: 20_000, standard: 20_000, reasoning: 
 // Varsayılan süre bütçesi. /api/chat kendi bütçesini `deadline` ile verir.
 export const DEFAULT_BUDGET_MS = 50_000;
 
+// Yanıt çeşitliliği (temperature) sınıf başına. Ölçüm koşulunun parçasıdır: yapılandırma özetine
+// (configHash.js) girer, Ön Test başladıktan sonra Son Test bitene kadar değiştirilmez.
+export const TEMPERATURE = { light: 0.7, standard: 0.7, reasoning: 0.5 };
+
 // Öğrenciye gösterilecek sabit Türkçe mesajlar.
 export const AI_MESSAGES = {
   busy: 'Asistan şu anda çok yoğun. Lütfen birkaç saniye sonra tekrar deneyin.',
@@ -157,7 +161,7 @@ export async function generateReply({
     contents: buildContents(history, prompt),
     systemInstruction: { parts: [{ text: buildSystemInstruction(modelId) }] },
     generationConfig: {
-      temperature: modelId === 'reasoning' ? 0.5 : 0.7,
+      temperature: TEMPERATURE[modelId],
       thinkingConfig: { thinkingLevel },
     },
   });
