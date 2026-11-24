@@ -49,8 +49,8 @@ function clock(ms) {
 }
 
 export default function AdminScreen({ token, onLogout }) {
-  // Panel açıkken sayfa zemini ve tarayıcı çubuğu açık (paper); pencere açılınca karartma rengine geçer.
-  useScreenTheme('light');
+  // Panel açıkken sayfa zemini açık (paper), tarayıcı çubuğu telefondaki siyah başlık şeridiyle aynı (ink).
+  useScreenTheme('admin');
   const data = useAdminData(token, onLogout);
   const [tab, setTab] = useState('overview');
   const [phaseTarget, setPhaseTarget] = useState(null); // onay bekleyen yeni aşama
@@ -113,7 +113,7 @@ export default function AdminScreen({ token, onLogout }) {
 
   return (
     <PreviewContext.Provider value={preview}>
-      <div className="fixed inset-0 w-full h-full flex flex-col lg:flex-row overflow-hidden bg-paper text-ink">
+      <div className="app-viewport fixed inset-0 w-full h-full flex flex-col lg:flex-row overflow-hidden bg-paper text-ink">
         {/* ---------- KENAR MENÜSÜ (lg) / ÜST ŞERİT (dar ekran) ---------- */}
         <aside className="shrink-0 bg-ink text-on-dark lg:w-[248px] lg:h-full flex flex-col gap-3 lg:gap-7 px-3 lg:px-4 pt-3 pb-3 sm:pb-2 lg:py-6">
           <div className="flex items-center gap-3 lg:px-2">

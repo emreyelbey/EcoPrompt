@@ -225,3 +225,54 @@ Her iki denklem de fotosentezi doğru ifade eder; ancak genel ve sadeleştirilmi
     expect(html).toMatch(/<ul>[\s\S]*<ul>/);
   });
 });
+
+// Çiğ <br> düzeltmesi (src/lib/remarkBrTags.js): yalnızca <br> etiketleri satır sonuna dönüşür.
+// Ham HTML açılmaz; kod içindeki <br> ve başka etiketler metin olarak kalır.
+describe('<br> etiketleri gerçek satır sonuna dönüşür (ham HTML kapalı kalır)', () => {
+  const render = (content) => renderToStaticMarkup(createElement(RichMessage, { content }));
+
+  it('tablo hücresinde <br> ve <BR /> satır sonu olur', () => {
+    const html = render('| Olay | Not |\n|---|---|\n| soğurulur.<br>• Su molekülleri | x<BR />y |');
+    expect(html).toContain('<td>soğurulur.<br/>\n• Su molekülleri</td>');
+    expect(html).toContain('<td>x<br/>\ny</td>');
+    expect(html).not.toContain('&lt;br');
+  });
+
+  it('paragrafta <br/> ve <br /> satır sonu olur; art arda iki etiket iki satır sonu', () => {
+    expect(render('Birinci<br/>ikinci')).toContain('<p>Birinci<br/>\nikinci</p>');
+    expect(render('a <br /> b')).toContain('<p>a <br/>\nb</p>'); // satır sonundan sonraki boşluk Markdown kuralıyla atılır
+    expect(render('a<br><br>b')).toContain('<p>a<br/>\n<br/>\nb</p>');
+  });
+
+  it('satır başında tek başına duran <br> de satır sonu olur (çiğ metin kalmaz)', () => {
+    const html = render('<br>\nSatır');
+    expect(html).not.toContain('&lt;br');
+    expect(html).toContain('<br/>');
+  });
+
+  it('kod bloğunda ve satır içi kodda <br> dokunulmadan metin olarak kalır', () => {
+    expect(render('```\na<br>b\n```')).toContain('a&lt;br&gt;b');
+    expect(render('Kod: `a<br>b`')).toContain('<code>a&lt;br&gt;b</code>');
+  });
+
+  it('blok HTML içindeki <br> dönüşür, geri kalan etiketler yine metindir', () => {
+    const html = render('<div>a<br>b</div>');
+    expect(html).not.toContain('<div>a');
+    expect(html).toContain('&lt;div&gt;a<br/>');
+    expect(html).toContain('b&lt;/div&gt;');
+  });
+
+  it('<script> ve diğer etiketler metin olarak kalır (çalıştırılmaz, öğe olmaz)', () => {
+    const html = render('<script>alert(1)</script> ve <b>kalın</b>');
+    expect(html).not.toContain('<script');
+    expect(html).not.toContain('<b>');
+    expect(html).toContain('&lt;script&gt;');
+    expect(html).toContain('&lt;b&gt;');
+  });
+
+  it('<br> benzeri ama farklı etiketler dönüşmez (<brx>, <br class="a">)', () => {
+    const html = render('a<brx>b ve c<br class="a">d');
+    expect(html).toContain('&lt;brx&gt;');
+    expect(html).toContain('&lt;br class=&quot;a&quot;&gt;');
+  });
+});

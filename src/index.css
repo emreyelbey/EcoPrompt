@@ -116,7 +116,8 @@ body {
    Böylece klavye açılınca veya aşırı kaydırmada ekranın dışında kalan alanda açık şerit görünmez.
    - Giriş ekranı: <html data-zemin="koyu"> → koyu zemin, color-scheme: dark.
    - Pencere açık: <html data-zemin="karartma"> → pencere arkasındaki %50 ink katmanının açık zemin
-     üstündeki rengi (theme-color ile aynı: #828282). Pencerelerin içi açık olduğu için color-scheme açık kalır.
+     üstündeki rengi (#828282). Tarayıcı çubuğu (theme-color) ayrıca üst kenardaki öğenin karartılmış rengini
+     alır (screenTheme.js). Pencerelerin içi açık olduğu için color-scheme açık kalır.
    - Öznitelik yoksa (sohbet, panel): açık zemin. */
 html[data-zemin='koyu'],
 html[data-zemin='koyu'] body {
@@ -156,13 +157,22 @@ html[data-zemin='karartma'] body {
   }
 }
 
-/* Ana görünümleri (giriş, sohbet) ekranın gerçekten görünen kısmına oturtur (Dilim 8d).
-   Değişkenleri src/lib/viewport.js yazar; yoksa (eski tarayıcı) tam ekran kullanılır.
+/* Ana görünümleri (giriş, sohbet, yönetici paneli, yükleniyor) ve pencere kutularını ekrana oturtur
+   (Dilim 8d; mobil-duzeltmeler). Tek mekanizma, iki durum (src/lib/viewport.js):
+   - Klavye kapalı: değişken yoktur → yükseklik tarayıcının dinamik yüksekliği (100dvh). Kaydırırken adres
+     çubuğu küçülüp alt araç çubuğu gizlenince düzen de büyür (eski hata: açılıştaki yüksekliğe kilitleniyordu).
+   - Klavye açık: viewport.js görünen alanın ölçülerini --app-height / --app-top değişkenlerine yazar.
    Bu kural Tailwind katmanlarının dışında olduğu için h-full ve inset-0'ın üstüne yazar:
-   top + height verildiğinde bottom yok sayılır. */
+   top + height verildiğinde bottom yok sayılır. dvh desteklemeyen eski tarayıcıda %100 kullanılır. */
 .app-viewport {
   top: var(--app-top, 0px);
   height: var(--app-height, 100%);
+}
+
+@supports (height: 100dvh) {
+  .app-viewport {
+    height: var(--app-height, 100dvh);
+  }
 }
 
 /* Asistan yanıtlarındaki Markdown öğeleri (RichMessage). Tailwind tüm varsayılan

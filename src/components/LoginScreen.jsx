@@ -25,7 +25,7 @@ const PRIMARY_BUTTON_CLASS =
 export default function LoginScreen({ onStudentLogin, onAdminLogin, initialCode = '', initialError = '' }) {
   const [mode, setMode] = useState('student'); // 'student' | 'admin'
   // Giriş ekranı açıkken sayfa zemini ve tarayıcı çubuğu koyu (klavye açılınca alttaki şerit de koyu kalır).
-  useScreenTheme('dark');
+  useScreenTheme('login');
   const [codeInput, setCodeInput] = useState(initialCode);
   const [passInput, setPassInput] = useState('');
   const [errorMsg, setErrorMsg] = useState(initialError);

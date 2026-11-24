@@ -4,6 +4,8 @@
 // Dilim 8: remark-breaks tek satır sonunu korur (alt alta yazılan satırlar birleşmez).
 // mhchem eklentisi kimyasal formülleri \ce{H2O} ile dik ve doğru alt simgeli çizer (KaTeX paketinin
 // parçasıdır; çiziciyle aynı KaTeX kopyasına kaydolur, package.json → overrides tek kopya sağlar).
+// Yanıttaki <br> etiketleri (ör. tablo hücrelerinde) gerçek satır sonuna çevrilir; ham HTML kapalı kalır,
+// başka etiketler metin olarak görünür (src/lib/remarkBrTags.js).
 // İsteğe bağlı "Kopyala" butonu yanıtın ham metnini panoya kopyalar.
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -15,6 +17,7 @@ import 'katex/dist/katex.min.css';
 import 'katex/contrib/mhchem'; // \ce{...} komutunu KaTeX'e ekler (yan etkili içe aktarma)
 import { Copy, Check } from 'lucide-react';
 import { prepareMarkdown } from '../lib/markdown.js';
+import remarkBrTags from '../lib/remarkBrTags.js';
 
 // Bağlantılar yeni sekmede açılır; böylece öğrenci sohbet sayfasından çıkmış olmaz.
 const components = {
@@ -45,7 +48,7 @@ export default function RichMessage({ content, showCopyButton = false, textClass
     <div>
       <div className={`rich-message break-words ${textClassName}`}>
         <ReactMarkdown
-          remarkPlugins={[remarkGfm, remarkMath, remarkBreaks]}
+          remarkPlugins={[remarkGfm, remarkMath, remarkBrTags, remarkBreaks]}
           rehypePlugins={[[rehypeKatex, { throwOnError: false }]]}
           components={components}
         >

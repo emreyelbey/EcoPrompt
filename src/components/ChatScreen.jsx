@@ -83,8 +83,8 @@ function formatTime(iso) {
 }
 
 export default function ChatScreen({ student, view = 'sade', onServerPhase, onLogout }) {
-  // Sohbet açıkken sayfa zemini ve tarayıcı çubuğu açık (paper); pencere açılınca karartma rengine geçer.
-  useScreenTheme('light');
+  // Sohbet açıkken sayfa zemini açık (paper), tarayıcı çubuğu beyaz üst çubukla aynı (surface).
+  useScreenTheme('chat');
   const isEco = view === 'ekotoken';
   const [messages, setMessages] = useState([]); // Sunucudan gelen, kaydı yazılmış mesajlar
   const [historyState, setHistoryState] = useState('loading'); // 'loading' | 'ready' | hata metni

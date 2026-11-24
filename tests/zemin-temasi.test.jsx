@@ -2,14 +2,16 @@
 // Sayfa zemini, tarayıcı çubuğu rengi ve pencerelerin klavye davranışı testleri
 // (src/lib/screenTheme.js, src/components/Overlay.jsx).
 // Telefonda klavye açılınca ekranın dışında kalan alanda html/body zemini görünür. Kural:
-// - Giriş ekranı → koyu; sohbet/panel → açık; herhangi bir pencere açık → karartma rengi.
+// - Zemin: giriş → koyu; sohbet/panel → açık; herhangi bir pencere açık → karartma rengi.
+// - Tarayıcı çubuğu (theme-color) üst kenardaki öğenin rengi: giriş ve panel → ink, sohbet → surface,
+//   pencere açıkken → o rengin %50 ink karartma altındaki tonu.
 // - Bütün pencereler ortak Overlay kabuğunu kullanır: karartma görünen alanın dışına taşar, pencere
 //   görünen alana (app-viewport) oturur, içerik kendi içinde kayar, eylem butonları sabit alt bölümdedir.
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, cleanup, fireEvent } from '@testing-library/react';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { THEME_COLORS, THEME_ATTR, useScreenTheme } from '../src/lib/screenTheme.js';
+import { COLORS, SCREENS, THEME_ATTR, scrimOver, useScreenTheme } from '../src/lib/screenTheme.js';
 import { keepFocusedVisible } from '../src/components/Overlay.jsx';
 
 const apiRequest = vi.fn(() => new Promise(() => {})); // sayılar hiç gelmez: pencere açık kalır
@@ -24,9 +26,9 @@ const attr = () => document.documentElement.getAttribute(THEME_ATTR);
 
 afterEach(cleanup);
 
-// Sohbet/panel yerine geçen sade açık ekran.
-function LightScreen({ children }) {
-  useScreenTheme('light');
+// Sohbet/panel yerine geçen sade ekran (varsayılan: sohbet).
+function LightScreen({ name = 'chat', children }) {
+  useScreenTheme(name);
   return <div>{children}</div>;
 }
 
@@ -34,19 +36,30 @@ describe('Ekran zemini', () => {
   it('giriş ekranı açılınca koyu, kapanınca açık zemine döner', () => {
     const { unmount } = render(<LoginScreen onStudentLogin={() => {}} onAdminLogin={() => {}} />);
     expect(attr()).toBe('koyu');
-    expect(themeColor()).toBe(THEME_COLORS.dark);
+    expect(themeColor()).toBe(COLORS.ink);
 
     unmount();
+    // Hiç ekran yok (yükleniyor): açık zemin, açık çubuk.
     expect(attr()).toBeNull();
-    expect(themeColor()).toBe(THEME_COLORS.light);
+    expect(themeColor()).toBe(COLORS.paper);
     expect(document.querySelectorAll('meta[name="theme-color"]')).toHaveLength(1);
   });
 
   it('girişten panele geçişte (yeni ekran eskisinden önce kurulsa da) zemin açık olur', () => {
     const { rerender } = render(<LoginScreen onStudentLogin={() => {}} onAdminLogin={() => {}} />);
-    rerender(<LightScreen />);
+    rerender(<LightScreen name="admin" />);
     expect(attr()).toBeNull();
-    expect(themeColor()).toBe(THEME_COLORS.light);
+    expect(themeColor()).toBe(COLORS.ink);
+  });
+
+  it('theme-color üst kenardaki öğeyle eşleşir: giriş ink, panel ink (siyah başlık), sohbet surface (beyaz)', () => {
+    expect(SCREENS.login.bar).toBe(COLORS.ink);
+    expect(SCREENS.admin.bar).toBe(COLORS.ink);
+    expect(SCREENS.chat.bar).toBe(COLORS.surface);
+    const { rerender } = render(<LightScreen name="chat" />);
+    expect(themeColor()).toBe(COLORS.surface);
+    rerender(<LightScreen name="admin" />);
+    expect(themeColor()).toBe(COLORS.ink);
   });
 });
 
@@ -65,7 +78,8 @@ describe('Pencere açıkken zemin karartma rengindedir', () => {
     it(`${name}: açılınca karartma, kapanınca açık; karartma taşar, pencere görünen alana oturur`, () => {
       const { rerender } = render(<LightScreen>{dialog}</LightScreen>);
       expect(attr()).toBe('karartma');
-      expect(themeColor()).toBe(THEME_COLORS.scrim);
+      // Sohbet ekranının üst kenarı beyaz: çubuk beyazın karartılmış tonunu alır.
+      expect(themeColor()).toBe(scrimOver(COLORS.surface));
 
       const dialogEl = document.querySelector('[role="dialog"]');
       // Pencere kutusu app-viewport ile görünen alana oturur; pencere bu alandan uzun olamaz.
@@ -78,9 +92,19 @@ describe('Pencere açıkken zemin karartma rengindedir', () => {
 
       rerender(<LightScreen />);
       expect(attr()).toBeNull();
-      expect(themeColor()).toBe(THEME_COLORS.light);
+      expect(themeColor()).toBe(COLORS.surface);
     });
   }
+
+  it('panelde pencere açıkken çubuk siyah başlığın karartılmış tonu (ink kalır)', () => {
+    render(
+      <LightScreen name="admin">
+        <ConfirmModal open title="Aşama değiştirilsin mi?" message="" onConfirm={() => {}} onCancel={() => {}} />
+      </LightScreen>,
+    );
+    expect(attr()).toBe('karartma');
+    expect(themeColor()).toBe(COLORS.ink);
+  });
 
   it('iki pencere üst üste açıkken biri kapanınca zemin karartmada kalır', () => {
     const { rerender } = render(
@@ -198,12 +222,23 @@ describe('CSS ve HTML karşılıkları', () => {
     expect(css).toMatch(/\.app-viewport\s*\{[^}]*--app-top[^}]*--app-height/);
   });
 
-  it('theme-color renkleri belirteçlerle aynı; karartma rengi %50 ink + %50 paper karışımı', () => {
-    expect(css).toContain(`--color-ink: ${THEME_COLORS.dark};`);
-    expect(css).toContain(`--color-paper: ${THEME_COLORS.light};`);
-    const channels = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-    const mixed = channels(THEME_COLORS.dark).map((c, i) => Math.round((c + channels(THEME_COLORS.light)[i]) / 2));
-    expect(channels(THEME_COLORS.scrim)).toEqual(mixed);
-    expect(html).toContain(`<meta name="theme-color" content="${THEME_COLORS.light}" />`);
+  it('renkler belirteçlerle aynı; karartma tonu %50 ink karışımı (paper → #828282, surface → #858585)', () => {
+    expect(css).toContain(`--color-ink: ${COLORS.ink};`);
+    expect(css).toContain(`--color-paper: ${COLORS.paper};`);
+    expect(css).toContain(`--color-surface: ${COLORS.surface};`);
+    expect(scrimOver(COLORS.paper)).toBe('#828282');
+    expect(scrimOver(COLORS.surface)).toBe('#858585');
+    expect(scrimOver(COLORS.ink)).toBe(COLORS.ink);
+    expect(html).toContain(`<meta name="theme-color" content="${COLORS.paper}" />`);
+  });
+
+  it('.app-viewport klavye kapalıyken 100dvh, klavye açıkken görünen alan değişkenleri', () => {
+    expect(css).toMatch(/@supports \(height: 100dvh\)\s*\{\s*\.app-viewport\s*\{\s*height: var\(--app-height, 100dvh\);/);
+  });
+
+  it('bütün ana ekranlar app-viewport taşır (yükleniyor, giriş, sohbet, panel)', () => {
+    for (const file of ['src/App.jsx', 'src/components/LoginScreen.jsx', 'src/components/ChatScreen.jsx', 'src/components/admin/AdminScreen.jsx']) {
+      expect(readFileSync(file, 'utf8'), file).toMatch(/className="app-viewport fixed inset-0/);
+    }
   });
 });
