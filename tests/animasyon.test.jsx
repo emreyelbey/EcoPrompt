@@ -65,9 +65,36 @@ describe('Hareket değişkenleri tek yerde', () => {
 
   it('mevcut animasyonlar ortak eğriye bağlı; süreleri korunur', () => {
     expect(css).toContain('--animate-ring: ring 1.4s var(--ease-motion) both;');
-    expect(css).toContain('--animate-grow: grow 0.9s var(--ease-motion) both;');
-    expect(css).toContain('--animate-up: up 0.8s var(--ease-motion) both;');
-    expect(css).toContain('--animate-motion-in: rise var(--motion-normal) var(--ease-motion) both;');
+    expect(css).toContain('--animate-grow: grow 0.9s var(--ease-motion) backwards;');
+    expect(css).toContain('--animate-up: up 0.8s var(--ease-motion) backwards;');
+    expect(css).toContain('--animate-motion-in: rise var(--motion-normal) var(--ease-motion) backwards;');
+  });
+
+  // modal-duzeltme: "both"/"forwards" biten animasyonun son karesini (birim matris) öğede bırakır; transform
+  // taşıyan üst öğe position: fixed çocuklar için konumlandırma bağlamı olur (karartma sekme kabına sıkışıyordu).
+  // jsdom animasyon çalıştırmaz; bu yüzden kural CSS metninden denetlenir (gerçek tarayıcıda da ölçüldü).
+  it('transform canlandıran GİRİŞ animasyonları bitince transform bırakmaz (backwards; both/forwards yok)', () => {
+    // transform değiştiren keyframe adları
+    const transformFrames = [...css.matchAll(/@keyframes\s+([\w-]+)\s*\{([\s\S]*?)\n\s*\}/g)]
+      .filter(([, , body]) => /transform\s*:/.test(body))
+      .map(([, name]) => name);
+    expect(transformFrames).toEqual(expect.arrayContaining(['rise', 'grow', 'up', 'dialog-in', 'sheet-in']));
+    // Çıkış animasyonları (pencere kaldırılana kadar görünmez kalmalı) ve sonsuz döngüler hariç.
+    const exitOrLoop = new Set(['dialog-out', 'sheet-out', 'orbit', 'pulse-dot', 'typing-dot']);
+    const declarations = [...css.matchAll(/(?:--animate-[\w-]+|animation)\s*:\s*([^;]+);/g)].map((m) => m[1]);
+    for (const decl of declarations) {
+      const name = decl.trim().split(/\s+/)[0];
+      if (!transformFrames.includes(name) || exitOrLoop.has(name)) continue;
+      expect(decl, decl).not.toMatch(/(both|forwards)/);
+    }
+    // Pencere girişleri açıkça backwards; çıkışlar both kalır.
+    expect(css).toMatch(/\.motion-dialog\s*\{\s*animation: dialog-in [^;]*backwards;/);
+    expect(css).toMatch(/\.overlay-closing \.motion-dialog\s*\{\s*animation: dialog-out [^;]*both;/);
+  });
+
+  it('kalıcı will-change yok (o da fixed öğeler için konumlandırma bağlamı oluşturur)', () => {
+    expect(css).not.toMatch(/will-change/);
+    for (const file of jsxFiles('src')) expect(readFileSync(file, 'utf8'), file).not.toMatch(/will-change/);
   });
 
   it('keyframe\'ler yalnızca transform / scale / opacity değiştirir (halka: SVG çizgi kayması)', () => {
@@ -119,6 +146,63 @@ describe('motion.js', () => {
     document.documentElement.style.setProperty('--motion-fast', '.2s');
     expect(motionMs('fast')).toBe(200);
     document.documentElement.style.removeProperty('--motion-fast');
+  });
+});
+
+describe('Pencereler portal ile body altında çizilir (modal-duzeltme)', () => {
+  // Transform taşıyan bir kabın içinden açılsa bile pencere kabuğu doğrudan body'nin çocuğudur.
+  function Animated({ children }) {
+    return (
+      <div data-testid="animasyonlu-kap" className="animate-motion-in" style={{ transform: 'translateY(6px)' }}>
+        {children}
+      </div>
+    );
+  }
+  function expectPortaled() {
+    const dialog = screen.getByRole('dialog');
+    expect(screen.getByTestId('animasyonlu-kap').contains(dialog)).toBe(false);
+    expect(dialog.closest('.fixed.inset-0').parentElement).toBe(document.body);
+    return dialog;
+  }
+
+  it('Modal (Kişisel Rapor, Metodoloji, kayıt önizleme): body altında; Esc ve arka plan tıklaması çalışır', () => {
+    const onClose = vi.fn();
+    render(
+      <Animated>
+        <Modal open title="Başlık" onClose={onClose}>İçerik</Modal>
+      </Animated>,
+    );
+    const dialog = expectPortaled();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+    // React olayları portalda da çalışır: karartmaya tıklamak kapatır.
+    fireEvent.click(dialog.closest('.fixed.inset-0').querySelector('.overlay-scrim'));
+    expect(onClose).toHaveBeenCalledTimes(2);
+  });
+
+  it('ConfirmModal: body altında', () => {
+    render(
+      <Animated>
+        <ConfirmModal open title="T" message="M" onConfirm={() => {}} onCancel={() => {}} />
+      </Animated>,
+    );
+    expectPortaled();
+  });
+
+  it('kapanınca pencere body altından tamamen kalkar', () => {
+    const { rerender } = render(
+      <Animated>
+        <Modal open title="Başlık" onClose={() => {}}>İçerik</Modal>
+      </Animated>,
+    );
+    expect(screen.getByRole('dialog')).toBeTruthy();
+    rerender(
+      <Animated>
+        <Modal open={false} title="Başlık" onClose={() => {}}>İçerik</Modal>
+      </Animated>,
+    );
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.body.querySelector('.overlay-scrim')).toBeNull();
   });
 });
 

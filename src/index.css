@@ -61,15 +61,19 @@
   --default-transition-timing-function: var(--ease-motion);
 
   /* Hareketler (TASARIM.md Bölüm 4). Hepsi yalnızca süslemedir; içerik animasyonu beklemez.
-     Süre ve eğri değişkenleri aşağıdaki HAREKET SİSTEMİ bloğundadır (:root). */
+     Süre ve eğri değişkenleri aşağıdaki HAREKET SİSTEMİ bloğundadır (:root).
+     GİRİŞ animasyonları "backwards" doldurur, "both"/"forwards" değil (modal-duzeltme): animasyon bitince
+     öğede transform kalmaz. "both" bitince birim matris bırakıyordu; transform taşıyan bir üst öğe içindeki
+     position: fixed pencere ekrana değil o öğeye göre konumlanıyordu (yönetici paneli → Önizle'de karartma
+     sekme kabına sıkışıyordu). Son kareler öğenin kendi hâliyle aynı olduğu için görünüm değişmez. */
   --animate-orbit: orbit 6s linear infinite;                                     /* logo yörünge noktası */
   --animate-pulse-dot: pulse-dot 2s ease-in-out infinite;                        /* "oturum açık" nabzı */
-  --animate-rise: rise var(--motion-normal) var(--ease-motion) both;             /* yeni mesaj balonu belirmesi */
-  --animate-motion-in: rise var(--motion-normal) var(--ease-motion) both;        /* sekme içeriği, açılan bölüm, kart */
-  --animate-fade-in: fade-in var(--motion-normal) var(--ease-motion) both;       /* pencere karartması */
+  --animate-rise: rise var(--motion-normal) var(--ease-motion) backwards;        /* yeni mesaj balonu belirmesi */
+  --animate-motion-in: rise var(--motion-normal) var(--ease-motion) backwards;        /* sekme içeriği, açılan bölüm, kart */
+  --animate-fade-in: fade-in var(--motion-normal) var(--ease-motion) backwards;       /* pencere karartması */
   --animate-ring: ring 1.4s var(--ease-motion) both;                             /* EkoToken halkası dolması */
-  --animate-grow: grow 0.9s var(--ease-motion) both;                             /* yatay çubuk dolması */
-  --animate-up: up 0.8s var(--ease-motion) both;                                 /* dikey sütun dolması */
+  --animate-grow: grow 0.9s var(--ease-motion) backwards;                        /* yatay çubuk dolması */
+  --animate-up: up 0.8s var(--ease-motion) backwards;                            /* dikey sütun dolması */
   --animate-typing: typing-dot 1.2s infinite;                                     /* "yazıyor" üç nokta */
 
   @keyframes orbit {
@@ -145,13 +149,15 @@
 
 /* Pencereler (src/components/Overlay.jsx): karartma belirir, pencere hafif ölçek + yukarı kayma ile gelir;
    telefonda (sm altı) alttan yükselir. Kapanışta kısa bir çıkış animasyonu oynar (.overlay-closing),
-   sonra pencere kaldırılır (src/lib/motion.js → usePresence). Konum/yükseklik canlandırılmaz:
+   sonra pencere kaldırılır (src/lib/motion.js → usePresence).
+   Giriş "backwards" (bitince transform kalmaz); çıkış "both" kalır: son kare (görünmez) pencere kaldırılana
+   kadar korunmalı, yoksa kaldırılmadan önce bir kare geri parlar. Konum/yükseklik canlandırılmaz:
    klavye ve görünür alan düzeltmeleri (app-viewport) etkilenmez. */
 .overlay-scrim {
-  animation: fade-in var(--motion-normal) var(--ease-motion) both;
+  animation: fade-in var(--motion-normal) var(--ease-motion) backwards;
 }
 .motion-dialog {
-  animation: dialog-in var(--motion-normal) var(--ease-motion) both;
+  animation: dialog-in var(--motion-normal) var(--ease-motion) backwards;
 }
 .overlay-closing {
   pointer-events: none; /* kapanırken ikinci bir dokunuş işlem yapmasın */

@@ -13,7 +13,12 @@
 // Hareket (animasyonlar dalı): karartma belirir, pencere (.motion-dialog sınıfını taşımalı) hafif ölçek +
 // yukarı kayma ile gelir, telefonda alttan yükselir. closing=true iken kısa çıkış animasyonu oynar
 // (index.css → .overlay-closing); pencereyi o süre boyunca sayfada tutmak usePresence'ın işidir (motion.js).
+// Portal (modal-duzeltme): pencere, onu açan bileşenin içinde değil doğrudan <body> altında çizilir.
+// Sebep: transform taşıyan bir üst öğe (ör. belirme animasyonlu sekme kabı) position: fixed için yeni bir
+// konumlandırma bağlamı oluşturur; karartma ekran yerine o kaba sıkışıyordu. body altında hiçbir üst öğe
+// pencereyi sınırlayamaz. React olayları (tıklama, Esc) portalda da bileşen ağacı üzerinden çalışır.
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useOverlayTheme } from '../lib/screenTheme.js';
 
 const EDGE_GAP = 12; // odaklanan kutu ile kayan bölümün kenarı arasında bırakılan boşluk (px)
@@ -50,7 +55,7 @@ export default function Overlay({ onBackdropClick, closing = false, children }) 
     };
   }, []);
 
-  return (
+  return createPortal(
     <div className={`fixed inset-0 z-50 ${closing ? 'overlay-closing' : ''}`} data-kapaniyor={closing ? 'true' : undefined}>
       {/* Karartma: ekranın her yönünde dışarı taşar (klavyenin arkası, aşırı kaydırma). */}
       <div aria-hidden="true" className="overlay-scrim fixed bg-ink/50" onClick={onBackdropClick} />
@@ -64,6 +69,7 @@ export default function Overlay({ onBackdropClick, closing = false, children }) 
       >
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

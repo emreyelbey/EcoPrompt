@@ -232,6 +232,22 @@ describe('Yönetici paneli', () => {
     expect(apiRequest).toHaveBeenCalledWith('/api/admin/record?id=r1', { token: 't' });
   });
 
+  // modal-duzeltme: Önizle penceresi sekme kabının (belirme animasyonlu, transform taşıyabilir) içinde değil,
+  // doğrudan body altında çizilir; yoksa karartma ekran yerine sekme kabına sıkışır.
+  it('kayıt önizleme penceresi portal ile body altında; sekme kabının içinde değil', async () => {
+    mockServer();
+    render(<AdminScreen token="t" onLogout={() => {}} />);
+    await screen.findByText('Aktif Katılımcılar');
+    fireEvent.click(screen.getByRole('button', { name: 'Öğrenci Kayıtları (1)' }));
+    fireEvent.click(screen.getByText('Fotosentez nedir?'));
+    await screen.findByText('Tam yanıt');
+    const dialog = screen.getByRole('dialog');
+    expect(screen.getByTestId('sekme-icerik').contains(dialog)).toBe(false);
+    expect(screen.getByTestId('panel-kaydirma').contains(dialog)).toBe(false);
+    const shell = dialog.closest('.fixed.inset-0');
+    expect(shell.parentElement).toBe(document.body);
+  });
+
   it('örnek veri önizlemesi: sabit bant, her kartta ÖRNEK VERİ etiketi, Excel/CSV pasif, istek yok', async () => {
     mockServer();
     render(<AdminScreen token="t" onLogout={() => {}} />);
