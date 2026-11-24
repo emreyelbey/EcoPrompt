@@ -1,7 +1,16 @@
-// Model sınıfı renkleri testi (src/lib/modelColors.js): kontrast ve açıklık ayrışması.
-// Kontrast: WCAG göreli parlaklık formülü. Grafik öğeleri için en az 3:1 gerekir.
+// Model sınıfı görünümü testi (src/lib/modelColors.js): renk + biçim.
+// Hedef: üç sınıf gri tonlu çıktıda da ayırt edilsin → Hafif DOLU, Standart İÇİ BOŞ (çerçeveli), Akıl Yürütme DOLU;
+// iki dolu sınıf açıklıkça da farklı olsun. Kontrast: WCAG göreli parlaklık formülü (grafik öğesi için en az 3:1).
 import { describe, it, expect } from 'vitest';
-import { MODEL_COLORS, MODEL_COLORS_ON_DARK, MODEL_SHORT_NAMES, modelLegend, modelColor } from '../src/lib/modelColors.js';
+import {
+  MODEL_STYLES,
+  MODEL_SHORT_NAMES,
+  TONE_BACKGROUNDS,
+  STANDARD_STROKE_WIDTH,
+  modelStyle,
+  modelSwatchStyle,
+  modelLegend,
+} from '../src/lib/modelColors.js';
 import { BRAND_PATTERNS } from './helpers/brand-patterns.js';
 
 // Onaltılık rengin göreli parlaklığı (0 = siyah, 1 = beyaz).
@@ -18,43 +27,69 @@ function contrast(a, b) {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-const PAPER = '#FAFAF9';
-const INK = '#0A0A0B';
+const TONES = ['light', 'dark', 'chart'];
 
-describe('Model sınıfı renkleri', () => {
-  it('açık zeminde her renk kâğıda karşı en az 3:1', () => {
-    for (const color of Object.values(MODEL_COLORS)) expect(contrast(color, PAPER)).toBeGreaterThanOrEqual(3);
+describe('Model sınıfı görünümü (renk + biçim)', () => {
+  it('her zeminde biçim: Hafif dolu, Standart içi boş + çerçeve, Akıl Yürütme dolu', () => {
+    for (const tone of TONES) {
+      const s = MODEL_STYLES[tone];
+      expect([s.light.hollow, s.standard.hollow, s.reasoning.hollow], tone).toEqual([false, true, false]);
+      expect(s.light.stroke, tone).toBeNull();
+      expect(s.reasoning.stroke, tone).toBeNull();
+      expect(s.standard.stroke, tone).toBeTruthy();
+    }
   });
 
-  it('koyu zeminde her renk siyah karta karşı en az 3:1', () => {
-    for (const color of Object.values(MODEL_COLORS_ON_DARK)) expect(contrast(color, INK)).toBeGreaterThanOrEqual(3);
-  });
-
-  it('üç renk açıklıkça belirgin ayrışır (yan yana iki renk arasında en az 1,8:1)', () => {
-    for (const palette of [MODEL_COLORS, MODEL_COLORS_ON_DARK]) {
-      const sorted = Object.values(palette).sort((a, b) => luminance(b) - luminance(a));
-      for (let i = 0; i < sorted.length - 1; i++) {
-        expect(contrast(sorted[i], sorted[i + 1])).toBeGreaterThanOrEqual(1.8);
+  it('dolu sınıflar zemine karşı en az 3:1 (görünür dolu şekil)', () => {
+    for (const tone of TONES) {
+      const bg = TONE_BACKGROUNDS[tone];
+      for (const id of ['light', 'reasoning']) {
+        expect(contrast(MODEL_STYLES[tone][id].fill, bg), `${tone}/${id}`).toBeGreaterThanOrEqual(3);
       }
     }
   });
 
-  it('açık zeminde açıklık sırası: Hafif > Standart > Akıl Yürütme (Akıl Yürütme = mürekkep siyahı)', () => {
-    expect(luminance(MODEL_COLORS.light)).toBeGreaterThan(luminance(MODEL_COLORS.standard));
-    expect(luminance(MODEL_COLORS.standard)).toBeGreaterThan(luminance(MODEL_COLORS.reasoning));
-    expect(MODEL_COLORS.reasoning).toBe(INK);
+  it('Standart: çerçeve zemine karşı en az 3:1, dolgu zemine çok yakın (içi boş okunur)', () => {
+    for (const tone of TONES) {
+      const bg = TONE_BACKGROUNDS[tone];
+      const { fill, stroke } = MODEL_STYLES[tone].standard;
+      expect(contrast(stroke, bg), `${tone} çerçeve`).toBeGreaterThanOrEqual(3);
+      expect(contrast(fill, bg), `${tone} dolgu`).toBeLessThan(1.5);
+    }
   });
 
-  it('lejant sabit sırada ve yalnızca Türkçe sınıf adları; marka adı yok', () => {
+  it('gri tonlu çıktıda ayırt edilir: boş sınıf biçimle, iki dolu sınıf açıklıkla (en az 1,8:1)', () => {
+    for (const tone of TONES) {
+      const s = MODEL_STYLES[tone];
+      // Biçim imzası: dolu/boş + dolgu parlaklığı. Üç imza birbirinden farklı olmalı.
+      const filled = [s.light.fill, s.reasoning.fill];
+      expect(contrast(filled[0], filled[1]), tone).toBeGreaterThanOrEqual(1.8);
+      expect(s.standard.hollow && !s.light.hollow && !s.reasoning.hollow).toBe(true);
+    }
+  });
+
+  it('açık zeminde Akıl Yürütme mürekkep siyahı, koyu zeminde açık ton', () => {
+    expect(MODEL_STYLES.light.reasoning.fill).toBe('#0A0A0B');
+    expect(MODEL_STYLES.dark.reasoning.fill).toBe('#FAFAFA');
+  });
+
+  it('HTML stili: çerçeve içe gölgeyle çizilir (boyut değişmez); dolu sınıfta gölge yok', () => {
+    expect(modelSwatchStyle('standard')).toEqual({
+      backgroundColor: '#FAFAF9',
+      boxShadow: `inset 0 0 0 ${STANDARD_STROKE_WIDTH}px #0A0A0B`,
+    });
+    expect(modelSwatchStyle('light', 'dark')).toEqual({ backgroundColor: '#34D399', boxShadow: undefined });
+  });
+
+  it('lejant sabit sırada, yalnızca Türkçe sınıf adları; marka adı yok', () => {
     expect(modelLegend().map((x) => x.name)).toEqual(['Hafif', 'Standart', 'Akıl Yürütme']);
-    expect(modelLegend('dark')[2].color).toBe(MODEL_COLORS_ON_DARK.reasoning);
+    expect(modelLegend('dark')[1].style).toEqual(modelSwatchStyle('standard', 'dark'));
     for (const name of Object.values(MODEL_SHORT_NAMES)) {
       for (const pattern of BRAND_PATTERNS) expect(pattern.test(name)).toBe(false);
     }
   });
 
-  it('bilinmeyen sınıf nötr gri döner', () => {
-    expect(modelColor('yok')).toBe('#A1A1AA');
-    expect(modelColor('light', 'dark')).toBe(MODEL_COLORS_ON_DARK.light);
+  it('bilinmeyen sınıf nötr gri dolu döner', () => {
+    expect(modelStyle('yok')).toEqual({ fill: '#A1A1AA', stroke: null, hollow: false });
   });
 });

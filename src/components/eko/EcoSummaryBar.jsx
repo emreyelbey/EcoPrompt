@@ -5,9 +5,10 @@
 //   - xl ve üstü → BİRİKİM SÜTUNU: okuma sütununun sağındaki boşlukta, kutusuz, solunda ince çizgi.
 //     Üstte etiket + toplamlar, ortada ince dikey yığılmış sütun (her istem bir dilim; eskisi altta, en yenisi
 //     üstte; sütunun tamamı = oturum toplamı), altta günlük karşılık.
-// RENK = MODEL SINIFI (src/lib/modelColors.js, tek kaynak): Hafif yeşil, Standart gri, Akıl Yürütme siyah
-// (siyah kartta beyaz). Her grafiğin altında renk açıklaması (lejant) vardır. En yeni istem renkle değil,
-// yanındaki küçük bir nokta işaretiyle gösterilir. Model sınıfı mesajın kendi modelId alanından gelir.
+// RENK + BİÇİM = MODEL SINIFI (src/lib/modelColors.js, tek kaynak): Hafif dolu yeşil, Standart içi boş + çerçeve,
+// Akıl Yürütme dolu siyah (siyah kartta dolu açık ton). Her grafiğin altında açıklama (lejant) vardır.
+// En yeni istem renkle değil, yanındaki küçük bir nokta işaretiyle gösterilir. Model sınıfı mesajın kendi
+// modelId alanından gelir.
 // İki biçimde de aynı bilgiler görünür (istem, token, enerji, su, CO₂, günlük karşılık): müdahale içeriği azalmaz.
 // Metinler önceki özet şeridiyle aynıdır. Toplamlar src/lib/ecoSummary.js → summarizeSession, çizim ölçekleri
 // src/lib/ecoVisual.js (promptColumns, stackSlices) ile hesaplanır; yeni formül yoktur.
@@ -15,7 +16,7 @@
 import { fmtSmart } from '../../lib/format.js';
 import { MODEL_SCALES } from '../../lib/footprint.js';
 import { promptColumns, stackSlices } from '../../lib/ecoVisual.js';
-import { modelColor, modelLegend } from '../../lib/modelColors.js';
+import { modelLegend, modelSwatchStyle } from '../../lib/modelColors.js';
 
 export default function EcoSummaryBar({ summary }) {
   return (
@@ -54,11 +55,8 @@ function Legend({ tone, className = '' }) {
     <ul className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] ${className}`}>
       {modelLegend(tone).map((item) => (
         <li key={item.id} className="flex items-center gap-1.5">
-          <span
-            className={`w-2 h-2 rounded-[2px] ${tone === 'light' ? 'ring-1 ring-inset ring-black/5' : ''}`}
-            style={{ backgroundColor: item.color }}
-            aria-hidden="true"
-          />
+          {/* Renk örneği dilimlerle aynı biçimde: dolu / içi boş (çerçeveli) / dolu. */}
+          <span className="w-2.5 h-2.5 rounded-[2px]" style={item.style} aria-hidden="true" />
           {item.name}
         </li>
       ))}
@@ -111,7 +109,7 @@ function SessionCard({ summary }) {
                   style={{
                     width: barWidth,
                     height: `${col.height}%`,
-                    backgroundColor: modelColor(col.modelId, 'dark'),
+                    ...modelSwatchStyle(col.modelId, 'dark'),
                     animationDelay: `${Math.min(i, 6) * 0.05}s`,
                   }}
                 />
@@ -163,7 +161,7 @@ function SessionColumn({ summary }) {
       {/* Orta: dikey yığılmış birikim sütunu. Kalan yüksekliğin tamamını kaplar; sütunun tamamı oturum toplamıdır.
           flex-col-reverse: dizideki ilk (en eski) istem en altta, en yenisi en üstte durur.
           Her dilimin yüksekliği flex-grow ile o istemin payına oranlanır (dilimler arası 2 px boşluk düşüldükten
-          sonra). Dilimin rengi o istemin model sınıfıdır. Yeni istem gelince yeni dilim alttan dolarak belirir,
+          sonra). Dilimin rengi ve biçimi o istemin model sınıfıdır. Yeni istem gelince yeni dilim alttan dolarak belirir,
           diğerleri yumuşakça küçülür ("hareketi azalt" açıksa ikisi de animasyonsuz). */}
       <div className="flex-1 min-h-0 flex">
         <div
@@ -184,7 +182,7 @@ function SessionColumn({ summary }) {
                 data-newest={isNewest ? 'true' : undefined}
                 // group: üzerine gelince veya klavyeyle odaklanınca yanındaki etiket görünür.
                 className="group relative min-h-[2px] rounded-[3px] outline-none animate-up origin-up transition-[flex-grow] duration-700 ease-out focus-visible:ring-2 focus-visible:ring-accent-ink focus-visible:ring-offset-2"
-                style={{ flexGrow: slice.share, flexBasis: 0, backgroundColor: modelColor(slice.modelId) }}
+                style={{ flexGrow: slice.share, flexBasis: 0, ...modelSwatchStyle(slice.modelId) }}
               >
                 {/* En yeni istem işareti: dilimin sağında küçük nokta (renk yerine işaret). */}
                 {isNewest && (

@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, within, act } from '@testing-library/react';
 import { calculateFootprint } from '../src/lib/footprint.js';
 import { fmtSmart } from '../src/lib/format.js';
-import { MODEL_COLORS } from '../src/lib/modelColors.js';
+import { modelSwatchStyle } from '../src/lib/modelColors.js';
 
 const apiRequest = vi.fn();
 vi.mock('../src/lib/api.js', () => ({ apiRequest: (...args) => apiRequest(...args) }));
@@ -115,7 +115,7 @@ describe('EkoToken görünümü (Deney grubu + Son Test)', () => {
 
   // Yön 2b, xl ve üstü: oturum özeti "birikim sütunu" olarak da çizilir (xl altında siyah kart).
   // Müdahale bilgisi azalmamalı: iki biçimde de istem, token, enerji, su, CO₂ ve günlük karşılık bulunur.
-  // Renk = model sınıfı (src/lib/modelColors.js); en yeni istem renkle değil, işaretle (data-newest) belirtilir.
+  // Renk + biçim = model sınıfı (src/lib/modelColors.js); en yeni istem renkle değil, işaretle (data-newest) belirtilir.
   it('birikim sütunu: her istem etiketli bir dilim, renk = model sınıfı, en yenisi işaretli; iki biçimde de bütün bilgiler var', async () => {
     const a = ecoMessage('a', 'light', 100, 50);
     const b = ecoMessage('b', 'standard', 200, 100);
@@ -130,14 +130,18 @@ describe('EkoToken görünümü (Deney grubu + Son Test)', () => {
     expect(slices[1].getAttribute('aria-label')).toContain('2. istem · Standart Model · ');
     expect(slices[0].getAttribute('tabindex')).toBe('0'); // klavyeyle odaklanabilir
 
+    // Görünüm tek kaynaktan (modelColors.js): Hafif dolu, Standart içi boş + çerçeve (içe gölge).
     // jsdom renkleri rgb(...) biçimine çevirir; beklenen değer aynı yoldan üretilir.
-    const rgb = (hex) => {
+    const asDom = (style) => {
       const probe = document.createElement('div');
-      probe.style.backgroundColor = hex;
-      return probe.style.backgroundColor;
+      Object.assign(probe.style, style);
+      return { bg: probe.style.backgroundColor, shadow: probe.style.boxShadow };
     };
-    expect(slices[0].style.backgroundColor).toBe(rgb(MODEL_COLORS.light));
-    expect(slices[1].style.backgroundColor).toBe(rgb(MODEL_COLORS.standard));
+    const domStyle = (el) => ({ bg: el.style.backgroundColor, shadow: el.style.boxShadow });
+    expect(domStyle(slices[0])).toEqual(asDom(modelSwatchStyle('light')));
+    expect(domStyle(slices[1])).toEqual(asDom(modelSwatchStyle('standard')));
+    expect(slices[1].style.boxShadow).toContain('inset'); // Standart: çerçeveli, içi boş
+    expect(slices[0].style.boxShadow).toBe(''); // Hafif: dolu, çerçevesiz
     expect(slices[1].getAttribute('data-newest')).toBe('true'); // en yeni istem işaretli
     expect(slices[0].hasAttribute('data-newest')).toBe(false);
 

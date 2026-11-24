@@ -24,12 +24,12 @@ import { Droplets, Zap, Cloud } from 'lucide-react';
 import Modal from '../Modal.jsx';
 import { BrandMark } from '../ui/BrandMark.jsx';
 import { fmtNum, fmtSmart } from '../../lib/format.js';
-import { MODEL_COLORS } from '../../lib/modelColors.js';
+import { modelStyle, modelSwatchStyle, STANDARD_STROKE_WIDTH } from '../../lib/modelColors.js';
 
-// Model sınıfı renkleri tek kaynaktan gelir (src/lib/modelColors.js): Hafif yeşil, Standart gri, Akıl Yürütme
-// siyah. Birikim sütunu ve oturum kartıyla aynı eşleme; her model sınıfı her grafikte hep aynı rengi alır.
-// Renk tek başına bilgi taşımaz: adlar ve sayılar yazılıdır.
-// Token grafiği (Girdi / Çıktı) model sınıfı göstermez; bu yüzden model renkleriyle (yeşil, koyu gri, siyah)
+// Model sınıfı görünümü tek kaynaktan gelir (src/lib/modelColors.js, 'chart' zemini): Hafif dolu yeşil,
+// Standart çok açık gri dolgu + koyu çerçeve, Akıl Yürütme dolu siyah. Birikim sütunu ve oturum kartıyla aynı
+// eşleme. Renk/biçim tek başına bilgi taşımaz: adlar ve sayılar yazılıdır.
+// Token grafiği (Girdi / Çıktı) model sınıfı göstermez; bu yüzden model renkleriyle (yeşil, siyah)
 // karışmayan tonlar kullanılır: açık gri ve nötr çivit. İkisi de beyaz zemine karşı en az 3:1.
 const TOKEN_COLORS = { Girdi: '#8A8A93', Çıktı: '#4F46E5' };
 // Birikimli su / enerji / CO₂ grafikleri (her biri kendi grafiğinde, tek seri). Model sınıfı göstermedikleri için
@@ -156,9 +156,18 @@ function ReportBody({ summary }) {
                   stroke="#ffffff"
                   strokeWidth={2}
                 >
-                  {summary.modelDistribution.map((item) => (
-                    <Cell key={item.id} fill={MODEL_COLORS[item.id]} />
-                  ))}
+                  {/* Standart: çok açık gri dolgu + koyu çerçeve; diğerleri dolu (aralarında beyaz boşluk çizgisi). */}
+                  {summary.modelDistribution.map((item) => {
+                    const look = modelStyle(item.id, 'chart');
+                    return (
+                      <Cell
+                        key={item.id}
+                        fill={look.fill}
+                        stroke={look.stroke ?? '#ffffff'}
+                        strokeWidth={look.stroke ? STANDARD_STROKE_WIDTH : 2}
+                      />
+                    );
+                  })}
                 </Pie>
                 <Tooltip formatter={(v) => `${v} istem`} />
               </PieChart>
@@ -169,7 +178,7 @@ function ReportBody({ summary }) {
             {summary.modelDistribution.map((item) => (
               <li key={item.id} className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-2 text-text-2b">
-                  <span className="w-3 h-3 rounded-full" style={{ backgroundColor: MODEL_COLORS[item.id] }} />
+                  <span className="w-3 h-3 rounded-full" style={modelSwatchStyle(item.id, 'chart')} aria-hidden="true" />
                   {item.name}
                 </span>
                 <span className="font-mono text-[13px] text-ink">
