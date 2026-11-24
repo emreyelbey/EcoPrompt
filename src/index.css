@@ -98,12 +98,27 @@ html,
 body {
   height: 100%;
   overflow: hidden; /* Yalnızca <main> kayar (proje rehberi, Bölüm 8). */
+  overscroll-behavior: none; /* Sayfa kenardan çekilince zıplamasın (zemin rengi açığa çıkmasın). */
+}
+
+html {
+  background: var(--color-paper);
+  color-scheme: light;
 }
 
 body {
   background: var(--color-paper);
   color: var(--color-ink);
   -webkit-font-smoothing: antialiased;
+}
+
+/* Giriş ekranı açıkken (src/lib/screenTheme.js → <html data-zemin="koyu">) sayfa zemini de koyudur.
+   Böylece klavye açılınca veya aşırı kaydırmada koyu ekranın altında açık şerit görünmez.
+   Giriş ekranından çıkınca öznitelik silinir, açık zemin geri gelir. */
+html[data-zemin='koyu'],
+html[data-zemin='koyu'] body {
+  background: var(--color-ink);
+  color-scheme: dark;
 }
 
 /* Çubuk ve sütunların hangi kenardan dolacağı (grow: soldan, up: alttan). */
