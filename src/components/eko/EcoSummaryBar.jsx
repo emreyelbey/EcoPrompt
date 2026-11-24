@@ -16,13 +16,16 @@ export default function EcoSummaryBar({ summary }) {
   return (
     <div data-testid="eko-ozet" className="rounded-[18px] bg-ink text-on-dark px-4 py-3.5 flex flex-col gap-2">
       {/* Üst satır tam genişlikte: 360 px'te sütun grafiği yanında sayıların kaymaması için ayrı satırdadır. */}
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="text-[11px] font-medium tracking-[0.1em] uppercase text-on-dark-2">Bu oturum</span>
-        <span className="font-mono text-[11px] text-on-dark-2 truncate">
+      {/* Yan panelde (xl, 220–280 px) başlık ve sayılar alt alta dizilir; sayılar kırpılmaz. */}
+      <div className="flex items-baseline justify-between gap-3 xl:flex-col xl:items-start xl:gap-1">
+        <span className="shrink-0 text-[11px] font-medium tracking-[0.1em] uppercase text-on-dark-2">Bu oturum</span>
+        <span className="font-mono text-[11px] text-on-dark-2 truncate xl:whitespace-normal">
           {prompts} İstem · {totalTokens.toLocaleString('tr-TR')} Token
         </span>
       </div>
-      <div className="flex items-end justify-between gap-3">
+      {/* xl ve üstünde kart okuma sütununun yanındaki dar panelde durur (220–280 px): sayılar ve sütun grafiği
+          yan yana sığmadığı için alt alta dizilir. */}
+      <div className="flex items-end justify-between gap-3 xl:flex-col xl:items-stretch">
         <div className="min-w-0 flex flex-col gap-1">
           <span className="font-mono text-[26px] leading-7">
             {fmtSmart(energy)}
@@ -34,7 +37,8 @@ export default function EcoSummaryBar({ summary }) {
         </div>
 
         {columns.length > 0 && (
-          <div className="shrink-0 flex flex-col items-end gap-1.5">
+          <div className="shrink-0 flex flex-col items-end gap-1.5 xl:items-start xl:flex-col-reverse xl:pt-1">
+
             {/* Sütun grafiği: ekran okuyucuya tek cümleyle anlatılır (değerler zaten yukarıda yazılı). */}
             <div
               role="img"
