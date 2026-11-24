@@ -24,14 +24,17 @@ import { Droplets, Zap, Cloud } from 'lucide-react';
 import Modal from '../Modal.jsx';
 import { BrandMark } from '../ui/BrandMark.jsx';
 import { fmtNum, fmtSmart } from '../../lib/format.js';
+import { MODEL_COLORS } from '../../lib/modelColors.js';
 
-// Renkler (Yön 2b tasarım belirteçleri, src/index.css): mürekkep siyahı, gri ve EkoToken yeşili.
-// Üç model sınıfı parlaklıkça belirgin farklı tonlardır (renk körlüğünde de ayırt edilir); Hafif Model yeşildir.
-// Her model sınıfı her grafikte hep aynı rengi alır. Renk tek başına bilgi taşımaz: adlar ve sayılar yazılıdır.
-const MODEL_COLORS = { light: '#10B981', standard: '#0A0A0B', reasoning: '#A1A1AA' };
-const TOKEN_COLORS = { Girdi: '#A1A1AA', Çıktı: '#0A0A0B' };
-// Birikimli su / enerji / CO₂ grafikleri (her biri kendi grafiğinde, tek seri): EkoToken yeşili.
-const TREND_COLOR = '#10B981';
+// Model sınıfı renkleri tek kaynaktan gelir (src/lib/modelColors.js): Hafif yeşil, Standart gri, Akıl Yürütme
+// siyah. Birikim sütunu ve oturum kartıyla aynı eşleme; her model sınıfı her grafikte hep aynı rengi alır.
+// Renk tek başına bilgi taşımaz: adlar ve sayılar yazılıdır.
+// Token grafiği (Girdi / Çıktı) model sınıfı göstermez; bu yüzden model renkleriyle (yeşil, koyu gri, siyah)
+// karışmayan tonlar kullanılır: açık gri ve nötr çivit. İkisi de beyaz zemine karşı en az 3:1.
+const TOKEN_COLORS = { Girdi: '#8A8A93', Çıktı: '#4F46E5' };
+// Birikimli su / enerji / CO₂ grafikleri (her biri kendi grafiğinde, tek seri). Model sınıfı göstermedikleri için
+// yeşil (= Hafif) değil, model renkleriyle karışmayan nötr çivit kullanılır.
+const TREND_COLOR = '#4F46E5';
 
 // Eksen ve ızgara çizgileri soluk tutulur; veri öne çıkar.
 const AXIS_TICK = { fontSize: 11, fill: '#71717A', fontFamily: 'JetBrains Mono, monospace' };

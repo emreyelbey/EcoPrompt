@@ -25,6 +25,7 @@ function round4(value) {
  *   equivalents: object,
  *   perInteraction: { name: string, Girdi: number, Çıktı: number, Su: number, Enerji: number, CO2: number }[],
  *   energyPerPrompt: number[],
+ *   modelPerPrompt: string[],
  *   modelDistribution: { id: string, name: string, count: number, pct: number }[],
  * }}
  */
@@ -81,6 +82,9 @@ export function summarizeSession(messages) {
     // Her istemin kendi enerjisi (Wh, ortalama katsayı), eskiden yeniye. EkoToken oturum kartındaki
     // küçük sütun grafiği bunu kullanır (birikimli değil; her sütun tek bir istemdir).
     energyPerPrompt: ecoMessages.map((m) => num(m.eco.energyAvg)),
+    // Her istemin model sınıfı (aynı sırada). Mesajın kendi modelId alanıdır; yeni veri çekilmez.
+    // Grafiklerde renk = model sınıfı (src/lib/modelColors.js).
+    modelPerPrompt: ecoMessages.map((m) => m.modelId),
     modelDistribution,
   };
 }

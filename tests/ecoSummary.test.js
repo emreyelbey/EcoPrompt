@@ -61,6 +61,7 @@ describe('summarizeSession', () => {
     const b = msg('light', 40, 10);
     const s = summarizeSession([a, b]);
     expect(s.energyPerPrompt).toEqual([a.eco.energyAvg, b.eco.energyAvg]);
+    expect(s.modelPerPrompt).toEqual(['reasoning', 'light']); // aynı sırada model sınıfı
     expect(summarizeSession([]).energyPerPrompt).toEqual([]);
   });
 

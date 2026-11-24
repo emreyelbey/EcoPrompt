@@ -57,8 +57,8 @@ describe('promptColumns', () => {
     const values = Array.from({ length: 15 }, (_, i) => i + 1); // 1..15
     const cols = promptColumns(values);
     expect(cols).toHaveLength(12);
-    expect(cols[0]).toEqual({ index: 3, value: 4, height: (4 / 15) * 100 });
-    expect(cols.at(-1)).toEqual({ index: 14, value: 15, height: 100 });
+    expect(cols[0]).toEqual({ index: 3, value: 4, height: (4 / 15) * 100, modelId: null });
+    expect(cols.at(-1)).toEqual({ index: 14, value: 15, height: 100, modelId: null });
   });
   it('çok küçük değer en az %8, 0 değer 0 yükseklik; boş liste boş', () => {
     const cols = promptColumns([1000, 1, 0]);
@@ -78,10 +78,19 @@ describe('stackSlices (birikim sütunu)', () => {
   });
   it('toplam 0 veya geçersiz girdi: paylar 0, NaN yok', () => {
     expect(stackSlices([0, 0])).toEqual([
-      { index: 0, value: 0, share: 0 },
-      { index: 1, value: 0, share: 0 },
+      { index: 0, value: 0, share: 0, modelId: null },
+      { index: 1, value: 0, share: 0, modelId: null },
     ]);
     expect(stackSlices(undefined)).toEqual([]);
-    expect(stackSlices([NaN, 2])[0]).toEqual({ index: 0, value: 0, share: 0 });
+    expect(stackSlices([NaN, 2])[0]).toEqual({ index: 0, value: 0, share: 0, modelId: null });
+  });
+});
+
+describe('dilim ve sütunlarda model sınıfı (renk = model sınıfı)', () => {
+  it('stackSlices ve promptColumns her istemin model sınıfını aynı sırada taşır', () => {
+    const models = ['light', 'reasoning', 'standard'];
+    expect(stackSlices([1, 2, 3], models).map((s) => s.modelId)).toEqual(models);
+    // promptColumns son 2 istemi gösterirse sınıflar da son 2 istemin sınıflarıdır.
+    expect(promptColumns([1, 2, 3], models, 2).map((c) => c.modelId)).toEqual(['reasoning', 'standard']);
   });
 });

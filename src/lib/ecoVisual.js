@@ -64,21 +64,30 @@ export function savingsBars(savingsPct) {
  * Birikim sütunu (xl ve üstü, EkoToken yan alanı): her istem bir dilim; sütunun tamamı oturum toplamıdır.
  * share = o istemin enerjisi / oturum toplam enerjisi (0–1). Toplam 0 ise bütün paylar 0.
  * Sıra eskiden yeniye korunur (çizimde eskisi altta, en yenisi üstte).
- * @returns {{ index: number, value: number, share: number }[]}  index: istemin oturumdaki sırası (0'dan)
+ * modelPerPrompt (isteğe bağlı): her istemin model sınıfı, aynı sırada (dilim rengi = model sınıfı).
+ * @returns {{ index: number, value: number, share: number, modelId: string|null }[]}
+ *   index: istemin oturumdaki sırası (0'dan)
  */
-export function stackSlices(energyPerPrompt) {
+export function stackSlices(energyPerPrompt, modelPerPrompt = []) {
   const values = (Array.isArray(energyPerPrompt) ? energyPerPrompt : []).map((v) => clamp(v, 0, Infinity));
   const total = values.reduce((sum, v) => sum + v, 0);
-  return values.map((value, index) => ({ index, value, share: total > 0 ? value / total : 0 }));
+  return values.map((value, index) => ({
+    index,
+    value,
+    share: total > 0 ? value / total : 0,
+    modelId: modelPerPrompt?.[index] ?? null,
+  }));
 }
 
 /**
  * Oturum kartındaki küçük sütun grafiği: son `limit` istemin enerjisi ve her sütunun yüksekliği (yüzde).
  * Sütun yüksekliği o istemin enerjisi / gösterilen en büyük enerji. Çok küçük değerler de görünsün diye
  * sütun en az %8 yüksekliktedir (değer 0 ise 0).
- * @returns {{ index: number, value: number, height: number }[]}  index: istemin oturumdaki sırası (0'dan)
+ * modelPerPrompt (isteğe bağlı): her istemin model sınıfı, aynı sırada (sütun rengi = model sınıfı).
+ * @returns {{ index: number, value: number, height: number, modelId: string|null }[]}
+ *   index: istemin oturumdaki sırası (0'dan)
  */
-export function promptColumns(energyPerPrompt, limit = 12) {
+export function promptColumns(energyPerPrompt, modelPerPrompt = [], limit = 12) {
   const values = Array.isArray(energyPerPrompt) ? energyPerPrompt : [];
   const start = Math.max(0, values.length - limit);
   const shown = values.slice(start);
@@ -86,6 +95,6 @@ export function promptColumns(energyPerPrompt, limit = 12) {
   return shown.map((v, i) => {
     const value = clamp(v, 0, Infinity);
     const height = top > 0 && value > 0 ? Math.max(8, (value / top) * 100) : 0;
-    return { index: start + i, value, height };
+    return { index: start + i, value, height, modelId: modelPerPrompt?.[start + i] ?? null };
   });
 }

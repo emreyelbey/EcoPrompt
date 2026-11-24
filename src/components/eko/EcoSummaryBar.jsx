@@ -4,13 +4,18 @@
 //     büyük mono oturum enerjisi, su · CO₂; sağda son 12 istemin küçük sütun grafiği; altta günlük karşılık.
 //   - xl ve üstü → BİRİKİM SÜTUNU: okuma sütununun sağındaki boşlukta, kutusuz, solunda ince çizgi.
 //     Üstte etiket + toplamlar, ortada ince dikey yığılmış sütun (her istem bir dilim; eskisi altta, en yenisi
-//     üstte ve yeşil; sütunun tamamı = oturum toplamı), altta günlük karşılık.
+//     üstte; sütunun tamamı = oturum toplamı), altta günlük karşılık.
+// RENK = MODEL SINIFI (src/lib/modelColors.js, tek kaynak): Hafif yeşil, Standart gri, Akıl Yürütme siyah
+// (siyah kartta beyaz). Her grafiğin altında renk açıklaması (lejant) vardır. En yeni istem renkle değil,
+// yanındaki küçük bir nokta işaretiyle gösterilir. Model sınıfı mesajın kendi modelId alanından gelir.
 // İki biçimde de aynı bilgiler görünür (istem, token, enerji, su, CO₂, günlük karşılık): müdahale içeriği azalmaz.
 // Metinler önceki özet şeridiyle aynıdır. Toplamlar src/lib/ecoSummary.js → summarizeSession, çizim ölçekleri
 // src/lib/ecoVisual.js (promptColumns, stackSlices) ile hesaplanır; yeni formül yoktur.
 // Mobil (Dilim 8d): yazarken (klavye açık) bileşenin tamamı ChatScreen tarafından mobilde gizlenir.
 import { fmtSmart } from '../../lib/format.js';
+import { MODEL_SCALES } from '../../lib/footprint.js';
 import { promptColumns, stackSlices } from '../../lib/ecoVisual.js';
+import { modelColor, modelLegend } from '../../lib/modelColors.js';
 
 export default function EcoSummaryBar({ summary }) {
   return (
@@ -37,12 +42,38 @@ function countsText({ prompts, totalTokens }) {
   return `${prompts} İstem · ${totalTokens.toLocaleString('tr-TR')} Token`;
 }
 
+// Dilim/sütun etiketi: "3. istem · Standart Model · 0,422 Wh" (yalnızca Türkçe sınıf adı).
+function sliceLabel(index, modelId, value) {
+  const name = MODEL_SCALES[modelId]?.name ?? 'Model';
+  return `${index + 1}. istem · ${name} · ${fmtSmart(value)} Wh`;
+}
+
+// Renk açıklaması: küçük renk örneği + kısa sınıf adı. tone: 'light' (kâğıt zemin) | 'dark' (siyah kart).
+function Legend({ tone, className = '' }) {
+  return (
+    <ul className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] ${className}`}>
+      {modelLegend(tone).map((item) => (
+        <li key={item.id} className="flex items-center gap-1.5">
+          <span
+            className={`w-2 h-2 rounded-[2px] ${tone === 'light' ? 'ring-1 ring-inset ring-black/5' : ''}`}
+            style={{ backgroundColor: item.color }}
+            aria-hidden="true"
+          />
+          {item.name}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /* ---------------------------------------------------------------------------
  * xl ALTI: SİYAH KART
  * ------------------------------------------------------------------------- */
 function SessionCard({ summary }) {
-  const { energy, water, co2, energyPerPrompt } = summary;
-  const columns = promptColumns(energyPerPrompt);
+  const { energy, water, co2, energyPerPrompt, modelPerPrompt } = summary;
+  const columns = promptColumns(energyPerPrompt, modelPerPrompt);
+  const barWidth = columns.length > 6 ? 6 : 10;
+  const barGap = columns.length > 6 ? 3 : 5;
 
   return (
     <div className="rounded-[18px] bg-ink text-on-dark px-4 py-3.5 flex flex-col gap-2">
@@ -63,31 +94,43 @@ function SessionCard({ summary }) {
         </div>
 
         {columns.length > 0 && (
-          <div className="shrink-0 flex flex-col items-end gap-1.5">
-            {/* Sütun grafiği: ekran okuyucuya tek cümleyle anlatılır (değerler zaten yukarıda yazılı). */}
+          <div className="shrink-0 flex flex-col items-end gap-1">
+            {/* Sütun grafiği (son 12 istem). Değerler yukarıda metin olarak da yazılıdır. */}
             <div
               role="img"
-              aria-label={`İstem başına enerji, son ${columns.length} istem`}
+              aria-label={`İstem başına enerji, son ${columns.length} istem; renk model sınıfını gösterir`}
               className="flex items-end h-10"
-              style={{ gap: columns.length > 6 ? 3 : 5 }}
+              style={{ gap: barGap }}
             >
               {columns.map((col, i) => (
                 <div
                   // Anahtar istemin oturumdaki sırasıdır: yeni istem gelince yalnızca yeni sütun dolarak belirir.
                   key={col.index}
-                  className={`rounded-[3px] animate-up origin-up ${i === columns.length - 1 ? 'bg-eco' : 'bg-text-2'}`}
+                  title={sliceLabel(col.index, col.modelId, col.value)}
+                  className="rounded-[3px] animate-up origin-up"
                   style={{
-                    width: columns.length > 6 ? 6 : 10,
+                    width: barWidth,
                     height: `${col.height}%`,
+                    backgroundColor: modelColor(col.modelId, 'dark'),
                     animationDelay: `${Math.min(i, 6) * 0.05}s`,
                   }}
                 />
+              ))}
+            </div>
+            {/* En yeni istem işareti: en sağdaki sütunun altında küçük nokta (renk yerine işaret). */}
+            <div className="flex" style={{ gap: barGap }} aria-hidden="true">
+              {columns.map((col, i) => (
+                <span key={col.index} className="flex justify-center" style={{ width: barWidth }}>
+                  {i === columns.length - 1 && <span className="w-1 h-1 rounded-full bg-on-dark" />}
+                </span>
               ))}
             </div>
             <span className="text-[10px] tracking-[0.06em] uppercase text-on-dark-2">İstem başına</span>
           </div>
         )}
       </div>
+
+      {columns.length > 0 && <Legend tone="dark" className="text-on-dark-2" />}
 
       <p className="pt-2 border-t border-white/10 text-[11px] leading-4 text-on-dark-2">{equivalentText(summary)}</p>
     </div>
@@ -98,8 +141,8 @@ function SessionCard({ summary }) {
  * xl VE ÜSTÜ: BİRİKİM SÜTUNU
  * ------------------------------------------------------------------------- */
 function SessionColumn({ summary }) {
-  const { energy, water, co2, energyPerPrompt } = summary;
-  const slices = stackSlices(energyPerPrompt);
+  const { energy, water, co2, energyPerPrompt, modelPerPrompt } = summary;
+  const slices = stackSlices(energyPerPrompt, modelPerPrompt);
   const newest = slices.length - 1;
 
   return (
@@ -120,16 +163,16 @@ function SessionColumn({ summary }) {
       {/* Orta: dikey yığılmış birikim sütunu. Kalan yüksekliğin tamamını kaplar; sütunun tamamı oturum toplamıdır.
           flex-col-reverse: dizideki ilk (en eski) istem en altta, en yenisi en üstte durur.
           Her dilimin yüksekliği flex-grow ile o istemin payına oranlanır (dilimler arası 2 px boşluk düşüldükten
-          sonra). Yeni istem gelince yeni dilim alttan dolarak belirir, diğerleri yumuşakça küçülür
-          ("hareketi azalt" açıksa ikisi de animasyonsuz). */}
+          sonra). Dilimin rengi o istemin model sınıfıdır. Yeni istem gelince yeni dilim alttan dolarak belirir,
+          diğerleri yumuşakça küçülür ("hareketi azalt" açıksa ikisi de animasyonsuz). */}
       <div className="flex-1 min-h-0 flex">
         <div
           role="list"
-          aria-label="İstem başına enerji; sütunun tamamı oturum toplamı"
+          aria-label="İstem başına enerji; sütunun tamamı oturum toplamı, renk model sınıfı"
           className={`w-[18px] h-full flex flex-col-reverse gap-[2px] rounded-[5px] ${slices.length === 0 ? 'bg-muted' : ''}`}
         >
           {slices.map((slice) => {
-            const label = `${slice.index + 1}. istem · ${fmtSmart(slice.value)} Wh`;
+            const label = sliceLabel(slice.index, slice.modelId, slice.value);
             const isNewest = slice.index === newest;
             return (
               <div
@@ -138,15 +181,21 @@ function SessionColumn({ summary }) {
                 tabIndex={0}
                 title={label}
                 aria-label={label}
+                data-newest={isNewest ? 'true' : undefined}
                 // group: üzerine gelince veya klavyeyle odaklanınca yanındaki etiket görünür.
-                className={`group relative min-h-[2px] rounded-[3px] outline-none animate-up origin-up transition-[flex-grow] duration-700 ease-out focus-visible:ring-2 focus-visible:ring-accent-ink focus-visible:ring-offset-2 ${
-                  isNewest ? 'bg-eco' : slice.index % 2 === 0 ? 'bg-ink' : 'bg-text-2'
-                }`}
-                style={{ flexGrow: slice.share, flexBasis: 0 }}
+                className="group relative min-h-[2px] rounded-[3px] outline-none animate-up origin-up transition-[flex-grow] duration-700 ease-out focus-visible:ring-2 focus-visible:ring-accent-ink focus-visible:ring-offset-2"
+                style={{ flexGrow: slice.share, flexBasis: 0, backgroundColor: modelColor(slice.modelId) }}
               >
+                {/* En yeni istem işareti: dilimin sağında küçük nokta (renk yerine işaret). */}
+                {isNewest && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute left-full top-1/2 -translate-y-1/2 ml-1.5 w-1.5 h-1.5 rounded-full bg-ink"
+                  />
+                )}
                 <span
                   aria-hidden="true"
-                  className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 whitespace-nowrap rounded-full bg-ink px-2.5 py-1 font-mono text-[11px] text-on-dark opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity"
+                  className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-10 whitespace-nowrap rounded-full bg-ink px-2.5 py-1 font-mono text-[11px] text-on-dark opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity"
                 >
                   {label}
                 </span>
@@ -156,8 +205,11 @@ function SessionColumn({ summary }) {
         </div>
       </div>
 
-      {/* Alt: günlük karşılık */}
-      <p className="text-[11px] leading-4 text-text-2">{equivalentText(summary)}</p>
+      {/* Renk açıklaması ve günlük karşılık */}
+      <div className="flex flex-col gap-3">
+        {slices.length > 0 && <Legend tone="light" className="text-text-2" />}
+        <p className="text-[11px] leading-4 text-text-2">{equivalentText(summary)}</p>
+      </div>
     </div>
   );
 }
